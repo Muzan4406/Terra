@@ -51,32 +51,37 @@ export default function TeamPage() {
 
   const totalTeamSize = (stats?.level1Count || 0) + (stats?.level2Count || 0) + (stats?.level3Count || 0);
   const totalInvestment = (stats?.level1Investment || 0) + (stats?.level2Investment || 0) + (stats?.level3Investment || 0);
+  const totalCommissions = stats?.totalCommissions || 0;
+
+  const level1Commission = Math.floor((stats?.level1Investment || 0) * 0.27);
+  const level2Commission = Math.floor((stats?.level2Investment || 0) * 0.02);
+  const level3Commission = Math.floor((stats?.level3Investment || 0) * 0.01);
 
   const levels = [
     {
       level: 1,
       label: "LV1",
-      commission: "27%",
+      commissionRate: "27%",
       teamSize: stats?.level1Count || 0,
-      investment: stats?.level1Investment || 0,
+      commissionEarned: level1Commission,
       medalColor: "bg-yellow-400",
       medalBorder: "border-yellow-500",
     },
     {
       level: 2,
       label: "LV2",
-      commission: "2%",
+      commissionRate: "2%",
       teamSize: stats?.level2Count || 0,
-      investment: stats?.level2Investment || 0,
+      commissionEarned: level2Commission,
       medalColor: "bg-gray-300",
       medalBorder: "border-gray-400",
     },
     {
       level: 3,
       label: "LV3",
-      commission: "1%",
+      commissionRate: "1%",
       teamSize: stats?.level3Count || 0,
-      investment: stats?.level3Investment || 0,
+      commissionEarned: level3Commission,
       medalColor: "bg-orange-400",
       medalBorder: "border-orange-500",
     },
@@ -152,7 +157,7 @@ export default function TeamPage() {
                   </div>
                   <Link href={`/team/level/${level.level}`}>
                     <div className="flex items-center gap-1 text-blue-500 cursor-pointer hover:text-blue-600" data-testid={`link-level-${level.level}`}>
-                      <span className="text-sm font-medium">Commission:{level.commission}</span>
+                      <span className="text-sm font-medium">Taux: {level.commissionRate}</span>
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </Link>
@@ -164,10 +169,10 @@ export default function TeamPage() {
                     <p className="text-xs text-gray-500">Taille de l'équipe</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-800">
-                      XOF {level.investment.toFixed(2)}
+                    <p className="text-lg font-semibold text-green-600">
+                      {level.commissionEarned.toLocaleString("fr-FR")} FCFA
                     </p>
-                    <p className="text-xs text-gray-500">investir</p>
+                    <p className="text-xs text-gray-500">Commission</p>
                   </div>
                 </div>
               </div>
