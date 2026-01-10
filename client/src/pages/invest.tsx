@@ -238,19 +238,19 @@ export default function InvestPage() {
       </div>
 
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="text-blue-600 text-xl">
+        <DialogContent className="max-w-xs mx-auto p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-blue-600 text-base">
               {selectedProduct?.name}
             </DialogTitle>
-            <DialogDescription>
-              Détails de la machine d'investissement
+            <DialogDescription className="text-xs">
+              Détails de la machine
             </DialogDescription>
           </DialogHeader>
           
           {selectedProduct && (
-            <div className="space-y-4">
-              <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100">
+            <div className="space-y-3">
+              <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-100">
                 <img 
                   src={productImages[selectedProductIndex] || productImages[0]} 
                   alt={selectedProduct.name}
@@ -258,54 +258,54 @@ export default function InvestPage() {
                 />
               </div>
               
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-xs">
                 {productDescriptions[selectedProductIndex] || productDescriptions[0]}
               </p>
               
-              <div className="space-y-3 bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Coins className="w-5 h-5 text-blue-600" />
+              <div className="space-y-2 bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Coins className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Prix d'achat</p>
-                    <p className="font-bold text-gray-800">{formatNumber(selectedProduct.price)} F CFA</p>
+                    <p className="text-[10px] text-gray-500">Prix d'achat</p>
+                    <p className="font-bold text-sm text-gray-800">{formatNumber(selectedProduct.price)} F CFA</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Revenu quotidien</p>
-                    <p className="font-bold text-green-600">{formatNumber(selectedProduct.dailyReturn)} F CFA</p>
+                    <p className="text-[10px] text-gray-500">Revenu quotidien</p>
+                    <p className="font-bold text-sm text-green-600">{formatNumber(selectedProduct.dailyReturn)} F CFA</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Revenu total (100 jours)</p>
-                    <p className="font-bold text-purple-600">{formatNumber(selectedProduct.totalReturn)} F CFA</p>
+                    <p className="text-[10px] text-gray-500">Revenu total (100 jours)</p>
+                    <p className="font-bold text-sm text-purple-600">{formatNumber(selectedProduct.totalReturn)} F CFA</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-600" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Durée du cycle</p>
-                    <p className="font-bold text-gray-800">{selectedProduct.duration} jours</p>
+                    <p className="text-[10px] text-gray-500">Durée du cycle</p>
+                    <p className="font-bold text-sm text-gray-800">{selectedProduct.duration} jours</p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Taux de profit quotidien:</span>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Taux de profit:</span>
                 <span className="font-bold text-blue-600">
                   {calculateProfitRate(selectedProduct.dailyReturn, selectedProduct.price)}%
                 </span>
@@ -313,14 +313,15 @@ export default function InvestPage() {
             </div>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             {selectedProduct?.owned ? (
-              <Button className="w-full bg-green-500 hover:bg-green-600" disabled>
-                <CheckCircle className="w-4 h-4 mr-2" />
+              <Button size="sm" className="w-full bg-green-500 hover:bg-green-600" disabled>
+                <CheckCircle className="w-3 h-3 mr-1" />
                 Déjà actif
               </Button>
             ) : (
               <Button 
+                size="sm"
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
                   if (selectedProduct) {
