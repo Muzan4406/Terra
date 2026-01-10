@@ -80,18 +80,18 @@ export default function AccountPage() {
     },
     { 
       icon: RefreshCw, 
-      label: "Échange", 
+      label: "Échange de code", 
       iconBg: "bg-teal-100",
       iconColor: "text-teal-500",
-      action: () => navigate("/history"),
+      action: () => navigate("/exchange-code"),
       testId: "menu-exchange" 
     },
     { 
       icon: Lock, 
-      label: "Mot de passe de transaction", 
+      label: "Modifier mot de passe", 
       iconBg: "bg-red-100",
       iconColor: "text-red-500",
-      action: () => navigate("/account"),
+      action: () => navigate("/change-password"),
       testId: "menu-password" 
     },
   ];
