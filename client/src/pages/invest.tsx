@@ -1,10 +1,30 @@
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, CheckCircle, TrendingUp, Clock, Coins } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import type { Product, UserProduct } from "@shared/schema";
 
 import product1Img from "@assets/79d84350-9aa4-4031-ad23-c22766584042_1768037288627.webp";
@@ -27,9 +47,24 @@ const productImages = [
   product3Img,
 ];
 
+const productDescriptions = [
+  "Machine d'entrée de gamme idéale pour commencer votre parcours d'investissement. Rendement stable et fiable.",
+  "Équipement de diagnostic avancé offrant un excellent rapport qualité-prix pour les investisseurs débutants.",
+  "Scanner médical de haute précision avec des rendements quotidiens attractifs.",
+  "Appareil d'imagerie médicale performant pour des gains réguliers et sécurisés.",
+  "Technologie de pointe en imagerie offrant des retours sur investissement élevés.",
+  "Notre machine premium avec les meilleurs rendements du marché pour les investisseurs expérimentés.",
+];
+
 export default function InvestPage() {
   const { user, refetchUser } = useAuth();
   const { toast } = useToast();
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithOwnership | null>(null);
+  const [selectedProductIndex, setSelectedProductIndex] = useState<number>(0);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showConfirmPurchase, setShowConfirmPurchase] = useState(false);
+  const [productToPurchase, setProductToPurchase] = useState<ProductWithOwnership | null>(null);
+  const [productToPurchaseIndex, setProductToPurchaseIndex] = useState<number>(0);
 
   const { data: products, isLoading } = useQuery<ProductWithOwnership[]>({
     queryKey: ["/api/products"],
@@ -51,6 +86,8 @@ export default function InvestPage() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       refetchUser();
+      setShowConfirmPurchase(false);
+      setProductToPurchase(null);
     },
     onError: (error: Error) => {
       toast({ 
@@ -58,6 +95,7 @@ export default function InvestPage() {
         description: error.message,
         variant: "destructive" 
       });
+      setShowConfirmPurchase(false);
     },
   });
 
@@ -67,6 +105,24 @@ export default function InvestPage() {
 
   const calculateProfitRate = (dailyReturn: number, price: number) => {
     return ((dailyReturn / price) * 100).toFixed(1);
+  };
+
+  const handleShowDetails = (product: ProductWithOwnership, index: number) => {
+    setSelectedProduct(product);
+    setSelectedProductIndex(index);
+    setShowDetails(true);
+  };
+
+  const handlePurchaseClick = (product: ProductWithOwnership, index: number) => {
+    setProductToPurchase(product);
+    setProductToPurchaseIndex(index);
+    setShowConfirmPurchase(true);
+  };
+
+  const confirmPurchase = () => {
+    if (productToPurchase) {
+      purchaseMutation.mutate(productToPurchase.id);
+    }
   };
 
   if (!user || isLoading) {
@@ -142,9 +198,13 @@ export default function InvestPage() {
                 </div>
                 
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                  <span className="text-blue-600 text-sm font-medium cursor-pointer">
+                  <button 
+                    className="text-blue-600 text-sm font-medium cursor-pointer hover:underline"
+                    onClick={() => handleShowDetails(product, index)}
+                    data-testid={`button-details-${product.level}`}
+                  >
                     Détail &gt;&gt;
-                  </span>
+                  </button>
                   
                   {product.owned ? (
                     <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
@@ -163,14 +223,10 @@ export default function InvestPage() {
                       <button
                         className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         disabled={purchaseMutation.isPending}
-                        onClick={() => purchaseMutation.mutate(product.id)}
+                        onClick={() => handlePurchaseClick(product, index)}
                         data-testid={`button-buy-${product.level}`}
                       >
-                        {purchaseMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "investir"
-                        )}
+                        investir
                       </button>
                     </div>
                   )}
@@ -180,6 +236,160 @@ export default function InvestPage() {
           })}
         </div>
       </div>
+
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-blue-600 text-xl">
+              {selectedProduct?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Détails de la machine d'investissement
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProduct && (
+            <div className="space-y-4">
+              <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100">
+                <img 
+                  src={productImages[selectedProductIndex] || productImages[0]} 
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <p className="text-gray-600 text-sm">
+                {productDescriptions[selectedProductIndex] || productDescriptions[0]}
+              </p>
+              
+              <div className="space-y-3 bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Coins className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Prix d'achat</p>
+                    <p className="font-bold text-gray-800">{formatNumber(selectedProduct.price)} F CFA</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Revenu quotidien</p>
+                    <p className="font-bold text-green-600">{formatNumber(selectedProduct.dailyReturn)} F CFA</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Revenu total (100 jours)</p>
+                    <p className="font-bold text-purple-600">{formatNumber(selectedProduct.totalReturn)} F CFA</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Durée du cycle</p>
+                    <p className="font-bold text-gray-800">{selectedProduct.duration} jours</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Taux de profit quotidien:</span>
+                <span className="font-bold text-blue-600">
+                  {calculateProfitRate(selectedProduct.dailyReturn, selectedProduct.price)}%
+                </span>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            {selectedProduct?.owned ? (
+              <Button className="w-full bg-green-500 hover:bg-green-600" disabled>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Déjà actif
+              </Button>
+            ) : (
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  if (selectedProduct) {
+                    setShowDetails(false);
+                    handlePurchaseClick(selectedProduct, selectedProductIndex);
+                  }
+                }}
+              >
+                Investir maintenant
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showConfirmPurchase} onOpenChange={setShowConfirmPurchase}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer l'achat</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Voulez-vous vraiment acheter cette machine?</p>
+                {productToPurchase && (
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                        <img 
+                          src={productImages[productToPurchaseIndex] || productImages[0]} 
+                          alt={productToPurchase.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800">{productToPurchase.name}</p>
+                        <p className="text-blue-600 font-bold">{formatNumber(productToPurchase.price)} F CFA</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 pt-2 border-t">
+                      <p>Votre solde: <span className="font-bold text-gray-800">{formatNumber(user.balance)} F CFA</span></p>
+                      <p>Après achat: <span className={`font-bold ${user.balance >= productToPurchase.price ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatNumber(user.balance - productToPurchase.price)} F CFA
+                      </span></p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purchaseMutation.isPending}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmPurchase}
+              disabled={purchaseMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {purchaseMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Traitement...
+                </>
+              ) : (
+                "Confirmer l'achat"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav />
     </div>
