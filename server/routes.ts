@@ -466,6 +466,7 @@ export async function registerRoutes(
           amount: PRODUCT_TASK.reward,
           type: "task",
           description: PRODUCT_TASK.description,
+          sourceId: null,
         });
 
         return res.json({ success: true, reward: PRODUCT_TASK.reward });
@@ -504,6 +505,7 @@ export async function registerRoutes(
           amount: task.reward,
           type: "task",
           description: task.description,
+          sourceId: null,
         });
 
         return res.json({ success: true, reward: task.reward });
@@ -523,6 +525,10 @@ export async function registerRoutes(
 
     const user = await storage.getUser(req.session.userId!);
 
+    const level1Investment = level1.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
+    const level2Investment = level2.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
+    const level3Investment = level3.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
+
     res.json({
       level1Count: level1.length,
       level2Count: level2.length,
@@ -530,6 +536,9 @@ export async function registerRoutes(
       level1Investors: level1.filter(r => r.hasProduct).length,
       level2Investors: level2.filter(r => r.hasProduct).length,
       level3Investors: level3.filter(r => r.hasProduct).length,
+      level1Investment,
+      level2Investment,
+      level3Investment,
       totalCommissions: user?.referralEarnings || 0,
     });
   });
