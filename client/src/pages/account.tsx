@@ -6,9 +6,9 @@ import { BottomNav } from "@/components/bottom-nav";
 import { getCountryDialCode } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  ChevronRight, Globe, Copy, Info, HelpCircle, 
+  ChevronRight, Globe, Copy, Info, 
   Headphones, RefreshCw, Lock, Shield, LogOut,
-  ArrowRight, CreditCard, FileText
+  ArrowRight
 } from "lucide-react";
 import bannerImage from "@assets/smilingdoctor-globalhealth-blog-1200x673_1768031545518.webp";
 import bankImage from "@assets/images_(30)_1768037288811.jpeg";
@@ -71,19 +71,11 @@ export default function AccountPage() {
       testId: "menu-about" 
     },
     { 
-      icon: HelpCircle, 
-      label: "Centre d'aide", 
-      iconBg: "bg-yellow-100",
-      iconColor: "text-yellow-500",
-      action: () => window.open(settings?.discussionGroup || "https://t.me/+DOnUcJs7idVmN2E0", "_blank"),
-      testId: "menu-help" 
-    },
-    { 
       icon: Headphones, 
       label: "Service client", 
       iconBg: "bg-green-100",
       iconColor: "text-green-500",
-      action: () => window.open(settings?.customerService || "https://t.me/+DOnUcJs7idVmN2E0", "_blank"),
+      action: () => navigate("/customer-service"),
       testId: "menu-support" 
     },
     { 
