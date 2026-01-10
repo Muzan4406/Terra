@@ -11,6 +11,7 @@ import HomePage from "@/pages/home";
 import TasksPage from "@/pages/tasks";
 import InvestPage from "@/pages/invest";
 import TeamPage from "@/pages/team";
+import TeamLevelPage from "@/pages/team-level";
 import AccountPage from "@/pages/account";
 import DepositPage from "@/pages/deposit";
 import WithdrawPage from "@/pages/withdraw";
@@ -124,6 +125,11 @@ function Router() {
       <Route path="/team">
         <ProtectedRoute>
           <TeamPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/team/level/:level">
+        <ProtectedRoute>
+          <TeamLevelPage />
         </ProtectedRoute>
       </Route>
       <Route path="/account">

@@ -543,6 +543,26 @@ export async function registerRoutes(
     });
   });
 
+  app.get("/api/team/referrals/:level", requireAuth, async (req, res) => {
+    const level = parseInt(req.params.level);
+    if (isNaN(level) || level < 1 || level > 3) {
+      return res.status(400).json({ message: "Niveau invalide" });
+    }
+
+    const referrals = await storage.getUserReferrals(req.session.userId!, level);
+    
+    const referralDetails = referrals.map(r => ({
+      id: r.id,
+      phone: r.phone,
+      country: r.country,
+      totalDeposits: r.totalDeposits || 0,
+      hasProduct: r.hasProduct || false,
+      createdAt: r.createdAt,
+    }));
+
+    res.json(referralDetails);
+  });
+
   app.get("/api/settings/public", async (req, res) => {
     const settings = await storage.getAllSettings();
     res.json({

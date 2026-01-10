@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 
 interface TeamStats {
   level1Count: number;
@@ -149,10 +150,12 @@ export default function TeamPage() {
                     </div>
                     <span className="font-bold text-gray-800 text-lg">{level.label}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-blue-500">
-                    <span className="text-sm font-medium">Commission:{level.commission}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
+                  <Link href={`/team/level/${level.level}`}>
+                    <div className="flex items-center gap-1 text-blue-500 cursor-pointer hover:text-blue-600" data-testid={`link-level-${level.level}`}>
+                      <span className="text-sm font-medium">Commission:{level.commission}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </Link>
                 </div>
 
                 <div className="flex items-end justify-between">
