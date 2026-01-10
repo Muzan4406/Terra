@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { z } from "zod";
-import heroImage from "@assets/IMG-20260108-WA0076_1768035736801.jpg";
+import heroImage from "@assets/Img_2026_01_09_18_58_01_1768036005304.jpeg";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
