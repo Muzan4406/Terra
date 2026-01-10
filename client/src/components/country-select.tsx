@@ -43,3 +43,8 @@ export function getCountryName(code: string): string {
 export function getCountryFlag(code: string): string {
   return FLAG_EMOJIS[code] || "";
 }
+
+export function getCountryDialCode(code: string): string {
+  const country = ELIGIBLE_COUNTRIES.find((c) => c.code === code);
+  return country ? `+${country.dialCode}` : "";
+}
