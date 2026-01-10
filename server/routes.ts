@@ -528,9 +528,13 @@ export async function registerRoutes(
 
     const user = await storage.getUser(req.session.userId!);
 
-    const level1Investment = level1.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
-    const level2Investment = level2.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
-    const level3Investment = level3.reduce((sum, r) => sum + (r.totalDeposits || 0), 0);
+    const level1Investments = await Promise.all(level1.map(r => storage.getUserTotalInvestment(r.id)));
+    const level2Investments = await Promise.all(level2.map(r => storage.getUserTotalInvestment(r.id)));
+    const level3Investments = await Promise.all(level3.map(r => storage.getUserTotalInvestment(r.id)));
+
+    const level1Investment = level1Investments.reduce((sum, inv) => sum + inv, 0);
+    const level2Investment = level2Investments.reduce((sum, inv) => sum + inv, 0);
+    const level3Investment = level3Investments.reduce((sum, inv) => sum + inv, 0);
 
     res.json({
       level1Count: level1.length,
@@ -554,13 +558,16 @@ export async function registerRoutes(
 
     const referrals = await storage.getUserReferrals(req.session.userId!, level);
     
-    const referralDetails = referrals.map(r => ({
-      id: r.id,
-      phone: r.phone,
-      country: r.country,
-      totalDeposits: r.totalDeposits || 0,
-      hasProduct: r.hasProduct || false,
-      createdAt: r.createdAt,
+    const referralDetails = await Promise.all(referrals.map(async r => {
+      const totalInvestment = await storage.getUserTotalInvestment(r.id);
+      return {
+        id: r.id,
+        phone: r.phone,
+        country: r.country,
+        totalInvestment,
+        hasProduct: r.hasProduct || false,
+        createdAt: r.createdAt,
+      };
     }));
 
     res.json(referralDetails);

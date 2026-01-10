@@ -35,6 +35,7 @@ export interface IStorage {
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
   
   getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]>;
+  getUserTotalInvestment(userId: string): Promise<number>;
   createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct>;
   updateUserProduct(id: string, updates: Partial<UserProduct>): Promise<UserProduct | undefined>;
   deleteUserProduct(id: string): Promise<void>;
@@ -230,6 +231,17 @@ export class DatabaseStorage implements IStorage {
     .where(eq(userProducts.userId, userId));
     
     return result;
+  }
+
+  async getUserTotalInvestment(userId: string): Promise<number> {
+    const result = await db.select({
+      total: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+    })
+    .from(userProducts)
+    .innerJoin(products, eq(userProducts.productId, products.id))
+    .where(eq(userProducts.userId, userId));
+    
+    return Number(result[0]?.total || 0);
   }
 
   async createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct> {

@@ -9,7 +9,7 @@ interface ReferralUser {
   id: string;
   phone: string;
   country: string;
-  totalDeposits: number;
+  totalInvestment: number;
   hasProduct: boolean;
   createdAt: string;
 }
@@ -96,7 +96,7 @@ export default function TeamLevelPage() {
                         Inscrit le {new Date(referral.createdAt).toLocaleDateString('fr-FR')}
                       </p>
                       <p className="text-sm font-medium text-gray-700">
-                        XOF {referral.totalDeposits.toFixed(2)}
+                        XOF {referral.totalInvestment.toFixed(2)}
                       </p>
                     </div>
                   </div>
