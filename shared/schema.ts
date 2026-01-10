@@ -45,7 +45,7 @@ export const REFERRAL_TASKS = [
   { id: 8, requiredInvestors: 300, reward: 11000, description: "Inviter 300 membres qui investissent" },
 ] as const;
 
-export const PRODUCT_TASK = { requiredProduct: 3, reward: 700, description: "Acheter un produit VIP3 pour recevoir 700F" };
+export const PRODUCT_TASK = { requiredProduct: 5, reward: 700, description: "Acheter un produit VIP5 pour recevoir 700F" };
 
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),

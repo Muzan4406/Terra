@@ -424,7 +424,7 @@ export async function registerRoutes(
     const investingReferrals = level1.filter(r => r.hasProduct);
 
     const userProducts = await storage.getUserProducts(req.session.userId!);
-    const hasVip3 = userProducts.some(up => up.product.level >= 3);
+    const hasVip5 = userProducts.some(up => up.product.level >= 5);
 
     const referralTasks = REFERRAL_TASKS.map(task => ({
       taskId: task.id,
@@ -434,12 +434,23 @@ export async function registerRoutes(
     }));
 
     const productTask = {
-      completed: hasVip3,
+      completed: hasVip5,
       claimed: claimedTasks.some(ct => ct.taskType === "product"),
-      hasVip3,
+      hasVip5,
     };
 
-    res.json({ referralTasks, productTask });
+    const totalReferrals = level1.length;
+    const claimedRewards = claimedTasks.reduce((sum, ct) => {
+      if (ct.taskType === "referral") {
+        const task = REFERRAL_TASKS.find(t => t.id === ct.taskId);
+        return sum + (task?.reward || 0);
+      } else if (ct.taskType === "product") {
+        return sum + PRODUCT_TASK.reward;
+      }
+      return sum;
+    }, 0);
+
+    res.json({ referralTasks, productTask, totalReferrals, totalRewards: claimedRewards });
   });
 
   app.post("/api/tasks/claim", requireAuth, async (req, res) => {
@@ -458,10 +469,10 @@ export async function registerRoutes(
         }
 
         const userProducts = await storage.getUserProducts(user.id);
-        const hasVip3 = userProducts.some(up => up.product.level >= 3);
+        const hasVip5 = userProducts.some(up => up.product.level >= 5);
         
-        if (!hasVip3) {
-          return res.status(400).json({ message: "Vous devez acheter un produit VIP3 ou supérieur" });
+        if (!hasVip5) {
+          return res.status(400).json({ message: "Vous devez acheter un produit VIP5 ou supérieur" });
         }
 
         await storage.createClaimedTask({
