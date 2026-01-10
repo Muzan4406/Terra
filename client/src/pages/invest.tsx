@@ -1,20 +1,25 @@
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
-import { MoneyDisplay } from "@/components/money-display";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Crown, Clock, TrendingUp, Loader2, Sparkles } from "lucide-react";
+import { Loader2, Zap, Lightbulb, Sun, Battery, Cpu, Server } from "lucide-react";
 import type { Product, UserProduct } from "@shared/schema";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
   userProduct?: UserProduct;
 }
+
+const productIcons = [
+  { icon: Lightbulb, color: "bg-gradient-to-b from-orange-100 to-orange-50", iconColor: "text-orange-500" },
+  { icon: Zap, color: "bg-gradient-to-b from-yellow-100 to-yellow-50", iconColor: "text-yellow-500" },
+  { icon: Sun, color: "bg-gradient-to-b from-blue-100 to-blue-50", iconColor: "text-blue-500" },
+  { icon: Battery, color: "bg-gradient-to-b from-green-100 to-green-50", iconColor: "text-green-500" },
+  { icon: Cpu, color: "bg-gradient-to-b from-purple-100 to-purple-50", iconColor: "text-purple-500" },
+  { icon: Server, color: "bg-gradient-to-b from-indigo-100 to-indigo-50", iconColor: "text-indigo-500" },
+];
 
 export default function InvestPage() {
   const { user, refetchUser } = useAuth();
@@ -36,7 +41,7 @@ export default function InvestPage() {
     onSuccess: () => {
       toast({ 
         title: "Achat réussi!", 
-        description: "Votre investissement est maintenant actif. Vous recevrez vos gains quotidiens automatiquement." 
+        description: "Votre investissement est maintenant actif." 
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       refetchUser();
@@ -50,25 +55,21 @@ export default function InvestPage() {
     },
   });
 
-  const getVipColor = (level: number) => {
-    const colors = [
-      "from-amber-500 to-yellow-400",
-      "from-blue-500 to-cyan-400",
-      "from-purple-500 to-pink-400",
-      "from-emerald-500 to-green-400",
-      "from-red-500 to-orange-400",
-      "from-indigo-600 to-violet-500",
-    ];
-    return colors[level - 1] || colors[0];
+  const formatNumber = (num: number) => {
+    return num.toLocaleString("fr-FR");
+  };
+
+  const calculateProfitRate = (dailyReturn: number, price: number) => {
+    return ((dailyReturn / price) * 100).toFixed(1);
   };
 
   if (!user || isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-gray-50 pb-20">
         <div className="max-w-md mx-auto p-4 space-y-4">
-          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-64 mx-auto" />
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-40 w-full" />
+            <Skeleton key={i} className="h-44 w-full rounded-xl" />
           ))}
         </div>
         <BottomNav />
@@ -77,107 +78,93 @@ export default function InvestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-md mx-auto">
-        <header className="p-4 bg-card border-b border-card-border">
-          <h1 className="text-xl font-bold">Plan d'investissement</h1>
-          <p className="text-sm text-muted-foreground">Choisissez un produit VIP pour commencer à gagner</p>
+        <header className="py-6 px-4 bg-white">
+          <h1 className="text-xl font-bold text-center text-gray-800">
+            Liste des Appareils d'Investissement
+          </h1>
         </header>
 
-        <div className="p-4">
-          <Card className="mb-4 bg-primary/5 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Votre solde disponible</p>
-                  <p className="text-2xl font-bold" data-testid="text-balance">
-                    <MoneyDisplay amount={user.balance} />
-                  </p>
+        <div className="px-4 py-2 space-y-4">
+          {products?.map((product, index) => {
+            const IconComponent = productIcons[index]?.icon || Lightbulb;
+            const iconStyle = productIcons[index] || productIcons[0];
+            
+            return (
+              <div 
+                key={product.id} 
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+              >
+                <div className="flex gap-4">
+                  <div className={`w-24 h-28 ${iconStyle.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                    <IconComponent className={`w-12 h-12 ${iconStyle.iconColor}`} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-bold text-lg text-orange-500">
+                        {product.name}
+                      </h3>
+                      <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                        Hot
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Revenu quotidien:</span>
+                        <span className="font-medium text-gray-800">{formatNumber(product.dailyReturn)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Revenu total:</span>
+                        <span className="font-medium text-gray-800">{formatNumber(product.totalReturn)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Taux de profit quotidien:</span>
+                        <span className="font-medium text-gray-800">{calculateProfitRate(product.dailyReturn, product.price)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Période de revenu:</span>
+                        <span className="font-medium text-gray-800">{product.duration} Jour</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-primary" />
+                
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                  <span className="text-orange-500 text-sm font-medium cursor-pointer">
+                    Détail &gt;&gt;
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="border border-gray-300 rounded-full px-4 py-1.5 text-sm text-gray-700">
+                      {formatNumber(product.price)} F CFA
+                    </span>
+                    
+                    {product.owned ? (
+                      <span className="bg-green-500 text-white text-sm px-5 py-1.5 rounded-md font-medium">
+                        Actif
+                      </span>
+                    ) : (
+                      <button
+                        className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-5 py-1.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        disabled={user.balance < product.price || purchaseMutation.isPending}
+                        onClick={() => purchaseMutation.mutate(product.id)}
+                        data-testid={`button-buy-${product.level}`}
+                      >
+                        {purchaseMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "investir"
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-4">
-            {products?.map((product) => (
-              <Card 
-                key={product.id} 
-                className={`overflow-hidden hover-elevate ${product.owned ? 'border-primary/50' : ''}`}
-              >
-                <div className={`h-2 bg-gradient-to-r ${getVipColor(product.level)}`} />
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getVipColor(product.level)} flex items-center justify-center`}>
-                        <Crown className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg">{product.name}</h3>
-                        {product.owned && (
-                          <Badge variant="secondary" className="text-xs">Actif</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {product.duration} jours
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-                    <div className="bg-muted/50 rounded-md p-2">
-                      <p className="text-xs text-muted-foreground">Prix d'achat</p>
-                      <p className="font-bold text-sm">
-                        <MoneyDisplay amount={product.price} showCurrency={false} />
-                      </p>
-                    </div>
-                    <div className="bg-muted/50 rounded-md p-2">
-                      <p className="text-xs text-muted-foreground">Gain/jour</p>
-                      <p className="font-bold text-sm text-green-500">
-                        +<MoneyDisplay amount={product.dailyReturn} showCurrency={false} />
-                      </p>
-                    </div>
-                    <div className="bg-muted/50 rounded-md p-2">
-                      <p className="text-xs text-muted-foreground">Gain total</p>
-                      <p className="font-bold text-sm text-primary">
-                        <MoneyDisplay amount={product.totalReturn} showCurrency={false} />
-                      </p>
-                    </div>
-                  </div>
-
-                  {product.owned ? (
-                    <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                      <span>Générant des revenus quotidiens</span>
-                    </div>
-                  ) : (
-                    <Button
-                      className="w-full"
-                      disabled={user.balance < product.price || purchaseMutation.isPending}
-                      onClick={() => purchaseMutation.mutate(product.id)}
-                      data-testid={`button-buy-${product.level}`}
-                    >
-                      {purchaseMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Achat en cours...
-                        </>
-                      ) : user.balance < product.price ? (
-                        "Solde insuffisant"
-                      ) : (
-                        <>
-                          Acheter pour <MoneyDisplay amount={product.price} />
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
