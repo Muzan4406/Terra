@@ -142,29 +142,24 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 mt-6 relative z-10">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-white/80 text-sm font-medium">Solde du compte</p>
-                <p className="text-white text-xl font-bold truncate ml-2" data-testid="text-balance">
-                  {formatNumber(user.balance)} FCFA
-                </p>
-              </div>
+          <div className="grid grid-cols-3 gap-2 mt-6 relative z-10 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="text-center flex flex-col items-center justify-center min-w-0">
+              <p className="text-white font-bold text-base leading-tight truncate w-full" data-testid="text-balance">
+                {formatNumber(user.balance)}
+              </p>
+              <p className="text-white/70 text-xs mt-1">Solde du compte</p>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-white/80 text-xs font-medium mb-1">Revenu cumulé</p>
-                <p className="text-white text-lg font-bold truncate" data-testid="text-total-earnings">
-                  {formatNumber(user.totalEarnings)} FCFA
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-white/80 text-xs font-medium mb-1">Revenu d'aujourd'hui</p>
-                <p className="text-white text-lg font-bold truncate" data-testid="text-today-earnings">
-                  {formatNumber(user.todayEarnings)} FCFA
-                </p>
-              </div>
+            <div className="text-center flex flex-col items-center justify-center min-w-0 border-x border-white/20 px-2">
+              <p className="text-white font-bold text-base leading-tight truncate w-full" data-testid="text-total-earnings">
+                {formatNumber(user.totalEarnings)}
+              </p>
+              <p className="text-white/70 text-xs mt-1">Revenu cumulé</p>
+            </div>
+            <div className="text-center flex flex-col items-center justify-center min-w-0">
+              <p className="text-white font-bold text-base leading-tight truncate w-full" data-testid="text-today-earnings">
+                {formatNumber(user.todayEarnings)}
+              </p>
+              <p className="text-white/70 text-xs mt-1">Revenu du jour</p>
             </div>
           </div>
 
