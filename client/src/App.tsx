@@ -30,6 +30,7 @@ import AdminUsersPage from "@/pages/admin/users";
 import AdminChannelsPage from "@/pages/admin/channels";
 import AdminSettingsPage from "@/pages/admin/settings";
 import AdminBonusCodesPage from "@/pages/admin/bonus-codes";
+import AdminUserTeamPage from "@/pages/admin/user-team";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -226,6 +227,11 @@ function Router() {
       <Route path="/admin/bonus-codes">
         <AdminRoute>
           <AdminBonusCodesPage />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/users/:id/team">
+        <AdminRoute>
+          <AdminUserTeamPage />
         </AdminRoute>
       </Route>
 

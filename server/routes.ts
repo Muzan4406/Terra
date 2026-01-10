@@ -735,6 +735,62 @@ export async function registerRoutes(
     res.json(usersWithDetails);
   });
 
+  app.get("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    const user = await storage.getUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    res.json({ ...user, password: undefined });
+  });
+
+  app.get("/api/admin/users/:id/team", requireAdmin, async (req, res) => {
+    const userId = req.params.id;
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    const level1 = await storage.getUserReferrals(userId, 1);
+    const level2Promises = level1.map(u => storage.getUserReferrals(u.id, 1));
+    const level2Arrays = await Promise.all(level2Promises);
+    const level2 = level2Arrays.flat();
+    
+    const level3Promises = level2.map(u => storage.getUserReferrals(u.id, 1));
+    const level3Arrays = await Promise.all(level3Promises);
+    const level3 = level3Arrays.flat();
+
+    const mapMember = async (u: any) => {
+      const totalInvestment = await storage.getUserTotalInvestment(u.id);
+      return {
+        id: u.id,
+        fullName: u.fullName,
+        phone: u.phone,
+        country: u.country,
+        balance: u.balance,
+        hasProduct: u.hasProduct,
+        totalInvestment,
+        createdAt: u.createdAt,
+      };
+    };
+
+    const [l1Members, l2Members, l3Members] = await Promise.all([
+      Promise.all(level1.map(mapMember)),
+      Promise.all(level2.map(mapMember)),
+      Promise.all(level3.map(mapMember)),
+    ]);
+
+    const totalInvestment = [...l1Members, ...l2Members, ...l3Members]
+      .reduce((sum, m) => sum + m.totalInvestment, 0);
+
+    res.json({
+      level1: l1Members,
+      level2: l2Members,
+      level3: l3Members,
+      totalTeamSize: l1Members.length + l2Members.length + l3Members.length,
+      totalInvestment,
+    });
+  });
+
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     const updates = req.body;
     const user = await storage.updateUser(req.params.id, updates);
