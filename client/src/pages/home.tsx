@@ -64,7 +64,7 @@ export default function HomePage() {
     { icon: Building2, label: "Pointage", path: "/tasks", testId: "button-pointage" },
     { icon: Info, label: "À propos", path: "/about", testId: "button-about" },
     { icon: FileCheck, label: "Règlement", path: "/rules", testId: "button-rules" },
-    { icon: Headphones, label: "Aide", path: null, external: settings?.customerService || "https://t.me/+DOnUcJs7idVmN2E0", testId: "button-aide" },
+    { icon: Headphones, label: "Aide", path: "/customer-service", testId: "button-aide" },
     { icon: CheckCircle, label: "Centre de tâches", path: "/tasks", testId: "button-tasks" },
   ];
 
@@ -91,9 +91,7 @@ export default function HomePage() {
                 key={index}
                 className="flex flex-col items-center gap-2"
                 onClick={() => {
-                  if (btn.external) {
-                    window.open(btn.external, "_blank");
-                  } else if (btn.path) {
+                  if (btn.path) {
                     navigate(btn.path);
                   }
                 }}

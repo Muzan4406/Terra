@@ -19,6 +19,7 @@ import WalletsPage from "@/pages/wallets";
 import HistoryPage from "@/pages/history";
 import AboutPage from "@/pages/about";
 import RulesPage from "@/pages/rules";
+import CustomerServicePage from "@/pages/customer-service";
 import AdminDashboard from "@/pages/admin/index";
 import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
@@ -165,6 +166,11 @@ function Router() {
       <Route path="/rules">
         <ProtectedRoute>
           <RulesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/customer-service">
+        <ProtectedRoute>
+          <CustomerServicePage />
         </ProtectedRoute>
       </Route>
 
