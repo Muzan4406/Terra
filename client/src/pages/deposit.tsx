@@ -27,7 +27,7 @@ export default function DepositPage() {
         accountName: user?.fullName || "",
         accountNumber: user?.phone || "",
         country: user?.country || "",
-        paymentMethod: channels?.find(c => c.id === selectedChannelId)?.paymentMethod || "",
+        paymentMethod: channels?.find(c => c.id === selectedChannelId)?.name || "",
       });
       if (!res.ok) {
         const resData = await res.json();
@@ -129,11 +129,11 @@ export default function DepositPage() {
                   <span className="font-medium text-gray-800">{channel.name}</span>
                 </div>
                 <span className={`px-3 py-1 rounded text-xs font-bold ${
-                  channel.type === "automatic" 
+                  channel.isApi 
                     ? "bg-blue-500 text-white" 
                     : "bg-red-100 text-red-600 border border-red-300"
                 }`}>
-                  {channel.type === "automatic" ? "AUTOMATIQUE" : "SEMI-AUTO"}
+                  {channel.isApi ? "AUTOMATIQUE" : "SEMI-AUTO"}
                 </span>
               </button>
             ))}

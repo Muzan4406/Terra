@@ -5,7 +5,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { REFERRAL_TASKS, PRODUCT_TASK } from "@shared/schema";
-import heroImage from "@assets/IMG-20260110-WA0006_1768062667677.jpg";
+import heroImage from "@assets/Img_2026_01_09_18_57_15_1768064264987.jpeg";
 
 interface TaskStatus {
   referralTasks: { taskId: number; completed: boolean; claimed: boolean; currentCount: number }[];

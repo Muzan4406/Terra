@@ -35,7 +35,7 @@ export function BottomNav() {
                 <img 
                   src={item.icon} 
                   alt={item.label} 
-                  className={`w-9 h-9 object-contain ${isActive ? "opacity-100" : "opacity-70"}`}
+                  className={`w-7 h-7 object-contain ${isActive ? "opacity-100" : "opacity-70"}`}
                 />
                 <span className={`text-xs font-bold ${isActive ? "text-primary" : ""}`}>{item.label}</span>
               </button>
