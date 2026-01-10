@@ -143,11 +143,17 @@ export async function registerRoutes(
   app.get("/api/products", requireAuth, async (req, res) => {
     const products = await storage.getProducts();
     const userProducts = await storage.getUserProducts(req.session.userId!);
-    const ownedProductIds = new Set(userProducts.map(up => up.productId));
+    
+    const productCountMap = new Map<string, number>();
+    userProducts.forEach(up => {
+      const count = productCountMap.get(up.productId) || 0;
+      productCountMap.set(up.productId, count + 1);
+    });
     
     const productsWithOwnership = products.map(p => ({
       ...p,
-      owned: ownedProductIds.has(p.id),
+      owned: productCountMap.has(p.id),
+      ownedCount: productCountMap.get(p.id) || 0,
       userProduct: userProducts.find(up => up.productId === p.id),
     }));
     

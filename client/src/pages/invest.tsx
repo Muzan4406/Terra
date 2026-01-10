@@ -35,6 +35,7 @@ import product5Img from "@assets/images_(33)_1768037288733.jpeg";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
+  ownedCount: number;
   userProduct?: UserProduct;
 }
 
@@ -206,30 +207,19 @@ export default function InvestPage() {
                     Détail &gt;&gt;
                   </button>
                   
-                  {product.owned ? (
-                    <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
-                      <span className="px-4 py-2 text-sm text-gray-700 bg-white font-bold">
-                        {formatNumber(product.price)} F CFA
-                      </span>
-                      <span className="bg-green-500 text-white text-sm px-5 py-2 font-medium">
-                        Actif
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
-                      <span className="px-4 py-2 text-sm text-gray-700 bg-white font-bold">
-                        {formatNumber(product.price)} F CFA
-                      </span>
-                      <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                        disabled={purchaseMutation.isPending}
-                        onClick={() => handlePurchaseClick(product, index)}
-                        data-testid={`button-buy-${product.level}`}
-                      >
-                        investir
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
+                    <span className="px-4 py-2 text-sm text-gray-700 bg-white font-bold">
+                      {formatNumber(product.price)} F CFA
+                    </span>
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      disabled={purchaseMutation.isPending}
+                      onClick={() => handlePurchaseClick(product, index)}
+                      data-testid={`button-buy-${product.level}`}
+                    >
+                      {product.ownedCount > 0 ? `Acheter (${product.ownedCount})` : "investir"}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -314,25 +304,20 @@ export default function InvestPage() {
           )}
           
           <DialogFooter className="pt-2">
-            {selectedProduct?.owned ? (
-              <Button size="sm" className="w-full bg-green-500 hover:bg-green-600" disabled>
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Déjà actif
-              </Button>
-            ) : (
-              <Button 
-                size="sm"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={() => {
-                  if (selectedProduct) {
-                    setShowDetails(false);
-                    handlePurchaseClick(selectedProduct, selectedProductIndex);
-                  }
-                }}
-              >
-                Investir maintenant
-              </Button>
-            )}
+            <Button 
+              size="sm"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                if (selectedProduct) {
+                  setShowDetails(false);
+                  handlePurchaseClick(selectedProduct, selectedProductIndex);
+                }
+              }}
+            >
+              {selectedProduct && selectedProduct.ownedCount > 0 
+                ? `Acheter à nouveau (${selectedProduct.ownedCount} actifs)` 
+                : "Investir maintenant"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
