@@ -1,16 +1,802 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import session from "express-session";
+import bcrypt from "bcryptjs";
+import { 
+  registerSchema, loginSchema, depositSchema, withdrawalSchema, walletSchema,
+  ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK, REFERRAL_LEVELS
+} from "@shared/schema";
+import { z } from "zod";
+import MemoryStore from "memorystore";
+
+const SessionStore = MemoryStore(session);
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: string;
+  }
+}
+
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Non authentifié" });
+  }
+  next();
+}
+
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Non authentifié" });
+  }
+  const user = await storage.getUser(req.session.userId);
+  if (!user?.isAdmin) {
+    return res.status(403).json({ message: "Accès refusé" });
+  }
+  next();
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "cigna-group-secret-key-2024",
+      resave: false,
+      saveUninitialized: false,
+      store: new SessionStore({ checkPeriod: 86400000 }),
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      },
+    })
+  );
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  await storage.initializeDefaults();
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByPhone(data.phone, data.country);
+      if (existingUser) {
+        return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé" });
+      }
+
+      let referrerId: string | undefined;
+      if (data.invitationCode) {
+        const referrer = await storage.getUserByReferralCode(data.invitationCode);
+        if (!referrer) {
+          return res.status(400).json({ message: "Code d'invitation invalide" });
+        }
+        referrerId = referrer.id;
+      }
+
+      const user = await storage.createUser({
+        fullName: data.fullName,
+        phone: data.phone,
+        country: data.country,
+        password: data.password,
+        referrerId,
+      });
+
+      req.session.userId = user.id;
+      res.json({ user: { ...user, password: undefined } });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Register error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByPhone(data.phone, data.country);
+      if (!user) {
+        return res.status(401).json({ message: "Identifiants incorrects" });
+      }
+
+      const isValid = await bcrypt.compare(data.password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Identifiants incorrects" });
+      }
+
+      if (user.isBanned) {
+        return res.status(403).json({ message: "Compte suspendu" });
+      }
+
+      req.session.userId = user.id;
+      res.json({ user: { ...user, password: undefined } });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy(() => {
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Non authentifié" });
+    }
+    const user = await storage.getUser(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ message: "Utilisateur non trouvé" });
+    }
+    res.json({ user: { ...user, password: undefined } });
+  });
+
+  app.get("/api/products", requireAuth, async (req, res) => {
+    const products = await storage.getProducts();
+    const userProducts = await storage.getUserProducts(req.session.userId!);
+    const ownedProductIds = new Set(userProducts.map(up => up.productId));
+    
+    const productsWithOwnership = products.map(p => ({
+      ...p,
+      owned: ownedProductIds.has(p.id),
+      userProduct: userProducts.find(up => up.productId === p.id),
+    }));
+    
+    res.json(productsWithOwnership);
+  });
+
+  app.get("/api/products/all", requireAuth, async (req, res) => {
+    const products = await storage.getProducts();
+    res.json(products);
+  });
+
+  app.post("/api/products/purchase", requireAuth, async (req, res) => {
+    try {
+      const { productId } = req.body;
+      const user = await storage.getUser(req.session.userId!);
+      const product = await storage.getProduct(productId);
+      
+      if (!user || !product) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+
+      if (user.balance < product.price) {
+        return res.status(400).json({ message: "Solde insuffisant" });
+      }
+
+      const nextPayoutAt = new Date();
+      nextPayoutAt.setHours(nextPayoutAt.getHours() + 24);
+
+      await storage.createUserProduct({
+        userId: user.id,
+        productId: product.id,
+        purchasedAt: new Date(),
+        nextPayoutAt,
+        cyclesCompleted: 0,
+        isActive: true,
+        assignedByAdmin: false,
+      });
+
+      await storage.updateUser(user.id, {
+        balance: user.balance - product.price,
+        hasProduct: true,
+      });
+
+      if (user.referrerId) {
+        const referrer = await storage.getUser(user.referrerId);
+        if (referrer) {
+          const commission1 = Math.floor(product.price * REFERRAL_LEVELS[0].percentage / 100);
+          await storage.updateUser(referrer.id, {
+            balance: referrer.balance + commission1,
+            referralEarnings: referrer.referralEarnings + commission1,
+            todayEarnings: referrer.todayEarnings + commission1,
+            totalEarnings: referrer.totalEarnings + commission1,
+          });
+          await storage.createEarning({
+            userId: referrer.id,
+            amount: commission1,
+            type: "referral",
+            description: `Commission niveau 1 (${user.fullName})`,
+            sourceId: user.id,
+          });
+
+          if (referrer.referrerId) {
+            const referrer2 = await storage.getUser(referrer.referrerId);
+            if (referrer2) {
+              const commission2 = Math.floor(product.price * REFERRAL_LEVELS[1].percentage / 100);
+              await storage.updateUser(referrer2.id, {
+                balance: referrer2.balance + commission2,
+                referralEarnings: referrer2.referralEarnings + commission2,
+                todayEarnings: referrer2.todayEarnings + commission2,
+                totalEarnings: referrer2.totalEarnings + commission2,
+              });
+              await storage.createEarning({
+                userId: referrer2.id,
+                amount: commission2,
+                type: "referral",
+                description: `Commission niveau 2`,
+                sourceId: user.id,
+              });
+
+              if (referrer2.referrerId) {
+                const referrer3 = await storage.getUser(referrer2.referrerId);
+                if (referrer3) {
+                  const commission3 = Math.floor(product.price * REFERRAL_LEVELS[2].percentage / 100);
+                  await storage.updateUser(referrer3.id, {
+                    balance: referrer3.balance + commission3,
+                    referralEarnings: referrer3.referralEarnings + commission3,
+                    todayEarnings: referrer3.todayEarnings + commission3,
+                    totalEarnings: referrer3.totalEarnings + commission3,
+                  });
+                  await storage.createEarning({
+                    userId: referrer3.id,
+                    amount: commission3,
+                    type: "referral",
+                    description: `Commission niveau 3`,
+                    sourceId: user.id,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Purchase error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/wallets", requireAuth, async (req, res) => {
+    const wallets = await storage.getWallets(req.session.userId!);
+    res.json(wallets);
+  });
+
+  app.post("/api/wallets", requireAuth, async (req, res) => {
+    try {
+      const data = walletSchema.parse(req.body);
+      const wallet = await storage.createWallet({
+        userId: req.session.userId!,
+        ...data,
+        isDefault: true,
+      });
+      res.json(wallet);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.delete("/api/wallets/:id", requireAuth, async (req, res) => {
+    const wallet = await storage.getWallet(req.params.id);
+    if (!wallet || wallet.userId !== req.session.userId) {
+      return res.status(404).json({ message: "Portefeuille non trouvé" });
+    }
+    await storage.deleteWallet(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.get("/api/payment-channels", async (req, res) => {
+    const channels = await storage.getPaymentChannels(true);
+    res.json(channels);
+  });
+
+  app.post("/api/deposits", requireAuth, async (req, res) => {
+    try {
+      const data = depositSchema.parse(req.body);
+      const channel = await storage.getPaymentChannel(data.channelId);
+      
+      const deposit = await storage.createDeposit({
+        userId: req.session.userId!,
+        amount: data.amount,
+        channelId: data.channelId,
+        accountName: data.accountName,
+        accountNumber: data.accountNumber,
+        country: data.country,
+        paymentMethod: data.paymentMethod,
+        adminNotes: null,
+        processedBy: null,
+      });
+
+      res.json({ 
+        deposit,
+        redirectUrl: channel?.redirectUrl || null,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const data = withdrawalSchema.parse(req.body);
+      const user = await storage.getUser(req.session.userId!);
+      const wallet = await storage.getWallet(data.walletId);
+
+      if (!user || !wallet) {
+        return res.status(404).json({ message: "Ressource non trouvée" });
+      }
+
+      if (!user.hasDeposited) {
+        return res.status(400).json({ message: "Vous devez effectuer un dépôt d'abord" });
+      }
+
+      if (!user.hasProduct) {
+        return res.status(400).json({ message: "Vous devez acheter un produit VIP d'abord" });
+      }
+
+      if (user.withdrawalBlocked) {
+        return res.status(400).json({ message: "Vos retraits sont bloqués" });
+      }
+
+      if (user.requiresInvestorReferral) {
+        const level1 = await storage.getUserReferrals(user.id, 1);
+        const investingReferrals = level1.filter(r => r.hasProduct);
+        if (investingReferrals.length === 0) {
+          return res.status(400).json({ message: "Vous devez inviter une personne qui investit avant de pouvoir retirer" });
+        }
+      }
+
+      const country = ELIGIBLE_COUNTRIES.find(c => c.code === user.country);
+      const hours = country?.withdrawalHours || { start: 8, end: 17 };
+      const currentHour = new Date().getHours();
+      
+      if (currentHour < hours.start || currentHour >= hours.end) {
+        return res.status(400).json({ message: `Les retraits sont disponibles de ${hours.start}h à ${hours.end}h` });
+      }
+
+      const todayWithdrawals = await storage.getUserTodayWithdrawals(user.id);
+      if (todayWithdrawals.length > 0) {
+        return res.status(400).json({ message: "Vous avez déjà effectué un retrait aujourd'hui" });
+      }
+
+      if (user.balance < data.amount) {
+        return res.status(400).json({ message: "Solde insuffisant" });
+      }
+
+      const feeAmount = Math.round(data.amount * 0.15);
+      const netAmount = data.amount - feeAmount;
+
+      const withdrawal = await storage.createWithdrawal({
+        userId: user.id,
+        walletId: data.walletId,
+        grossAmount: data.amount,
+        feeAmount,
+        netAmount,
+        adminNotes: null,
+        processedBy: null,
+      });
+
+      await storage.updateUser(user.id, {
+        balance: user.balance - data.amount,
+      });
+
+      res.json(withdrawal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Withdrawal error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/transactions/history", requireAuth, async (req, res) => {
+    const deposits = await storage.getUserDeposits(req.session.userId!);
+    const withdrawals = await storage.getUserWithdrawals(req.session.userId!);
+    const earnings = await storage.getEarnings(req.session.userId!);
+    res.json({ deposits, withdrawals, earnings });
+  });
+
+  app.get("/api/tasks/status", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    const claimedTasks = await storage.getClaimedTasks(req.session.userId!);
+    const level1 = await storage.getUserReferrals(req.session.userId!, 1);
+    const investingReferrals = level1.filter(r => r.hasProduct);
+
+    const userProducts = await storage.getUserProducts(req.session.userId!);
+    const hasVip3 = userProducts.some(up => up.product.level >= 3);
+
+    const referralTasks = REFERRAL_TASKS.map(task => ({
+      taskId: task.id,
+      completed: investingReferrals.length >= task.requiredInvestors,
+      claimed: claimedTasks.some(ct => ct.taskId === task.id && ct.taskType === "referral"),
+      currentCount: investingReferrals.length,
+    }));
+
+    const productTask = {
+      completed: hasVip3,
+      claimed: claimedTasks.some(ct => ct.taskType === "product"),
+      hasVip3,
+    };
+
+    res.json({ referralTasks, productTask });
+  });
+
+  app.post("/api/tasks/claim", requireAuth, async (req, res) => {
+    try {
+      const { taskId, taskType } = req.body;
+      const user = await storage.getUser(req.session.userId!);
+      const claimedTasks = await storage.getClaimedTasks(req.session.userId!);
+
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      if (taskType === "product") {
+        if (claimedTasks.some(ct => ct.taskType === "product")) {
+          return res.status(400).json({ message: "Récompense déjà réclamée" });
+        }
+
+        const userProducts = await storage.getUserProducts(user.id);
+        const hasVip3 = userProducts.some(up => up.product.level >= 3);
+        
+        if (!hasVip3) {
+          return res.status(400).json({ message: "Vous devez acheter un produit VIP3 ou supérieur" });
+        }
+
+        await storage.createClaimedTask({
+          userId: user.id,
+          taskId: 0,
+          taskType: "product",
+          reward: PRODUCT_TASK.reward,
+        });
+
+        await storage.updateUser(user.id, {
+          balance: user.balance + PRODUCT_TASK.reward,
+        });
+
+        await storage.createEarning({
+          userId: user.id,
+          amount: PRODUCT_TASK.reward,
+          type: "task",
+          description: PRODUCT_TASK.description,
+        });
+
+        return res.json({ success: true, reward: PRODUCT_TASK.reward });
+      }
+
+      if (taskType === "referral") {
+        const task = REFERRAL_TASKS.find(t => t.id === taskId);
+        if (!task) {
+          return res.status(404).json({ message: "Tâche non trouvée" });
+        }
+
+        if (claimedTasks.some(ct => ct.taskId === taskId && ct.taskType === "referral")) {
+          return res.status(400).json({ message: "Récompense déjà réclamée" });
+        }
+
+        const level1 = await storage.getUserReferrals(user.id, 1);
+        const investingReferrals = level1.filter(r => r.hasProduct);
+
+        if (investingReferrals.length < task.requiredInvestors) {
+          return res.status(400).json({ message: "Conditions non remplies" });
+        }
+
+        await storage.createClaimedTask({
+          userId: user.id,
+          taskId: task.id,
+          taskType: "referral",
+          reward: task.reward,
+        });
+
+        await storage.updateUser(user.id, {
+          balance: user.balance + task.reward,
+        });
+
+        await storage.createEarning({
+          userId: user.id,
+          amount: task.reward,
+          type: "task",
+          description: task.description,
+        });
+
+        return res.json({ success: true, reward: task.reward });
+      }
+
+      res.status(400).json({ message: "Type de tâche invalide" });
+    } catch (error) {
+      console.error("Claim task error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/team/stats", requireAuth, async (req, res) => {
+    const level1 = await storage.getUserReferrals(req.session.userId!, 1);
+    const level2 = await storage.getUserReferrals(req.session.userId!, 2);
+    const level3 = await storage.getUserReferrals(req.session.userId!, 3);
+
+    const user = await storage.getUser(req.session.userId!);
+
+    res.json({
+      level1Count: level1.length,
+      level2Count: level2.length,
+      level3Count: level3.length,
+      level1Investors: level1.filter(r => r.hasProduct).length,
+      level2Investors: level2.filter(r => r.hasProduct).length,
+      level3Investors: level3.filter(r => r.hasProduct).length,
+      totalCommissions: user?.referralEarnings || 0,
+    });
+  });
+
+  app.get("/api/settings/public", async (req, res) => {
+    const settings = await storage.getAllSettings();
+    res.json({
+      customerService: settings.customerService || "https://t.me/+DOnUcJs7idVmN2E0",
+      officialChannel: settings.officialChannel || "https://t.me/+DOnUcJs7idVmN2E0",
+      discussionGroup: settings.discussionGroup || "https://t.me/+DOnUcJs7idVmN2E0",
+    });
+  });
+
+  app.get("/api/admin/dashboard", requireAdmin, async (req, res) => {
+    const stats = await storage.getDashboardStats();
+    res.json(stats);
+  });
+
+  app.get("/api/admin/deposits", requireAdmin, async (req, res) => {
+    const filter = req.query.filter as string || "pending";
+    const deposits = await storage.getDeposits(filter);
+    res.json(deposits);
+  });
+
+  app.post("/api/admin/deposits/:id/approve", requireAdmin, async (req, res) => {
+    const deposit = await storage.getDeposit(req.params.id);
+    if (!deposit) {
+      return res.status(404).json({ message: "Dépôt non trouvé" });
+    }
+
+    await storage.updateDeposit(deposit.id, {
+      status: "approved",
+      processedBy: req.session.userId,
+      processedAt: new Date(),
+    });
+
+    const user = await storage.getUser(deposit.userId);
+    if (user) {
+      await storage.updateUser(user.id, {
+        balance: user.balance + deposit.amount,
+        totalDeposits: user.totalDeposits + deposit.amount,
+        hasDeposited: true,
+      });
+
+      await storage.createEarning({
+        userId: user.id,
+        amount: deposit.amount,
+        type: "deposit",
+        description: "Dépôt validé",
+        sourceId: deposit.id,
+      });
+    }
+
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/deposits/:id/reject", requireAdmin, async (req, res) => {
+    const { ban } = req.body;
+    const deposit = await storage.getDeposit(req.params.id);
+    if (!deposit) {
+      return res.status(404).json({ message: "Dépôt non trouvé" });
+    }
+
+    await storage.updateDeposit(deposit.id, {
+      status: "rejected",
+      processedBy: req.session.userId,
+      processedAt: new Date(),
+    });
+
+    if (ban) {
+      await storage.updateUser(deposit.userId, { isBanned: true });
+    }
+
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/withdrawals", requireAdmin, async (req, res) => {
+    const filter = req.query.filter as string || "pending";
+    const withdrawals = await storage.getWithdrawals(filter);
+    res.json(withdrawals);
+  });
+
+  app.post("/api/admin/withdrawals/:id/approve", requireAdmin, async (req, res) => {
+    const withdrawal = await storage.getWithdrawal(req.params.id);
+    if (!withdrawal) {
+      return res.status(404).json({ message: "Retrait non trouvé" });
+    }
+
+    await storage.updateWithdrawal(withdrawal.id, {
+      status: "approved",
+      processedBy: req.session.userId,
+      processedAt: new Date(),
+    });
+
+    const user = await storage.getUser(withdrawal.userId);
+    if (user) {
+      await storage.updateUser(user.id, {
+        totalWithdrawals: user.totalWithdrawals + withdrawal.netAmount,
+      });
+    }
+
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/withdrawals/:id/reject", requireAdmin, async (req, res) => {
+    const withdrawal = await storage.getWithdrawal(req.params.id);
+    if (!withdrawal) {
+      return res.status(404).json({ message: "Retrait non trouvé" });
+    }
+
+    await storage.updateWithdrawal(withdrawal.id, {
+      status: "rejected",
+      processedBy: req.session.userId,
+      processedAt: new Date(),
+    });
+
+    const user = await storage.getUser(withdrawal.userId);
+    if (user) {
+      await storage.updateUser(user.id, {
+        balance: user.balance + withdrawal.grossAmount,
+      });
+    }
+
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    const filter = req.query.filter as string;
+    const users = await storage.getAllUsers(filter === "all" ? undefined : filter);
+    
+    const usersWithDetails = await Promise.all(users.map(async u => {
+      const referrals = await storage.getUserReferrals(u.id, 1);
+      const products = await storage.getUserProducts(u.id);
+      return {
+        ...u,
+        password: undefined,
+        referralCount: referrals.length,
+        productCount: products.length,
+      };
+    }));
+
+    res.json(usersWithDetails);
+  });
+
+  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    const updates = req.body;
+    const user = await storage.updateUser(req.params.id, updates);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    res.json({ ...user, password: undefined });
+  });
+
+  app.post("/api/admin/users/:id/products", requireAdmin, async (req, res) => {
+    const { productId, action } = req.body;
+    const user = await storage.getUser(req.params.id);
+    const product = await storage.getProduct(productId);
+
+    if (!user || !product) {
+      return res.status(404).json({ message: "Ressource non trouvée" });
+    }
+
+    if (action === "assign") {
+      const nextPayoutAt = new Date();
+      nextPayoutAt.setHours(nextPayoutAt.getHours() + 24);
+
+      await storage.createUserProduct({
+        userId: user.id,
+        productId: product.id,
+        purchasedAt: new Date(),
+        nextPayoutAt,
+        cyclesCompleted: 0,
+        isActive: true,
+        assignedByAdmin: true,
+      });
+
+      await storage.updateUser(user.id, { hasProduct: true });
+    } else if (action === "remove") {
+      const userProducts = await storage.getUserProducts(user.id);
+      const toRemove = userProducts.find(up => up.productId === productId);
+      if (toRemove) {
+        await storage.deleteUserProduct(toRemove.id);
+      }
+    }
+
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/payment-channels", requireAdmin, async (req, res) => {
+    const channels = await storage.getPaymentChannels(false);
+    res.json(channels);
+  });
+
+  app.post("/api/admin/payment-channels", requireAdmin, async (req, res) => {
+    const channel = await storage.createPaymentChannel(req.body);
+    res.json(channel);
+  });
+
+  app.patch("/api/admin/payment-channels/:id", requireAdmin, async (req, res) => {
+    const channel = await storage.updatePaymentChannel(req.params.id, req.body);
+    if (!channel) {
+      return res.status(404).json({ message: "Canal non trouvé" });
+    }
+    res.json(channel);
+  });
+
+  app.delete("/api/admin/payment-channels/:id", requireAdmin, async (req, res) => {
+    await storage.deletePaymentChannel(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+    const settings = await storage.getAllSettings();
+    res.json({
+      customerService: settings.customerService || "",
+      officialChannel: settings.officialChannel || "",
+      discussionGroup: settings.discussionGroup || "",
+    });
+  });
+
+  app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
+    const { customerService, officialChannel, discussionGroup } = req.body;
+    if (customerService !== undefined) await storage.setSetting("customerService", customerService);
+    if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel);
+    if (discussionGroup !== undefined) await storage.setSetting("discussionGroup", discussionGroup);
+    res.json({ success: true });
+  });
+
+  setInterval(async () => {
+    try {
+      const activeProducts = await storage.getActiveUserProducts();
+      const now = new Date();
+
+      for (const up of activeProducts) {
+        if (new Date(up.nextPayoutAt) <= now && up.cyclesCompleted < up.product.duration) {
+          const user = await storage.getUser(up.userId);
+          if (!user) continue;
+
+          await storage.updateUser(user.id, {
+            balance: user.balance + up.product.dailyReturn,
+            todayEarnings: user.todayEarnings + up.product.dailyReturn,
+            totalEarnings: user.totalEarnings + up.product.dailyReturn,
+          });
+
+          await storage.createEarning({
+            userId: user.id,
+            amount: up.product.dailyReturn,
+            type: "daily",
+            description: `Gain quotidien ${up.product.name}`,
+            sourceId: up.id,
+          });
+
+          const nextPayout = new Date(up.nextPayoutAt);
+          nextPayout.setHours(nextPayout.getHours() + 24);
+
+          const newCycles = up.cyclesCompleted + 1;
+          await storage.updateUserProduct(up.id, {
+            nextPayoutAt: nextPayout,
+            cyclesCompleted: newCycles,
+            isActive: newCycles < up.product.duration,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Daily payout error:", error);
+    }
+  }, 60000);
 
   return httpServer;
 }

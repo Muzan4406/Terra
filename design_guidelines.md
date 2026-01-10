@@ -1,139 +1,110 @@
 # Cigna Group Investment Platform - Design Guidelines
 
 ## Design Approach
-**Hybrid Approach**: Combining fintech trust elements (Revolut, Stripe clarity) with African mobile-first patterns (Wave, Flutterwave accessibility). This platform requires both credibility for financial transactions and optimal mobile performance for the target markets.
+**Hybrid Fintech-Mobile Strategy**: Combining Revolut's financial clarity and Stripe's restrained professionalism with Wave's mobile-first accessibility. Establishes trust through Cigna's healthcare brand equity while optimizing for African mobile markets.
 
 ## Core Design Principles
-1. **Mobile-First Financial Clarity**: Clear typography, generous touch targets (minimum 44px), obvious interactive states
-2. **Trust Through Transparency**: Prominent display of balances, transaction states, and VIP tier information
-3. **Efficient Navigation**: Bottom tab bar for primary navigation, minimal scrolling to critical actions
-4. **Status-Driven Design**: Clear visual feedback for pending deposits, active investments, withdrawal states
+1. **Financial Transparency**: Prominent balances, clear transaction states, visible VIP tier benefits
+2. **Mobile-First Efficiency**: 44px minimum touch targets, bottom navigation, minimal scrolling to critical actions
+3. **Trust Through Branding**: Professional blue palette reinforcing Cigna healthcare credibility
+4. **Status-Driven Feedback**: Clear visual states for pending deposits, active investments, withdrawal locks
+
+## Color System
+
+**Primary Palette** (Cigna-inspired professional blues):
+- Primary Blue: `bg-blue-600` (#2563eb) - CTAs, active states, tier badges
+- Primary Hover: `bg-blue-700` - Button hover states
+- Deep Blue: `bg-blue-900` - Headers, important labels
+- Light Blue: `bg-blue-50` - Card backgrounds, subtle highlights
+- Accent Blue: `bg-blue-500` - Links, secondary actions
+
+**Semantic Colors**:
+- Success: `bg-green-600` - Approved withdrawals, positive gains
+- Warning: `bg-amber-500` - Pending states, tier expiration alerts
+- Error: `bg-red-600` - Rejected transactions, withdrawal blocks
+- Neutral Dark: `bg-slate-800` - Body text, primary content
+- Neutral Medium: `bg-slate-500` - Labels, timestamps
+- Neutral Light: `bg-slate-100` - Borders, dividers
+
+**Surface Colors**:
+- Background: `bg-white`
+- Card Surface: `bg-white` with `border border-slate-200`
+- Admin Sidebar: `bg-slate-900`
+- Bottom Tab Bar: `bg-white` with `border-t border-slate-200`
 
 ## Typography System
 
-**Font Family**: Inter (via Google Fonts) for excellent readability at small sizes and professional appearance
+**Font**: Inter via Google Fonts CDN
 
-**Hierarchy**:
-- Account Headers/Balances: text-2xl to text-3xl, font-bold (24-30px)
-- Section Titles: text-lg, font-semibold (18px)
-- VIP Tier Prices: text-xl, font-bold (20px)
-- Body Text/Labels: text-sm, font-medium (14px)
-- Helper Text/Timestamps: text-xs, font-normal (12px)
-- CTA Buttons: text-base, font-semibold (16px)
+**Scale**:
+- Balance/Revenue Displays: `text-3xl font-bold` (#3,450 FCFA)
+- VIP Tier Prices: `text-2xl font-bold` (5,000 FCFA)
+- Section Headers: `text-lg font-semibold` (Mes Investissements)
+- Body/Labels: `text-sm font-medium` (Solde actuel)
+- Helper Text: `text-xs text-slate-500` (Dernière mise à jour)
+- Buttons: `text-base font-semibold`
 
 ## Layout System
 
-**Spacing Units**: Tailwind 2, 3, 4, 6, 8, 12, 16 for consistent rhythm
-- Component padding: p-4 or p-6
-- Section spacing: space-y-4 or space-y-6
-- Card gaps: gap-3 or gap-4
-- Bottom tab bar: p-4 with safe-area-inset support
+**Spacing**: Tailwind units 2, 3, 4, 6, 8, 12, 16
+- Screen padding: `px-4`
+- Card internal: `p-4` or `p-6`
+- Section gaps: `space-y-6`
+- Component gaps: `gap-4`
+- Bottom nav: `p-4` with `pb-safe`
 
-**Container Strategy**:
-- Max width: max-w-md (mobile-optimized, 448px)
-- Full-width cards with px-4 internal padding
-- Edge-to-edge images on home screen as specified
+**Container**: `max-w-md mx-auto` (448px centered on desktop)
 
-## Component Library
+## Component Specifications
 
-### Navigation
-**Bottom Tab Bar**: Fixed position with 4 tabs (Home, Tasks, Invest, Team, Account)
-- Icons from Heroicons (home, clipboard-document-list, shopping-bag, users, user-circle)
-- Active state: icon + label visible
-- Inactive: icon only with reduced opacity
+### Hero Section (Home Screen Top)
+Full-width edge-to-edge image featuring Cigna medical professionals or healthcare facility. Height: `h-48` on mobile, `h-64` on tablet. Overlay gradient: `bg-gradient-to-t from-blue-900/60 to-transparent`. 
 
-### Cards & Containers
+Overlaid elements: Cigna wordmark (top-left), "Investissez dans votre avenir" headline (`text-2xl font-bold text-white`), quick action button with `backdrop-blur-md bg-white/20 border border-white/40` treatment.
 
-**Balance/Revenue Cards** (Home screen horizontal pair):
-- Rounded-lg borders, p-4 padding
-- Grid layout: grid-cols-2 gap-3
-- Large numbers prominently displayed
-- Subtle labels underneath
+### Balance Cards (Horizontal Pair)
+`grid grid-cols-2 gap-3 -mt-8` to overlap hero. Each card: `bg-white rounded-xl p-4 shadow-lg border border-slate-200`. Left: Total Balance with blue accent. Right: Total Revenue with green accent. Large number `text-2xl font-bold`, label `text-xs text-slate-500 uppercase tracking-wide`.
 
-**VIP Tier Cards** (Invest tab):
-- Full-width cards with mb-3 spacing
-- Tiered visual weight: VIP 6 most prominent
-- Structure: Tier badge → Price → Daily gain → Total gain → Duration → CTA button
-- Purchase button: w-full, rounded-lg, py-3
+### Primary Action Grid
+`grid grid-cols-3 gap-3 mt-6`. Buttons: `bg-blue-50 border border-blue-200 rounded-xl py-4 flex flex-col items-center gap-2`. Heroicons (outline style): `arrow-down-tray`, `arrow-up-tray`, `chat-bubble-left-right`. Icon `w-8 h-8 text-blue-600`, label `text-sm font-medium text-slate-700`.
 
-**Profile Header Block** (Account tab):
-- Full-width with px-4 py-6
-- Horizontal layout: Avatar circle (w-16 h-16) → Name/Phone → Expand icon
-- Avatar: rounded-full with logo/photo
+### VIP Investment Cards
+Full-width cards `mb-4`. Structure: `bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-xl p-6`. Top: Tier badge `bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 inline-block`. Price display `text-3xl font-bold`, daily gain `text-green-400 text-sm`, total gain projection. Duration badge `bg-amber-500 text-white rounded-full px-3 py-1 text-xs`. Bottom: `bg-white text-blue-600 font-semibold py-3 rounded-lg w-full` purchase button.
 
-### Action Buttons
+### Bottom Navigation
+Fixed `bottom-0 inset-x-0 bg-white border-t border-slate-200`. 5 tabs: Home, Tasks, Invest, Team, Account. Active: `text-blue-600` with icon + label. Inactive: `text-slate-400` icon only. Heroicons: `home`, `clipboard-document-list`, `banknotes`, `users`, `user-circle`.
 
-**Primary Actions** (Deposit/Withdraw/Customer Service):
-- Grid layout: grid-cols-3 gap-2 or gap-3
-- Vertical button style: Icon top, label bottom
-- Rounded-lg, py-4, text-center
-- Icons from Heroicons (arrow-down-tray, arrow-up-tray, chat-bubble-left-right)
+### Transaction Lists
+Tabbed interface: `border-b border-slate-200` tabs with `border-b-2 border-blue-600` active indicator. List items: `bg-white border border-slate-200 rounded-lg p-4 mb-3`. Left: Amount `text-lg font-bold`, method `text-xs text-slate-500`. Right: Status badge (`bg-amber-100 text-amber-700` pending, `bg-green-100 text-green-700` approved). Timestamp `text-xs text-slate-400 mt-1`.
 
-**Transaction Buttons**: Full-width, rounded-lg, py-3, font-semibold
+### Profile Header
+`bg-blue-600 text-white px-4 py-8`. Avatar `w-20 h-20 rounded-full border-4 border-white/20`, name `text-xl font-bold`, phone `text-sm opacity-90`. "Promoteur" badge when applicable: `bg-amber-500 text-white rounded-full px-3 py-1 text-xs`.
 
 ### Forms
+Input fields: `border border-slate-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`. Labels: `text-sm font-medium text-slate-700 mb-2`. Submit buttons: `bg-blue-600 text-white font-semibold py-3 rounded-lg w-full hover:bg-blue-700`.
 
-**Authentication Forms**:
-- Vertical stack with space-y-4
-- Input fields: rounded-lg, px-4, py-3, border
-- Dropdowns for country/payment method: Consistent styling
-- Labels: text-sm, font-medium, mb-2
-- Error states: text-xs with validation messages
-
-**Withdrawal Wallet Setup**: Same form patterns with secure information display
-
-### Data Display
-
-**Transaction History**:
-- Tabbed interface: Withdrawals, Deposits, Revenue
-- List items with clear status indicators (Pending, Approved, Rejected)
-- Amount prominently displayed, timestamp subtle
-- Swipeable or tappable for details
-
-**Team/Referral Stats**:
-- Level badges (Level 1/2/3) with percentage display
-- Commission totals in prominent cards
-- Referral link copy button: Full-width with icon
-- Team member count displays
-
-### Status Indicators
-
-**Investment Status**: Badge components showing active days/remaining
-**Transaction States**: Clear color-independent icons (checkmark, clock, x-mark)
-**Account Badges**: "Promoteur" badge when applicable
-**Withdrawal Lock**: Visual indicator when blocked
-
-## Responsive Behavior
-
-**Mobile (base)**:
-- Single column layouts
-- Full-width cards and buttons
-- Bottom navigation always visible
-- 16px minimum font size for inputs (prevent zoom)
-
-**Tablet (md: 768px+)**:
-- Maintain mobile layout (this is a mobile-first platform)
-- Optional: 2-column grid for VIP tiers
-- Centered content with max-w-md
-
-## Admin Dashboard
-
-**Layout**: Traditional sidebar navigation (fixed left) + main content area
-**Dashboard Cards**: Grid layout for statistics (total users, deposits, active products)
-**Tables**: Sortable/filterable for deposits, withdrawals, user management
-**Action Modals**: For approving/rejecting transactions, editing users
+### Admin Dashboard
+Sidebar: `bg-slate-900 w-64 fixed h-full` with white nav items. Active: `bg-blue-600 text-white`. Main content: `ml-64 p-8 bg-slate-50`. Stat cards: `grid grid-cols-4 gap-6`, each `bg-white rounded-xl p-6 border border-slate-200`. Tables: `bg-white rounded-xl overflow-hidden` with `border border-slate-200`, striped rows `even:bg-slate-50`.
 
 ## Images
 
-**Home Screen**:
-- Top banner: Full-width edge-to-edge Cigna branding image (provided: cigna-healthcare-logo or medical professionals image)
-- Bottom section: Another edge-to-edge promotional/trust image
-- Both images: object-cover, aspect ratio maintained
+**Hero Image**: Professional medical/healthcare environment photo. Dimensions: 1200x600px minimum. Position: Top of home screen, full-width, `object-cover object-center`.
 
-**VIP Product Cards**: Optional small icons or badge graphics for tier differentiation
+**Secondary Banner**: Trust-building image (Cigna facilities or satisfied clients). Position: Mid-page after investment tiers. Same dimensions/treatment.
 
-**Profile Avatar**: Circular placeholder or uploaded user photo
+**Profile Avatars**: Circular 80px × 80px placeholders or user uploads.
 
-**About Us Section**: Use provided medical professional/facility images to establish credibility
+**About Section**: Grid of 2-3 medical professional photos establishing credibility.
 
-This platform prioritizes **clarity, trust, and mobile efficiency** for a French-speaking African audience managing financial investments.
+## Accessibility
+- WCAG AA contrast ratios (blue-600 on white = 4.5:1)
+- 16px minimum input font sizes (prevent iOS zoom)
+- Clear focus states: `focus:ring-2 focus:ring-blue-500`
+- Touch targets: 44px minimum (all navigation, CTAs)
+
+## Responsive Breakpoints
+- Mobile (base): Single column, full-width cards
+- Tablet (md: 768px+): Maintain mobile layout, centered `max-w-md`
+- Desktop admin only: Sidebar + content area
+
+This platform prioritizes **professional trust, mobile clarity, and efficient financial management** for French-speaking African users.

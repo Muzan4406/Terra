@@ -1,38 +1,573 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { 
+  users, products, userProducts, wallets, paymentChannels, 
+  deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
+  type User, type InsertUser, type Product, type UserProduct, type Wallet,
+  type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
+  type PlatformSetting, type PlatformImage, VIP_PRODUCTS
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, sql, gte, lte, or, count } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
-// modify the interface with any CRUD methods
-// you might need
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByPhone(phone: string, country: string): Promise<User | undefined>;
+  getUserByReferralCode(code: string): Promise<User | undefined>;
+  createUser(user: Omit<InsertUser, "referralCode"> & { referralCode?: string }): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  getAllUsers(filter?: string): Promise<User[]>;
+  getUserReferrals(userId: string, level: number): Promise<User[]>;
+  
+  getProducts(): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  getProductByLevel(level: number): Promise<Product | undefined>;
+  createProduct(product: Omit<Product, "id">): Promise<Product>;
+  updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
+  
+  getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]>;
+  createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct>;
+  updateUserProduct(id: string, updates: Partial<UserProduct>): Promise<UserProduct | undefined>;
+  deleteUserProduct(id: string): Promise<void>;
+  getActiveUserProducts(): Promise<(UserProduct & { product: Product; user: User })[]>;
+  
+  getWallets(userId: string): Promise<Wallet[]>;
+  getWallet(id: string): Promise<Wallet | undefined>;
+  createWallet(data: Omit<Wallet, "id" | "createdAt">): Promise<Wallet>;
+  deleteWallet(id: string): Promise<void>;
+  
+  getPaymentChannels(activeOnly?: boolean): Promise<PaymentChannel[]>;
+  getPaymentChannel(id: string): Promise<PaymentChannel | undefined>;
+  createPaymentChannel(data: Omit<PaymentChannel, "id" | "createdAt">): Promise<PaymentChannel>;
+  updatePaymentChannel(id: string, updates: Partial<PaymentChannel>): Promise<PaymentChannel | undefined>;
+  deletePaymentChannel(id: string): Promise<void>;
+  
+  getDeposits(filter?: string): Promise<(Deposit & { user: User })[]>;
+  getDeposit(id: string): Promise<Deposit | undefined>;
+  getUserDeposits(userId: string): Promise<Deposit[]>;
+  createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt">): Promise<Deposit>;
+  updateDeposit(id: string, updates: Partial<Deposit>): Promise<Deposit | undefined>;
+  
+  getWithdrawals(filter?: string): Promise<(Withdrawal & { user: User; wallet: Wallet })[]>;
+  getWithdrawal(id: string): Promise<Withdrawal | undefined>;
+  getUserWithdrawals(userId: string): Promise<Withdrawal[]>;
+  getUserTodayWithdrawals(userId: string): Promise<Withdrawal[]>;
+  createWithdrawal(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<Withdrawal>;
+  updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<Withdrawal | undefined>;
+  
+  getEarnings(userId: string): Promise<Earning[]>;
+  createEarning(data: Omit<Earning, "id" | "createdAt">): Promise<Earning>;
+  
+  getClaimedTasks(userId: string): Promise<ClaimedTask[]>;
+  createClaimedTask(data: Omit<ClaimedTask, "id" | "claimedAt">): Promise<ClaimedTask>;
+  
+  getSetting(key: string): Promise<string | undefined>;
+  setSetting(key: string, value: string): Promise<void>;
+  getAllSettings(): Promise<Record<string, string>>;
+  
+  getImage(location: string): Promise<string | undefined>;
+  setImage(location: string, imageUrl: string): Promise<void>;
+  
+  getDashboardStats(): Promise<{
+    totalUsers: number;
+    todayRegistrations: number;
+    todayDeposits: number;
+    todayWithdrawals: number;
+    totalDepositsAmount: number;
+    totalWithdrawalsAmount: number;
+    usersWithProducts: number;
+    pendingDeposits: number;
+    pendingWithdrawals: number;
+  }>;
+  
+  initializeDefaults(): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getUserByPhone(phone: string, country: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(
+      and(eq(users.phone, phone), eq(users.country, country))
+    );
+    return user || undefined;
+  }
+
+  async getUserByReferralCode(code: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.referralCode, code));
+    return user || undefined;
+  }
+
+  async createUser(userData: Omit<InsertUser, "referralCode"> & { referralCode?: string }): Promise<User> {
+    const referralCode = userData.referralCode || generateReferralCode();
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const [user] = await db.insert(users).values({
+      ...userData,
+      password: hashedPassword,
+      referralCode,
+      balance: 500,
+    }).returning();
+    
+    await this.createEarning({
+      userId: user.id,
+      amount: 500,
+      type: "bonus",
+      description: "Bonus d'inscription",
+    });
+    
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    if (updates.password) {
+      updates.password = await bcrypt.hash(updates.password, 10);
+    }
+    const [user] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return user || undefined;
+  }
+
+  async getAllUsers(filter?: string): Promise<User[]> {
+    let query = db.select().from(users);
+    if (filter === "banned") {
+      return db.select().from(users).where(eq(users.isBanned, true));
+    }
+    if (filter === "blocked") {
+      return db.select().from(users).where(eq(users.withdrawalBlocked, true));
+    }
+    if (filter === "promoter") {
+      return db.select().from(users).where(eq(users.isPromoter, true));
+    }
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getUserReferrals(userId: string, level: number): Promise<User[]> {
+    if (level === 1) {
+      return db.select().from(users).where(eq(users.referrerId, userId));
+    }
+    if (level === 2) {
+      const level1 = await this.getUserReferrals(userId, 1);
+      const level2Users: User[] = [];
+      for (const u of level1) {
+        const refs = await db.select().from(users).where(eq(users.referrerId, u.id));
+        level2Users.push(...refs);
+      }
+      return level2Users;
+    }
+    if (level === 3) {
+      const level2 = await this.getUserReferrals(userId, 2);
+      const level3Users: User[] = [];
+      for (const u of level2) {
+        const refs = await db.select().from(users).where(eq(users.referrerId, u.id));
+        level3Users.push(...refs);
+      }
+      return level3Users;
+    }
+    return [];
+  }
+
+  async getProducts(): Promise<Product[]> {
+    return db.select().from(products).where(eq(products.isActive, true)).orderBy(products.level);
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product || undefined;
+  }
+
+  async getProductByLevel(level: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.level, level));
+    return product || undefined;
+  }
+
+  async createProduct(product: Omit<Product, "id">): Promise<Product> {
+    const [created] = await db.insert(products).values(product).returning();
+    return created;
+  }
+
+  async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> {
+    const [updated] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]> {
+    const result = await db.select({
+      id: userProducts.id,
+      userId: userProducts.userId,
+      productId: userProducts.productId,
+      purchasedAt: userProducts.purchasedAt,
+      nextPayoutAt: userProducts.nextPayoutAt,
+      cyclesCompleted: userProducts.cyclesCompleted,
+      isActive: userProducts.isActive,
+      assignedByAdmin: userProducts.assignedByAdmin,
+      product: products,
+    })
+    .from(userProducts)
+    .innerJoin(products, eq(userProducts.productId, products.id))
+    .where(eq(userProducts.userId, userId));
+    
+    return result;
+  }
+
+  async createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct> {
+    const [created] = await db.insert(userProducts).values(data).returning();
+    return created;
+  }
+
+  async updateUserProduct(id: string, updates: Partial<UserProduct>): Promise<UserProduct | undefined> {
+    const [updated] = await db.update(userProducts).set(updates).where(eq(userProducts.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteUserProduct(id: string): Promise<void> {
+    await db.delete(userProducts).where(eq(userProducts.id, id));
+  }
+
+  async getActiveUserProducts(): Promise<(UserProduct & { product: Product; user: User })[]> {
+    const result = await db.select({
+      id: userProducts.id,
+      userId: userProducts.userId,
+      productId: userProducts.productId,
+      purchasedAt: userProducts.purchasedAt,
+      nextPayoutAt: userProducts.nextPayoutAt,
+      cyclesCompleted: userProducts.cyclesCompleted,
+      isActive: userProducts.isActive,
+      assignedByAdmin: userProducts.assignedByAdmin,
+      product: products,
+      user: users,
+    })
+    .from(userProducts)
+    .innerJoin(products, eq(userProducts.productId, products.id))
+    .innerJoin(users, eq(userProducts.userId, users.id))
+    .where(eq(userProducts.isActive, true));
+    
+    return result;
+  }
+
+  async getWallets(userId: string): Promise<Wallet[]> {
+    return db.select().from(wallets).where(eq(wallets.userId, userId));
+  }
+
+  async getWallet(id: string): Promise<Wallet | undefined> {
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, id));
+    return wallet || undefined;
+  }
+
+  async createWallet(data: Omit<Wallet, "id" | "createdAt">): Promise<Wallet> {
+    const [created] = await db.insert(wallets).values(data).returning();
+    return created;
+  }
+
+  async deleteWallet(id: string): Promise<void> {
+    await db.delete(wallets).where(eq(wallets.id, id));
+  }
+
+  async getPaymentChannels(activeOnly = false): Promise<PaymentChannel[]> {
+    if (activeOnly) {
+      return db.select().from(paymentChannels).where(eq(paymentChannels.isActive, true));
+    }
+    return db.select().from(paymentChannels);
+  }
+
+  async getPaymentChannel(id: string): Promise<PaymentChannel | undefined> {
+    const [channel] = await db.select().from(paymentChannels).where(eq(paymentChannels.id, id));
+    return channel || undefined;
+  }
+
+  async createPaymentChannel(data: Omit<PaymentChannel, "id" | "createdAt">): Promise<PaymentChannel> {
+    const [created] = await db.insert(paymentChannels).values(data).returning();
+    return created;
+  }
+
+  async updatePaymentChannel(id: string, updates: Partial<PaymentChannel>): Promise<PaymentChannel | undefined> {
+    const [updated] = await db.update(paymentChannels).set(updates).where(eq(paymentChannels.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deletePaymentChannel(id: string): Promise<void> {
+    await db.delete(paymentChannels).where(eq(paymentChannels.id, id));
+  }
+
+  async getDeposits(filter?: string): Promise<(Deposit & { user: User })[]> {
+    let whereClause;
+    if (filter && filter !== "all") {
+      whereClause = eq(deposits.status, filter);
+    }
+    
+    const result = await db.select({
+      id: deposits.id,
+      userId: deposits.userId,
+      amount: deposits.amount,
+      channelId: deposits.channelId,
+      accountName: deposits.accountName,
+      accountNumber: deposits.accountNumber,
+      country: deposits.country,
+      paymentMethod: deposits.paymentMethod,
+      status: deposits.status,
+      adminNotes: deposits.adminNotes,
+      processedBy: deposits.processedBy,
+      createdAt: deposits.createdAt,
+      processedAt: deposits.processedAt,
+      user: users,
+    })
+    .from(deposits)
+    .innerJoin(users, eq(deposits.userId, users.id))
+    .where(whereClause)
+    .orderBy(desc(deposits.createdAt));
+    
+    return result;
+  }
+
+  async getDeposit(id: string): Promise<Deposit | undefined> {
+    const [deposit] = await db.select().from(deposits).where(eq(deposits.id, id));
+    return deposit || undefined;
+  }
+
+  async getUserDeposits(userId: string): Promise<Deposit[]> {
+    return db.select().from(deposits).where(eq(deposits.userId, userId)).orderBy(desc(deposits.createdAt));
+  }
+
+  async createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt">): Promise<Deposit> {
+    const [created] = await db.insert(deposits).values({
+      ...data,
+      status: "pending",
+    }).returning();
+    return created;
+  }
+
+  async updateDeposit(id: string, updates: Partial<Deposit>): Promise<Deposit | undefined> {
+    const [updated] = await db.update(deposits).set(updates).where(eq(deposits.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getWithdrawals(filter?: string): Promise<(Withdrawal & { user: User; wallet: Wallet })[]> {
+    let whereClause;
+    if (filter && filter !== "all") {
+      whereClause = eq(withdrawals.status, filter);
+    }
+    
+    const result = await db.select({
+      id: withdrawals.id,
+      userId: withdrawals.userId,
+      walletId: withdrawals.walletId,
+      grossAmount: withdrawals.grossAmount,
+      feeAmount: withdrawals.feeAmount,
+      netAmount: withdrawals.netAmount,
+      status: withdrawals.status,
+      adminNotes: withdrawals.adminNotes,
+      processedBy: withdrawals.processedBy,
+      createdAt: withdrawals.createdAt,
+      processedAt: withdrawals.processedAt,
+      user: users,
+      wallet: wallets,
+    })
+    .from(withdrawals)
+    .innerJoin(users, eq(withdrawals.userId, users.id))
+    .innerJoin(wallets, eq(withdrawals.walletId, wallets.id))
+    .where(whereClause)
+    .orderBy(desc(withdrawals.createdAt));
+    
+    return result;
+  }
+
+  async getWithdrawal(id: string): Promise<Withdrawal | undefined> {
+    const [withdrawal] = await db.select().from(withdrawals).where(eq(withdrawals.id, id));
+    return withdrawal || undefined;
+  }
+
+  async getUserWithdrawals(userId: string): Promise<Withdrawal[]> {
+    return db.select().from(withdrawals).where(eq(withdrawals.userId, userId)).orderBy(desc(withdrawals.createdAt));
+  }
+
+  async getUserTodayWithdrawals(userId: string): Promise<Withdrawal[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return db.select().from(withdrawals).where(
+      and(
+        eq(withdrawals.userId, userId),
+        gte(withdrawals.createdAt, today)
+      )
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createWithdrawal(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<Withdrawal> {
+    const [created] = await db.insert(withdrawals).values({
+      ...data,
+      status: "pending",
+    }).returning();
+    return created;
+  }
+
+  async updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<Withdrawal | undefined> {
+    const [updated] = await db.update(withdrawals).set(updates).where(eq(withdrawals.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getEarnings(userId: string): Promise<Earning[]> {
+    return db.select().from(earnings).where(eq(earnings.userId, userId)).orderBy(desc(earnings.createdAt));
+  }
+
+  async createEarning(data: Omit<Earning, "id" | "createdAt">): Promise<Earning> {
+    const [created] = await db.insert(earnings).values(data).returning();
+    return created;
+  }
+
+  async getClaimedTasks(userId: string): Promise<ClaimedTask[]> {
+    return db.select().from(claimedTasks).where(eq(claimedTasks.userId, userId));
+  }
+
+  async createClaimedTask(data: Omit<ClaimedTask, "id" | "claimedAt">): Promise<ClaimedTask> {
+    const [created] = await db.insert(claimedTasks).values(data).returning();
+    return created;
+  }
+
+  async getSetting(key: string): Promise<string | undefined> {
+    const [setting] = await db.select().from(platformSettings).where(eq(platformSettings.key, key));
+    return setting?.value;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    const existing = await this.getSetting(key);
+    if (existing !== undefined) {
+      await db.update(platformSettings).set({ value, updatedAt: new Date() }).where(eq(platformSettings.key, key));
+    } else {
+      await db.insert(platformSettings).values({ key, value });
+    }
+  }
+
+  async getAllSettings(): Promise<Record<string, string>> {
+    const allSettings = await db.select().from(platformSettings);
+    const result: Record<string, string> = {};
+    for (const s of allSettings) {
+      result[s.key] = s.value;
+    }
+    return result;
+  }
+
+  async getImage(location: string): Promise<string | undefined> {
+    const [img] = await db.select().from(platformImages).where(eq(platformImages.location, location));
+    return img?.imageUrl;
+  }
+
+  async setImage(location: string, imageUrl: string): Promise<void> {
+    const existing = await this.getImage(location);
+    if (existing !== undefined) {
+      await db.update(platformImages).set({ imageUrl, updatedAt: new Date() }).where(eq(platformImages.location, location));
+    } else {
+      await db.insert(platformImages).values({ location, imageUrl });
+    }
+  }
+
+  async getDashboardStats(): Promise<{
+    totalUsers: number;
+    todayRegistrations: number;
+    todayDeposits: number;
+    todayWithdrawals: number;
+    totalDepositsAmount: number;
+    totalWithdrawalsAmount: number;
+    usersWithProducts: number;
+    pendingDeposits: number;
+    pendingWithdrawals: number;
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalUsersResult] = await db.select({ count: count() }).from(users);
+    const [todayRegsResult] = await db.select({ count: count() }).from(users).where(gte(users.createdAt, today));
+    const [todayDepsResult] = await db.select({ count: count() }).from(deposits).where(gte(deposits.createdAt, today));
+    const [todayWithsResult] = await db.select({ count: count() }).from(withdrawals).where(gte(withdrawals.createdAt, today));
+    
+    const approvedDeposits = await db.select().from(deposits).where(eq(deposits.status, "approved"));
+    const totalDepositsAmount = approvedDeposits.reduce((sum, d) => sum + d.amount, 0);
+    
+    const approvedWithdrawals = await db.select().from(withdrawals).where(eq(withdrawals.status, "approved"));
+    const totalWithdrawalsAmount = approvedWithdrawals.reduce((sum, w) => sum + w.netAmount, 0);
+    
+    const [usersWithProdsResult] = await db.select({ count: count() }).from(users).where(eq(users.hasProduct, true));
+    const [pendingDepsResult] = await db.select({ count: count() }).from(deposits).where(eq(deposits.status, "pending"));
+    const [pendingWithsResult] = await db.select({ count: count() }).from(withdrawals).where(eq(withdrawals.status, "pending"));
+
+    return {
+      totalUsers: totalUsersResult.count,
+      todayRegistrations: todayRegsResult.count,
+      todayDeposits: todayDepsResult.count,
+      todayWithdrawals: todayWithsResult.count,
+      totalDepositsAmount,
+      totalWithdrawalsAmount,
+      usersWithProducts: usersWithProdsResult.count,
+      pendingDeposits: pendingDepsResult.count,
+      pendingWithdrawals: pendingWithsResult.count,
+    };
+  }
+
+  async initializeDefaults(): Promise<void> {
+    const existingProducts = await db.select().from(products);
+    if (existingProducts.length === 0) {
+      for (const vip of VIP_PRODUCTS) {
+        await this.createProduct({
+          level: vip.level,
+          name: vip.name,
+          price: vip.price,
+          dailyReturn: vip.dailyReturn,
+          duration: vip.duration,
+          totalReturn: vip.totalReturn,
+          imageUrl: null,
+          isActive: true,
+        });
+      }
+    }
+
+    const existingChannels = await db.select().from(paymentChannels);
+    if (existingChannels.length === 0) {
+      await this.createPaymentChannel({
+        name: "LeekPay",
+        redirectUrl: "https://leekpay.fr/api/v1/checkout",
+        isApi: true,
+        isActive: true,
+      });
+    }
+
+    const defaultSettings = {
+      customerService: "https://t.me/+DOnUcJs7idVmN2E0",
+      officialChannel: "https://t.me/+DOnUcJs7idVmN2E0",
+      discussionGroup: "https://t.me/+DOnUcJs7idVmN2E0",
+    };
+
+    for (const [key, value] of Object.entries(defaultSettings)) {
+      const existing = await this.getSetting(key);
+      if (!existing) {
+        await this.setSetting(key, value);
+      }
+    }
+
+    const adminPhone = "99935673";
+    const adminCountry = "TG";
+    const existingAdmin = await this.getUserByPhone(adminPhone, adminCountry);
+    
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash("AAbb11##", 10);
+      await db.insert(users).values({
+        fullName: "Admin",
+        phone: adminPhone,
+        country: adminCountry,
+        password: hashedPassword,
+        referralCode: "ADMIN001",
+        isAdmin: true,
+        balance: 0,
+      });
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
