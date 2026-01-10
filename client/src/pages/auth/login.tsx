@@ -2,17 +2,16 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "wouter";
-import { loginSchema } from "@shared/schema";
+import { loginSchema, ELIGIBLE_COUNTRIES } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CountrySelect } from "@/components/country-select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { z } from "zod";
-import logoImage from "@assets/cigna-healthcare-logo_1768031545630.png";
+import heroImage from "@assets/IMG-20260108-WA0076_1768035736801.jpg";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -21,16 +20,17 @@ export default function LoginPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       phone: "",
-      country: "",
+      country: "CI",
       password: "",
     },
   });
+
+  const selectedCountry = ELIGIBLE_COUNTRIES.find(c => c.code === form.watch("country"));
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -50,109 +50,107 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img src={logoImage} alt="Cigna Group" className="h-16 object-contain" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
-          <CardDescription>Connectez-vous à votre compte Cigna Group</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pays</FormLabel>
-                    <FormControl>
-                      <CountrySelect value={field.value} onValueChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="w-full">
+        <img 
+          src={heroImage} 
+          alt="Hero" 
+          className="w-full h-48 sm:h-56 md:h-64 object-cover rounded-b-[2rem]"
+        />
+      </div>
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Numéro de téléphone</FormLabel>
-                    <FormControl>
+      <div className="flex-1 px-6 py-8 max-w-md mx-auto w-full">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <p className="text-sm text-gray-600 mb-2">Numéro de portable</p>
+                  <FormControl>
+                    <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-white">
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field: countryField }) => (
+                          <Select value={countryField.value} onValueChange={countryField.onChange}>
+                            <SelectTrigger className="w-24 border-0 border-r border-gray-200 rounded-none bg-transparent focus:ring-0 h-12">
+                              <SelectValue>
+                                {selectedCountry ? `+${selectedCountry.dialCode}` : "+225"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ELIGIBLE_COUNTRIES.map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  +{country.dialCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                       <Input
                         {...field}
                         type="tel"
-                        placeholder="Ex: 99935673"
+                        placeholder="Numéro de portable"
+                        className="flex-1 border-0 h-12 focus-visible:ring-0 bg-transparent"
                         data-testid="input-phone"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mot de passe</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Mot de passe"
-                          data-testid="input-password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <p className="text-sm text-gray-600 mb-2">Mot de passe</p>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      placeholder="Mot de passe"
+                      className="h-12 border-gray-200 rounded-xl bg-white"
+                      data-testid="input-password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-                data-testid="button-login"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connexion...
-                  </>
-                ) : (
-                  "Se connecter"
-                )}
-              </Button>
-            </form>
-          </Form>
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-medium text-base mt-4"
+              disabled={isLoading}
+              data-testid="button-login"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
+                "Se connecter"
+              )}
+            </Button>
+          </form>
+        </Form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Pas encore de compte? </span>
-            <Link href="/register">
-              <span className="text-primary font-medium hover:underline cursor-pointer" data-testid="link-register">
-                S'inscrire
-              </span>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex justify-between mt-8 text-sm">
+          <span className="text-gray-500">Se connecter Client</span>
+          <Link href="/register">
+            <span className="text-gray-700 font-medium cursor-pointer" data-testid="link-register">
+              S'inscrire
+            </span>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
