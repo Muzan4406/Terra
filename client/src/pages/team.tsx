@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Banknote } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 interface TeamStats {
   level1Count: number;
@@ -142,37 +142,29 @@ export default function TeamPage() {
                 className="bg-white rounded-xl p-4 shadow-sm"
                 data-testid={`card-level-${level.level}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-20 h-16 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex-shrink-0 flex items-center justify-center">
-                    <Banknote className="w-10 h-10 text-white" />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-7 h-7 rounded-full ${level.medalColor} ${level.medalBorder} border-2 flex items-center justify-center`}>
+                      <span className="text-xs font-bold text-white">{level.level}</span>
+                    </div>
+                    <span className="font-bold text-gray-800 text-lg">{level.label}</span>
                   </div>
+                  <div className="flex items-center gap-1 text-blue-500">
+                    <span className="text-sm font-medium">Commission:{level.commission}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full ${level.medalColor} ${level.medalBorder} border-2 flex items-center justify-center`}>
-                          <span className="text-xs font-bold text-white">{level.level}</span>
-                        </div>
-                        <span className="font-bold text-gray-800">{level.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-blue-500">
-                        <span className="text-sm font-medium">Commission:{level.commission}</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{level.teamSize}</p>
-                        <p className="text-xs text-gray-500">Taille de l'équipe</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-gray-800">
-                          XOF {level.investment.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-gray-500">investir</p>
-                      </div>
-                    </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{level.teamSize}</p>
+                    <p className="text-xs text-gray-500">Taille de l'équipe</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold text-gray-800">
+                      XOF {level.investment.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500">investir</p>
                   </div>
                 </div>
               </div>
