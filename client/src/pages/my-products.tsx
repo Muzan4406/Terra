@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
-import { ArrowLeft, Crown, Calendar, TrendingUp, CheckCircle } from "lucide-react";
+import { ArrowLeft, Crown, Calendar, TrendingUp, CheckCircle, Clock } from "lucide-react";
 import { Link } from "wouter";
 
 interface UserProduct {
@@ -20,7 +20,7 @@ interface UserProduct {
     price: number;
     dailyReturn: number;
     totalReturn: number;
-    cycleDays: number;
+    duration: number;
   };
 }
 
@@ -92,69 +92,94 @@ export default function MyProductsPage() {
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     Produits actifs ({activeProducts.length})
                   </h2>
-                  {activeProducts.map((userProduct) => (
-                    <div
-                      key={userProduct.id}
-                      className="bg-white rounded-xl overflow-hidden shadow-sm"
-                      data-testid={`card-product-${userProduct.id}`}
-                    >
-                      <div className={`bg-gradient-to-r ${getLevelColor(userProduct.product.level)} p-4`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Crown className="w-5 h-5 text-white" />
-                            <span className="text-white font-bold text-lg">
-                              {userProduct.product.name}
+                  {activeProducts.map((userProduct) => {
+                    const daysRemaining = userProduct.product.duration - userProduct.cyclesCompleted;
+                    const cumulativeRevenue = userProduct.cyclesCompleted * userProduct.product.dailyReturn;
+                    const progressPercent = (userProduct.cyclesCompleted / userProduct.product.duration) * 100;
+                    
+                    return (
+                      <div
+                        key={userProduct.id}
+                        className="bg-white rounded-xl overflow-hidden shadow-sm"
+                        data-testid={`card-product-${userProduct.id}`}
+                      >
+                        <div className={`bg-gradient-to-r ${getLevelColor(userProduct.product.level)} p-4`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Crown className="w-5 h-5 text-white" />
+                              <span className="text-white font-bold text-lg">
+                                {userProduct.product.name}
+                              </span>
+                            </div>
+                            <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                              Actif
                             </span>
                           </div>
-                          <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
-                            Actif
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-500 text-sm">Prix d'achat</span>
-                          <span className="font-semibold text-gray-800">
-                            {formatNumber(userProduct.product.price)} FCFA
-                          </span>
                         </div>
                         
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-500 text-sm">Revenu journalier</span>
-                          <span className="font-semibold text-green-600">
-                            +{formatNumber(userProduct.product.dailyReturn)} FCFA
-                          </span>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-500 text-sm">Cycles complétés</span>
-                          <span className="font-semibold text-gray-800">
-                            {userProduct.cyclesCompleted} / {userProduct.product.cycleDays}
-                          </span>
-                        </div>
-                        
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`bg-gradient-to-r ${getLevelColor(userProduct.product.level)} h-2 rounded-full`}
-                            style={{
-                              width: `${(userProduct.cyclesCompleted / userProduct.product.cycleDays) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-xs text-gray-500 pt-2">
-                          <Calendar className="w-3 h-3" />
-                          <span>Acheté le {formatDate(userProduct.purchasedAt)}</span>
-                          {userProduct.assignedByAdmin && (
-                            <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-auto">
-                              Attribué par admin
+                        <div className="p-4 space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-blue-50 rounded-lg p-3 text-center">
+                              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-xs font-medium">Jours restants</span>
+                              </div>
+                              <p className="text-2xl font-bold text-blue-700" data-testid="text-days-remaining">
+                                {daysRemaining}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 rounded-lg p-3 text-center">
+                              <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+                                <TrendingUp className="w-4 h-4" />
+                                <span className="text-xs font-medium">Revenu cumulé</span>
+                              </div>
+                              <p className="text-xl font-bold text-green-700" data-testid="text-cumulative-revenue">
+                                {formatNumber(cumulativeRevenue)} F
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500 text-sm">Prix d'achat</span>
+                            <span className="font-semibold text-gray-800">
+                              {formatNumber(userProduct.product.price)} FCFA
                             </span>
-                          )}
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500 text-sm">Revenu journalier</span>
+                            <span className="font-semibold text-green-600">
+                              +{formatNumber(userProduct.product.dailyReturn)} FCFA
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500 text-sm">Progression</span>
+                            <span className="font-semibold text-gray-800">
+                              {userProduct.cyclesCompleted} / {userProduct.product.duration} jours
+                            </span>
+                          </div>
+                          
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`bg-gradient-to-r ${getLevelColor(userProduct.product.level)} h-2 rounded-full`}
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-xs text-gray-500 pt-2">
+                            <Calendar className="w-3 h-3" />
+                            <span>Acheté le {formatDate(userProduct.purchasedAt)}</span>
+                            {userProduct.assignedByAdmin && (
+                              <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-auto">
+                                Attribué par admin
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -193,7 +218,7 @@ export default function MyProductsPage() {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Calendar className="w-3 h-3" />
-                          <span>Terminé après {userProduct.product.cycleDays} jours</span>
+                          <span>Terminé après {userProduct.product.duration} jours</span>
                         </div>
                       </div>
                     </div>
