@@ -4,21 +4,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2, Zap, Lightbulb, Sun, Battery, Cpu, Server } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { Product, UserProduct } from "@shared/schema";
+
+import product1Img from "@assets/79d84350-9aa4-4031-ad23-c22766584042_1768037288627.webp";
+import product2Img from "@assets/images_(30)_1768037288811.jpeg";
+import product3Img from "@assets/images_(31)_1768037288700.jpeg";
+import product4Img from "@assets/images_(32)_1768037288765.jpeg";
+import product5Img from "@assets/images_(33)_1768037288733.jpeg";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
   userProduct?: UserProduct;
 }
 
-const productIcons = [
-  { icon: Lightbulb, color: "bg-gradient-to-b from-orange-100 to-orange-50", iconColor: "text-orange-500" },
-  { icon: Zap, color: "bg-gradient-to-b from-yellow-100 to-yellow-50", iconColor: "text-yellow-500" },
-  { icon: Sun, color: "bg-gradient-to-b from-blue-100 to-blue-50", iconColor: "text-blue-500" },
-  { icon: Battery, color: "bg-gradient-to-b from-green-100 to-green-50", iconColor: "text-green-500" },
-  { icon: Cpu, color: "bg-gradient-to-b from-purple-100 to-purple-50", iconColor: "text-purple-500" },
-  { icon: Server, color: "bg-gradient-to-b from-indigo-100 to-indigo-50", iconColor: "text-indigo-500" },
+const productImages = [
+  product1Img,
+  product2Img,
+  product3Img,
+  product4Img,
+  product5Img,
+  product3Img,
 ];
 
 export default function InvestPage() {
@@ -88,8 +94,7 @@ export default function InvestPage() {
 
         <div className="px-4 py-2 space-y-4">
           {products?.map((product, index) => {
-            const IconComponent = productIcons[index]?.icon || Lightbulb;
-            const iconStyle = productIcons[index] || productIcons[0];
+            const productImage = productImages[index] || productImages[0];
             
             return (
               <div 
@@ -97,16 +102,20 @@ export default function InvestPage() {
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
               >
                 <div className="flex gap-4">
-                  <div className={`w-24 h-28 ${iconStyle.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                    <IconComponent className={`w-12 h-12 ${iconStyle.iconColor}`} />
+                  <div className="w-24 h-28 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                    <img 
+                      src={productImage} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-lg text-orange-500">
+                      <h3 className="font-bold text-lg text-blue-600">
                         {product.name}
                       </h3>
-                      <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded">
+                      <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
                         Hot
                       </span>
                     </div>
@@ -133,7 +142,7 @@ export default function InvestPage() {
                 </div>
                 
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                  <span className="text-orange-500 text-sm font-medium cursor-pointer">
+                  <span className="text-blue-600 text-sm font-medium cursor-pointer">
                     Détail &gt;&gt;
                   </span>
                   
@@ -152,7 +161,7 @@ export default function InvestPage() {
                         {formatNumber(product.price)} F CFA
                       </span>
                       <button
-                        className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         disabled={purchaseMutation.isPending}
                         onClick={() => purchaseMutation.mutate(product.id)}
                         data-testid={`button-buy-${product.level}`}
