@@ -178,6 +178,18 @@ export default function TeamPage() {
               </div>
             ))}
           </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm mt-4">
+            <h3 className="text-blue-600 font-bold mb-3">Comment ça fonctionne</h3>
+            <div className="space-y-3 text-sm text-gray-600">
+              <p>1. Partagez votre lien ou code d'invitation avec vos amis et votre famille.</p>
+              <p>2. Lorsqu'ils s'inscrivent et investissent, vous gagnez des commissions sur leurs achats.</p>
+              <p>3. Niveau 1 (invités directs): 25% de commission sur leurs investissements.</p>
+              <p>4. Niveau 2 (invités de niveau 1): 2% de commission sur leurs investissements.</p>
+              <p>5. Niveau 3 (invités de niveau 2): 1% de commission sur leurs investissements.</p>
+              <p>6. Les commissions sont créditées instantanément sur votre solde.</p>
+            </div>
+          </div>
         </div>
       </div>
 
