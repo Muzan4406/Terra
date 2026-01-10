@@ -219,6 +219,35 @@ export const platformImages = pgTable("platform_images", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const bonusCodes = pgTable("bonus_codes", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  amount: integer("amount").notNull(),
+  maxUses: integer("max_uses").notNull(),
+  currentUses: integer("current_uses").notNull().default(0),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: varchar("created_by", { length: 36 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const bonusCodesRelations = relations(bonusCodes, ({ one, many }) => ({
+  creator: one(users, { fields: [bonusCodes.createdBy], references: [users.id] }),
+  usages: many(bonusCodeUsages),
+}));
+
+export const bonusCodeUsages = pgTable("bonus_code_usages", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  bonusCodeId: varchar("bonus_code_id", { length: 36 }).notNull(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  usedAt: timestamp("used_at").notNull().defaultNow(),
+});
+
+export const bonusCodeUsagesRelations = relations(bonusCodeUsages, ({ one }) => ({
+  bonusCode: one(bonusCodes, { fields: [bonusCodeUsages.bonusCodeId], references: [bonusCodes.id] }),
+  user: one(users, { fields: [bonusCodeUsages.userId], references: [users.id] }),
+}));
+
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true, 
   balance: true, 
@@ -273,6 +302,26 @@ export const walletSchema = z.object({
   paymentMethod: z.string(),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+  newPassword: z.string().min(6, "Le nouveau mot de passe doit contenir au moins 6 caractères"),
+  confirmPassword: z.string().min(1, "Confirmation requise"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
+});
+
+export const bonusCodeSchema = z.object({
+  code: z.string().min(3, "Code doit contenir au moins 3 caractères"),
+  amount: z.number().min(1, "Montant doit être supérieur à 0"),
+  maxUses: z.number().min(1, "Nombre d'utilisations minimum: 1"),
+  expiresAt: z.string(),
+});
+
+export const exchangeCodeSchema = z.object({
+  code: z.string().min(1, "Code requis"),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -285,3 +334,5 @@ export type Earning = typeof earnings.$inferSelect;
 export type ClaimedTask = typeof claimedTasks.$inferSelect;
 export type PlatformSetting = typeof platformSettings.$inferSelect;
 export type PlatformImage = typeof platformImages.$inferSelect;
+export type BonusCode = typeof bonusCodes.$inferSelect;
+export type BonusCodeUsage = typeof bonusCodeUsages.$inferSelect;
