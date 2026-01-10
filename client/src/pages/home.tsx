@@ -2,11 +2,19 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
-import { DollarSign, Users, MessageCircle, ArrowRight, Copy } from "lucide-react";
+import { 
+  DollarSign, 
+  FileText, 
+  Building2, 
+  Info, 
+  FileCheck, 
+  Headphones, 
+  CheckCircle,
+  Bell
+} from "lucide-react";
 import { useLocation } from "wouter";
-import { useToast } from "@/hooks/use-toast";
-import logoImage from "@assets/cigna-healthcare-logo_1768031545630.png";
-import lotteryImage from "@assets/Img_2026_01_09_18_58_01_1768031521173.jpeg";
+import { useEffect, useState } from "react";
+import bannerImage from "@assets/Img_2026_01_09_18_58_01_1768031521173.jpeg";
 
 interface PlatformSettings {
   customerService: string;
@@ -17,7 +25,7 @@ interface PlatformSettings {
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const { toast } = useToast();
+  const [tickerOffset, setTickerOffset] = useState(0);
 
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
@@ -27,15 +35,19 @@ export default function HomePage() {
     return num.toLocaleString("fr-FR");
   };
 
-  const referralLink = user ? `${window.location.origin}/register?ref=${user.referralCode}` : "";
+  const notifications = [
+    "**2047 a rechargé 250,000",
+    "******0558 a rechargé 100,000",
+    "**8934 a rechargé 50,000",
+    "******1234 a retiré 75,000",
+  ];
 
-  const copyReferralLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    toast({
-      title: "Copié!",
-      description: "Le lien de parrainage a été copié.",
-    });
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTickerOffset((prev) => (prev + 1) % notifications.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [notifications.length]);
 
   if (!user) {
     return (
@@ -45,130 +57,141 @@ export default function HomePage() {
     );
   }
 
+  const actionButtons = [
+    { icon: DollarSign, label: "Recharger", path: "/deposit", testId: "button-recharge" },
+    { icon: DollarSign, label: "Retirer", path: "/withdraw", testId: "button-withdraw" },
+    { icon: FileText, label: "Historique", path: "/history", testId: "button-history" },
+    { icon: Building2, label: "Pointage", path: "/tasks", testId: "button-pointage" },
+    { icon: Info, label: "À propos", path: "/about", testId: "button-about" },
+    { icon: FileCheck, label: "Règlement", path: "/rules", testId: "button-rules" },
+    { icon: Headphones, label: "Aide", path: null, external: settings?.customerService || "https://t.me/+DOnUcJs7idVmN2E0", testId: "button-aide" },
+    { icon: CheckCircle, label: "Centre de tâches", path: "/tasks", testId: "button-tasks" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
-      <div className="max-w-md mx-auto bg-white">
-        <header className="flex items-center justify-center py-4 bg-white">
-          <div className="flex items-center gap-2">
-            <img src={logoImage} alt="Logo" className="h-14 object-contain" />
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-green-600 tracking-wide">Cigna</span>
-              <span className="text-[10px] text-green-600 tracking-[0.2em] uppercase -mt-1">Group</span>
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-4 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}>
-          <div className="grid grid-cols-3 divide-x divide-white/20 py-6">
-            <div className="text-center text-white px-2">
-              <p className="text-lg font-bold" data-testid="text-balance">XOF{formatNumber(user.balance)}</p>
-              <p className="text-xs opacity-90 mt-1">Solde de Recharge</p>
-            </div>
-            <div className="text-center text-white px-2">
-              <p className="text-lg font-bold" data-testid="text-product-earnings">XOF{formatNumber(user.todayEarnings)}</p>
-              <p className="text-xs opacity-90 mt-1">Revenu des Produits</p>
-            </div>
-            <div className="text-center text-white px-2">
-              <p className="text-lg font-bold" data-testid="text-withdrawal-balance">XOF{formatNumber(user.totalEarnings)}</p>
-              <p className="text-xs opacity-90 mt-1">Solde de Retrait</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 py-5 px-4">
-            <div className="grid grid-cols-4 gap-4">
-              <button
-                className="flex flex-col items-center gap-2"
-                onClick={() => navigate("/deposit")}
-                data-testid="button-recharge"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-medium text-gray-700">Recharger</span>
-              </button>
-
-              <button
-                className="flex flex-col items-center gap-2"
-                onClick={() => navigate("/withdraw")}
-                data-testid="button-withdraw"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-medium text-gray-700">Retirer</span>
-              </button>
-
-              <button
-                className="flex flex-col items-center gap-2"
-                onClick={() => navigate("/team")}
-                data-testid="button-team"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-medium text-gray-700">Équipe</span>
-              </button>
-
-              <button
-                className="flex flex-col items-center gap-2"
-                onClick={() => window.open(settings?.officialChannel || "https://t.me/+DOnUcJs7idVmN2E0", "_blank")}
-                data-testid="button-telegram"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                  <MessageCircle className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-medium text-gray-700">Telegram</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-md mx-auto bg-white min-h-screen">
+        <div className="relative w-full h-48 overflow-hidden bg-gradient-to-r from-gray-100 to-gray-200">
+          <img 
+            src={bannerImage} 
+            alt="MaxiCharger" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-4 left-4 text-white">
+            <h2 className="text-xl font-bold drop-shadow-lg">MaxiCharger</h2>
+            <p className="text-lg font-semibold drop-shadow-lg">DC HiPower</p>
+            <p className="text-sm drop-shadow-lg">320kW | 640 kW</p>
           </div>
         </div>
 
-        <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">Mon Équipe</h3>
-          <p className="text-sm text-gray-500 break-all mb-3" data-testid="text-referral-link">
-            {referralLink}
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              className="bg-green-500 hover:bg-green-600 text-white text-sm px-5 py-2 rounded-lg font-medium flex items-center gap-2"
-              onClick={copyReferralLink}
-              data-testid="button-copy-link"
-            >
-              <Copy className="h-4 w-4" />
-              Copier
-            </button>
-            <button
-              className="text-gray-600 text-sm font-medium flex items-center gap-1 hover:text-green-600"
-              onClick={() => navigate("/team")}
-              data-testid="button-goto-team"
-            >
-              Aller sur
-              <ArrowRight className="h-4 w-4" />
-            </button>
+        <div className="px-4 py-6">
+          <div className="grid grid-cols-4 gap-4">
+            {actionButtons.map((btn, index) => (
+              <button
+                key={index}
+                className="flex flex-col items-center gap-2"
+                onClick={() => {
+                  if (btn.external) {
+                    window.open(btn.external, "_blank");
+                  } else if (btn.path) {
+                    navigate(btn.path);
+                  }
+                }}
+                data-testid={btn.testId}
+              >
+                <div className="w-14 h-14 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center">
+                  <btn.icon className="h-6 w-6 text-green-500" />
+                </div>
+                <span className="text-xs text-gray-600 font-medium">{btn.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Tirage au Sort</h3>
-            <p className="text-sm text-gray-500 mb-3">
-              La roue de la chance continue de tourner avec de superbes cadeaux
+        <div className="mx-4 flex items-center gap-2 py-3 border-y border-gray-100 overflow-hidden">
+          <Bell className="h-5 w-5 text-green-500 flex-shrink-0" />
+          <div className="overflow-hidden flex-1">
+            <p className="text-sm text-gray-600 whitespace-nowrap animate-pulse">
+              {notifications[tickerOffset]} {notifications[(tickerOffset + 1) % notifications.length]}
+            </p>
+          </div>
+        </div>
+
+        <div className="mx-4 mt-4 rounded-2xl overflow-hidden relative" style={{ minHeight: '180px' }}>
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${bannerImage})`,
+              filter: 'brightness(0.6)',
+            }}
+          />
+          <div className="relative z-10 p-6 flex flex-col items-center justify-center h-full text-center" style={{ minHeight: '180px' }}>
+            <h3 className="text-2xl font-bold text-white mb-2">Centre de Tâches</h3>
+            <p className="text-white/90 text-sm mb-4">
+              Complétez les tâches et<br />obtenez des bonus généreux
             </p>
             <button
-              className="text-green-600 text-sm font-medium flex items-center gap-1 hover:underline"
-              onClick={() => window.open(settings?.discussionGroup || "https://t.me/+DOnUcJs7idVmN2E0", "_blank")}
-              data-testid="button-goto-lottery"
+              onClick={() => navigate("/tasks")}
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
+              data-testid="button-enter-tasks"
             >
-              Aller sur
-              <ArrowRight className="h-4 w-4" />
+              cliquez pour<br />entrer
             </button>
           </div>
-          <div className="relative">
-            <img 
-              src={lotteryImage} 
-              alt="Tirage au Sort" 
-              className="w-full h-32 object-cover"
-            />
+        </div>
+
+        <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <img 
+                  src={bannerImage} 
+                  alt="" 
+                  className="w-8 h-8 object-cover rounded"
+                />
+              </div>
+            </div>
+            <p className="text-lg font-bold text-gray-900" data-testid="text-balance">
+              FCFA {formatNumber(user.balance)}
+            </p>
+            <p className="text-xs text-gray-500">Solde du compte</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <img 
+                  src={bannerImage} 
+                  alt="" 
+                  className="w-8 h-8 object-cover rounded"
+                />
+              </div>
+            </div>
+            <p className="text-lg font-bold text-gray-900" data-testid="text-earnings">
+              FCFA {formatNumber(user.totalEarnings)}
+            </p>
+            <p className="text-xs text-gray-500">Revenus cumulés</p>
+          </div>
+        </div>
+
+        <div className="mx-4 mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 bg-green-500 rounded-full"></div>
+            <h3 className="text-sm font-semibold text-gray-800">Partenaires</h3>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div 
+                key={i} 
+                className="aspect-video bg-gray-100 rounded-lg overflow-hidden"
+              >
+                <img 
+                  src={bannerImage} 
+                  alt={`Partenaire ${i}`} 
+                  className="w-full h-full object-cover opacity-70"
+                />
+              </div>
+            ))}
           </div>
         </div>
 
