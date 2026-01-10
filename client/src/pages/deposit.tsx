@@ -6,13 +6,19 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Loader2, CreditCard, Clock } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
+import { CountrySelect } from "@/components/country-select";
+import { PaymentMethodSelect } from "@/components/payment-method-select";
 import type { PaymentChannel } from "@shared/schema";
 
 export default function DepositPage() {
   const { user, refetchUser } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [amount, setAmount] = useState<number>(3000);
+  const [amount, setAmount] = useState<string>("3000");
+  const [accountName, setAccountName] = useState<string>(user?.fullName || "");
+  const [accountNumber, setAccountNumber] = useState<string>("");
+  const [country, setCountry] = useState<string>(user?.country || "");
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [selectedChannelId, setSelectedChannelId] = useState<string>("");
 
   const { data: channels } = useQuery<PaymentChannel[]>({
@@ -22,12 +28,12 @@ export default function DepositPage() {
   const depositMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/deposits", {
-        amount,
+        amount: parseInt(amount) || 0,
         channelId: selectedChannelId,
-        accountName: user?.fullName || "",
-        accountNumber: user?.phone || "",
-        country: user?.country || "",
-        paymentMethod: channels?.find(c => c.id === selectedChannelId)?.name || "",
+        accountName,
+        accountNumber,
+        country,
+        paymentMethod,
       });
       if (!res.ok) {
         const resData = await res.json();
@@ -56,10 +62,43 @@ export default function DepositPage() {
   });
 
   const handleSubmit = () => {
-    if (amount < 3000) {
+    const amountNum = parseInt(amount) || 0;
+    if (amountNum < 3000) {
       toast({ 
         title: "Erreur", 
         description: "Le montant minimum est de 3 000 FCFA",
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!accountName.trim()) {
+      toast({ 
+        title: "Erreur", 
+        description: "Veuillez entrer votre nom",
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!accountNumber.trim()) {
+      toast({ 
+        title: "Erreur", 
+        description: "Veuillez entrer votre numéro de paiement",
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!country) {
+      toast({ 
+        title: "Erreur", 
+        description: "Veuillez sélectionner votre pays",
+        variant: "destructive" 
+      });
+      return;
+    }
+    if (!paymentMethod) {
+      toast({ 
+        title: "Erreur", 
+        description: "Veuillez sélectionner un moyen de paiement",
         variant: "destructive" 
       });
       return;
@@ -96,13 +135,14 @@ export default function DepositPage() {
 
         <div className="p-4 space-y-6">
           <div>
-            <p className="text-gray-500 text-sm mb-2">Entrez un autre montant</p>
-            <div className="flex items-baseline gap-2">
+            <p className="text-gray-500 text-sm mb-2">Entrez le montant</p>
+            <div className="flex items-baseline gap-2 border-b border-gray-300 pb-2">
               <span className="text-blue-600 font-bold text-xl">FCFA</span>
               <input
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="3000"
                 className="text-3xl font-bold text-gray-800 bg-transparent border-none outline-none w-full"
                 min={3000}
                 data-testid="input-amount"
@@ -110,7 +150,48 @@ export default function DepositPage() {
             </div>
           </div>
 
+          <div className="space-y-4 bg-white rounded-xl p-4">
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Nom du compte de paiement</label>
+              <input
+                type="text"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                placeholder="Entrez votre nom complet"
+                className="w-full p-3 border border-gray-200 rounded-lg text-gray-800 outline-none focus:border-blue-500"
+                data-testid="input-account-name"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Numéro de paiement</label>
+              <input
+                type="tel"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                placeholder="Entrez votre numéro de téléphone"
+                className="w-full p-3 border border-gray-200 rounded-lg text-gray-800 outline-none focus:border-blue-500"
+                data-testid="input-account-number"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Pays</label>
+              <CountrySelect value={country} onValueChange={setCountry} />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Moyen de paiement</label>
+              <PaymentMethodSelect 
+                country={country} 
+                value={paymentMethod} 
+                onValueChange={setPaymentMethod} 
+              />
+            </div>
+          </div>
+
           <div className="space-y-3">
+            <p className="text-gray-500 text-sm">Sélectionnez un canal de recharge</p>
             {activeChannels.map((channel) => (
               <button
                 key={channel.id}
