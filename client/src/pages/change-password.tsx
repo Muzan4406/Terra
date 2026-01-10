@@ -48,6 +48,10 @@ export default function ChangePasswordPage() {
   const mutation = useMutation({
     mutationFn: async (data: ChangePasswordForm) => {
       const response = await apiRequest("POST", "/api/auth/change-password", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de la modification du mot de passe");
+      }
       return response.json();
     },
     onSuccess: () => {

@@ -41,6 +41,10 @@ export default function ExchangeCodePage() {
   const mutation = useMutation({
     mutationFn: async (data: ExchangeCodeForm) => {
       const response = await apiRequest("POST", "/api/bonus-codes/exchange", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de l'échange du code");
+      }
       return response.json();
     },
     onSuccess: (data) => {
