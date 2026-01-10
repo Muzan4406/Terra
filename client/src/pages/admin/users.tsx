@@ -17,9 +17,22 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   ArrowLeft, Search, Edit, Ban, Users, ShoppingBag, Lock, 
-  Unlock, Award, Key, Wallet, Loader2, ChevronRight 
+  Unlock, Award, Key, Wallet, Loader2, ChevronRight, Trash2, Crown
 } from "lucide-react";
 import type { User, Product } from "@shared/schema";
+
+interface UserProductItem {
+  id: string;
+  productId: string;
+  cyclesCompleted: number;
+  isActive: boolean;
+  product: {
+    id: string;
+    name: string;
+    level: number;
+    price: number;
+  };
+}
 
 interface UserWithDetails extends User {
   referralCount: number;
@@ -36,6 +49,7 @@ export default function AdminUsersPage() {
   const [editBalance, setEditBalance] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [managingUserId, setManagingUserId] = useState<string | null>(null);
 
   const { data: users, isLoading } = useQuery<UserWithDetails[]>({
     queryKey: [`/api/admin/users?filter=${filter}`],
@@ -43,6 +57,17 @@ export default function AdminUsersPage() {
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products/all"],
+  });
+
+  const { data: userProducts, refetch: refetchUserProducts } = useQuery<UserProductItem[]>({
+    queryKey: ["/api/admin/users", managingUserId, "products"],
+    queryFn: async () => {
+      if (!managingUserId) return [];
+      const res = await fetch(`/api/admin/users/${managingUserId}/products`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!managingUserId,
   });
 
   const updateUserMutation = useMutation({
@@ -66,6 +91,27 @@ export default function AdminUsersPage() {
     },
   });
 
+  const removeProductMutation = useMutation({
+    mutationFn: async ({ userProductId }: { userProductId: string }) => {
+      const res = await apiRequest("DELETE", `/api/admin/user-products/${userProductId}`);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Produit révoqué avec succès" });
+      refetchUserProducts();
+      queryClient.invalidateQueries({ predicate: (query) => 
+        typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/api/admin/users')
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
   const assignProductMutation = useMutation({
     mutationFn: async ({ userId, productId, action }: { userId: string; productId: string; action: "assign" | "remove" }) => {
       const res = await apiRequest("POST", `/api/admin/users/${userId}/products`, { productId, action });
@@ -77,6 +123,7 @@ export default function AdminUsersPage() {
     },
     onSuccess: (_, variables) => {
       toast({ title: variables.action === "assign" ? "Produit attribué" : "Produit retiré" });
+      refetchUserProducts();
       queryClient.invalidateQueries({ predicate: (query) => 
         typeof query.queryKey[0] === 'string' && query.queryKey[0].startsWith('/api/admin/users')
       });
@@ -203,6 +250,7 @@ export default function AdminUsersPage() {
                             onClick={() => {
                               setSelectedUser(u);
                               setEditBalance(u.balance.toString());
+                              setManagingUserId(u.id);
                             }}
                           >
                             <Edit className="h-4 w-4" />
@@ -288,6 +336,35 @@ export default function AdminUsersPage() {
                                 </Button>
                               </div>
                             </div>
+
+                            {userProducts && userProducts.length > 0 && (
+                              <div className="space-y-2">
+                                <Label>Produits de l'utilisateur ({userProducts.length})</Label>
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                  {userProducts.map((up) => (
+                                    <div key={up.id} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        <Crown className="h-4 w-4 text-yellow-500" />
+                                        <div>
+                                          <p className="text-sm font-medium">{up.product.name}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {up.cyclesCompleted}/100 jours • {up.isActive ? "Actif" : "Terminé"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => removeProductMutation.mutate({ userProductId: up.id })}
+                                        disabled={removeProductMutation.isPending}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4">
                               <div className="flex items-center justify-between">

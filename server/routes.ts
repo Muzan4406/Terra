@@ -835,6 +835,18 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.get("/api/admin/users/:id/products", requireAdmin, async (req, res) => {
+    const userId = req.params.id;
+    const userProducts = await storage.getUserProducts(userId);
+    res.json(userProducts);
+  });
+
+  app.delete("/api/admin/user-products/:id", requireAdmin, async (req, res) => {
+    const userProductId = req.params.id;
+    await storage.deleteUserProduct(userProductId);
+    res.json({ success: true });
+  });
+
   app.get("/api/admin/payment-channels", requireAdmin, async (req, res) => {
     const channels = await storage.getPaymentChannels(false);
     res.json(channels);
