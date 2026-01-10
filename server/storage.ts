@@ -1,9 +1,10 @@
 import { 
   users, products, userProducts, wallets, paymentChannels, 
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
+  bonusCodes, bonusCodeUsages,
   type User, type InsertUser, type Product, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
-  type PlatformSetting, type PlatformImage, VIP_PRODUCTS
+  type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, or, count } from "drizzle-orm";
@@ -87,6 +88,17 @@ export interface IStorage {
     pendingDeposits: number;
     pendingWithdrawals: number;
   }>;
+  
+  getBonusCodes(): Promise<BonusCode[]>;
+  getBonusCode(id: string): Promise<BonusCode | undefined>;
+  getBonusCodeByCode(code: string): Promise<BonusCode | undefined>;
+  createBonusCode(data: Omit<BonusCode, "id" | "createdAt" | "currentUses">): Promise<BonusCode>;
+  updateBonusCode(id: string, updates: Partial<BonusCode>): Promise<BonusCode | undefined>;
+  deleteBonusCode(id: string): Promise<void>;
+  
+  getBonusCodeUsage(bonusCodeId: string, userId: string): Promise<BonusCodeUsage | undefined>;
+  createBonusCodeUsage(data: Omit<BonusCodeUsage, "id" | "usedAt">): Promise<BonusCodeUsage>;
+  getBonusCodeUsages(bonusCodeId: string): Promise<(BonusCodeUsage & { user: User })[]>;
   
   initializeDefaults(): Promise<void>;
 }
@@ -567,6 +579,66 @@ export class DatabaseStorage implements IStorage {
         balance: 0,
       });
     }
+  }
+
+  async getBonusCodes(): Promise<BonusCode[]> {
+    return db.select().from(bonusCodes).orderBy(desc(bonusCodes.createdAt));
+  }
+
+  async getBonusCode(id: string): Promise<BonusCode | undefined> {
+    const [code] = await db.select().from(bonusCodes).where(eq(bonusCodes.id, id));
+    return code || undefined;
+  }
+
+  async getBonusCodeByCode(code: string): Promise<BonusCode | undefined> {
+    const [bonusCode] = await db.select().from(bonusCodes).where(eq(bonusCodes.code, code));
+    return bonusCode || undefined;
+  }
+
+  async createBonusCode(data: Omit<BonusCode, "id" | "createdAt" | "currentUses">): Promise<BonusCode> {
+    const [created] = await db.insert(bonusCodes).values({
+      ...data,
+      currentUses: 0,
+    }).returning();
+    return created;
+  }
+
+  async updateBonusCode(id: string, updates: Partial<BonusCode>): Promise<BonusCode | undefined> {
+    const [updated] = await db.update(bonusCodes).set(updates).where(eq(bonusCodes.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteBonusCode(id: string): Promise<void> {
+    await db.delete(bonusCodeUsages).where(eq(bonusCodeUsages.bonusCodeId, id));
+    await db.delete(bonusCodes).where(eq(bonusCodes.id, id));
+  }
+
+  async getBonusCodeUsage(bonusCodeId: string, userId: string): Promise<BonusCodeUsage | undefined> {
+    const [usage] = await db.select().from(bonusCodeUsages).where(
+      and(eq(bonusCodeUsages.bonusCodeId, bonusCodeId), eq(bonusCodeUsages.userId, userId))
+    );
+    return usage || undefined;
+  }
+
+  async createBonusCodeUsage(data: Omit<BonusCodeUsage, "id" | "usedAt">): Promise<BonusCodeUsage> {
+    const [created] = await db.insert(bonusCodeUsages).values(data).returning();
+    return created;
+  }
+
+  async getBonusCodeUsages(bonusCodeId: string): Promise<(BonusCodeUsage & { user: User })[]> {
+    const result = await db.select({
+      id: bonusCodeUsages.id,
+      bonusCodeId: bonusCodeUsages.bonusCodeId,
+      userId: bonusCodeUsages.userId,
+      usedAt: bonusCodeUsages.usedAt,
+      user: users,
+    })
+    .from(bonusCodeUsages)
+    .innerJoin(users, eq(bonusCodeUsages.userId, users.id))
+    .where(eq(bonusCodeUsages.bonusCodeId, bonusCodeId))
+    .orderBy(desc(bonusCodeUsages.usedAt));
+    
+    return result;
   }
 }
 
