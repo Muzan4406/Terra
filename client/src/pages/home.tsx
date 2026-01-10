@@ -237,7 +237,7 @@ export default function HomePage() {
         <div className="mx-4 mt-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1 h-4 bg-amber-500 rounded-full"></div>
-            <h3 className="text-sm font-semibold text-gray-800">Nos Partenaires</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Nos services que nous proposons l'équipe Cigna group</h3>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {[goldImage1, goldImage2, goldImage3, goldImage4].map((img, i) => (
