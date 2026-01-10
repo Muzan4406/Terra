@@ -41,6 +41,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Trust proxy for secure cookies behind Replit's reverse proxy
+  app.set("trust proxy", 1);
+  
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "cigna-group-secret-key-2024",
@@ -51,6 +54,7 @@ export async function registerRoutes(
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       },
     })
   );
