@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyDisplay } from "@/components/money-display";
 import { 
   ArrowLeft, Users, ArrowDownToLine, ArrowUpFromLine, ShoppingBag, 
-  Settings, CreditCard, TrendingUp, UserCheck, ChevronRight 
+  Settings, CreditCard, TrendingUp, UserCheck, ChevronRight, Gift 
 } from "lucide-react";
 
 interface DashboardStats {
@@ -40,6 +40,7 @@ export default function AdminDashboard() {
     { icon: ArrowUpFromLine, label: "Retraits en attente", path: "/admin/withdrawals", count: stats?.pendingWithdrawals, color: "text-red-500" },
     { icon: Users, label: "Gestion des utilisateurs", path: "/admin/users", color: "text-blue-500" },
     { icon: CreditCard, label: "Canaux de paiement", path: "/admin/channels", color: "text-purple-500" },
+    { icon: Gift, label: "Codes bonus", path: "/admin/bonus-codes", color: "text-teal-500" },
     { icon: Settings, label: "Paramètres", path: "/admin/settings", color: "text-gray-500" },
   ];
 

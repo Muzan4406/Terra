@@ -20,12 +20,15 @@ import HistoryPage from "@/pages/history";
 import AboutPage from "@/pages/about";
 import RulesPage from "@/pages/rules";
 import CustomerServicePage from "@/pages/customer-service";
+import ChangePasswordPage from "@/pages/change-password";
+import ExchangeCodePage from "@/pages/exchange-code";
 import AdminDashboard from "@/pages/admin/index";
 import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
 import AdminUsersPage from "@/pages/admin/users";
 import AdminChannelsPage from "@/pages/admin/channels";
 import AdminSettingsPage from "@/pages/admin/settings";
+import AdminBonusCodesPage from "@/pages/admin/bonus-codes";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -173,6 +176,16 @@ function Router() {
           <CustomerServicePage />
         </ProtectedRoute>
       </Route>
+      <Route path="/change-password">
+        <ProtectedRoute>
+          <ChangePasswordPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/exchange-code">
+        <ProtectedRoute>
+          <ExchangeCodePage />
+        </ProtectedRoute>
+      </Route>
 
       <Route path="/admin">
         <AdminRoute>
@@ -202,6 +215,11 @@ function Router() {
       <Route path="/admin/settings">
         <AdminRoute>
           <AdminSettingsPage />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/bonus-codes">
+        <AdminRoute>
+          <AdminBonusCodesPage />
         </AdminRoute>
       </Route>
 
