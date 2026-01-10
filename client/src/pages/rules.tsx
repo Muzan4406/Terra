@@ -34,7 +34,7 @@ export default function RulesPage() {
         "Frais de retrait: 15%",
         "Maximum 1 retrait par jour",
         "Heures: 8h-17h (9h-18h pour Cameroun/Bénin)",
-        "Dépôt et produit VIP requis pour débloquer les retraits",
+        "Produit VIP requis pour débloquer les retraits",
       ],
     },
     {

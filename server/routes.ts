@@ -346,10 +346,6 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Ressource non trouvée" });
       }
 
-      if (!user.hasDeposited) {
-        return res.status(400).json({ message: "Vous devez effectuer un dépôt d'abord" });
-      }
-
       if (!user.hasProduct) {
         return res.status(400).json({ message: "Vous devez acheter un produit VIP d'abord" });
       }
