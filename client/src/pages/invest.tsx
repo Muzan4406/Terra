@@ -153,7 +153,7 @@ export default function InvestPage() {
                       </span>
                       <button
                         className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                        disabled={user.balance < product.price || purchaseMutation.isPending}
+                        disabled={purchaseMutation.isPending}
                         onClick={() => purchaseMutation.mutate(product.id)}
                         data-testid={`button-buy-${product.level}`}
                       >
