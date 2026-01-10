@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   ChevronRight, Globe, Copy, Info, 
   Headphones, RefreshCw, Lock, Shield, LogOut,
-  ArrowRight
+  ArrowRight, Package
 } from "lucide-react";
 import bannerImage from "@assets/smilingdoctor-globalhealth-blog-1200x673_1768031545518.webp";
 import bankImage from "@assets/images_(30)_1768037288811.jpeg";
@@ -62,6 +62,14 @@ export default function AccountPage() {
   };
 
   const menuItems = [
+    { 
+      icon: Package, 
+      label: "Mes produits VIP", 
+      iconBg: "bg-purple-100",
+      iconColor: "text-purple-500",
+      action: () => navigate("/my-products"),
+      testId: "menu-products" 
+    },
     { 
       icon: Info, 
       label: "À propos de nous", 

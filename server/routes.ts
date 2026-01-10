@@ -159,6 +159,11 @@ export async function registerRoutes(
     res.json(products);
   });
 
+  app.get("/api/user/products", requireAuth, async (req, res) => {
+    const userProducts = await storage.getUserProducts(req.session.userId!);
+    res.json(userProducts);
+  });
+
   app.post("/api/products/purchase", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;

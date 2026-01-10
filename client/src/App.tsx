@@ -22,6 +22,7 @@ import RulesPage from "@/pages/rules";
 import CustomerServicePage from "@/pages/customer-service";
 import ChangePasswordPage from "@/pages/change-password";
 import ExchangeCodePage from "@/pages/exchange-code";
+import MyProductsPage from "@/pages/my-products";
 import AdminDashboard from "@/pages/admin/index";
 import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
@@ -184,6 +185,11 @@ function Router() {
       <Route path="/exchange-code">
         <ProtectedRoute>
           <ExchangeCodePage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/my-products">
+        <ProtectedRoute>
+          <MyProductsPage />
         </ProtectedRoute>
       </Route>
 
