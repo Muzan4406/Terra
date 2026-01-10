@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ArrowLeft, Gift, CheckCircle, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,24 +12,34 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BottomNav } from "@/components/bottom-nav";
+import giftImage from "@assets/IMG-20260110-WA0008_1768060572054.jpg";
 
 const exchangeCodeSchema = z.object({
-  code: z.string().min(1, "Code requis"),
+  code: z.string().min(1, "Veuillez saisir le code cadeau"),
 });
 
 type ExchangeCodeForm = z.infer<typeof exchangeCodeSchema>;
+
+interface PlatformSettings {
+  customerService: string;
+  officialChannel: string;
+  discussionGroup: string;
+}
 
 export default function ExchangeCodePage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
+
+  const { data: settings } = useQuery<PlatformSettings>({
+    queryKey: ["/api/settings/public"],
+  });
 
   const form = useForm<ExchangeCodeForm>({
     resolver: zodResolver(exchangeCodeSchema),
@@ -71,113 +81,95 @@ export default function ExchangeCodePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-500 to-teal-700 pb-20">
-      <div className="max-w-md mx-auto">
-        <div className="flex items-center gap-3 p-4 text-white">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-4 p-4 border-b bg-white">
           <button 
             onClick={() => navigate("/account")}
-            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
             data-testid="button-back"
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ChevronLeft className="w-7 h-7 text-gray-800" />
           </button>
-          <h1 className="text-xl font-semibold">Échange de code bonus</h1>
+          <h1 className="text-xl font-bold text-gray-900">Échanger cadeau</h1>
         </div>
 
-        <div className="bg-white rounded-t-3xl min-h-[calc(100vh-140px)] p-6">
-          <div className="flex justify-center mb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg relative">
-              <Gift className="w-12 h-12 text-white" />
-              <div className="absolute -top-1 -right-1 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-md">
-                <Sparkles className="w-4 h-4 text-yellow-800" />
-              </div>
-            </div>
-          </div>
+        {/* Hero Image */}
+        <div className="w-full aspect-[4/3] bg-gray-200 overflow-hidden">
+          <img 
+            src={giftImage} 
+            alt="Gift" 
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-          <h2 className="text-center text-xl font-bold text-gray-800 mb-2">
-            Entrez votre code bonus
-          </h2>
-          <p className="text-center text-gray-600 mb-8">
-            Saisissez un code valide pour recevoir votre bonus directement sur votre solde.
-          </p>
+        {/* Form Container */}
+        <div className="flex-1 px-4 -mt-10 relative z-10 pb-6">
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+              Vous pouvez obtenir le code cadeau depuis le groupe telegram
+            </p>
 
-          {successAmount && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-white" />
+            <a
+              href={settings?.officialChannel || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-8 group active:bg-gray-100 transition-colors"
+              data-testid="link-telegram-group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#24A1DE] rounded-full flex items-center justify-center shadow-md">
+                  <Send className="w-6 h-6 text-white -ml-0.5 mt-0.5 transform rotate-[-30deg]" />
                 </div>
-                <div>
-                  <p className="text-green-700 font-semibold">Bonus reçu!</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    +{successAmount.toLocaleString("fr-FR")} FCFA
-                  </p>
-                </div>
+                <span className="text-gray-900 font-bold text-lg">Groupe officiel Telegram</span>
               </div>
-            </div>
-          )}
+              <ChevronRight className="w-6 h-6 text-gray-300 group-hover:text-gray-400" />
+            </a>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-700 font-medium">Code bonus</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Ex: BONUS2024"
-                        className="h-14 text-center text-lg font-mono uppercase tracking-widest border-gray-300 rounded-xl focus:border-teal-500 focus:ring-teal-500"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                        data-testid="input-bonus-code"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <FormField
+                    control={form.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <label className="text-gray-900 font-bold text-lg flex items-center gap-1">
+                          <span className="text-red-500">*</span> Code cadeau
+                        </label>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              placeholder="Veuillez saisir le code cadeau"
+                              className="h-12 bg-transparent border-0 border-b-2 border-gray-100 rounded-none px-0 text-lg placeholder:text-gray-300 focus-visible:ring-0 focus-visible:border-blue-500 transition-all"
+                              {...field}
+                              data-testid="input-bonus-code"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <Button
-                type="submit"
-                className="w-full h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg"
-                disabled={mutation.isPending}
-                data-testid="button-exchange-code"
-              >
-                {mutation.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Vérification...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Gift className="w-5 h-5" />
-                    Échanger le code
-                  </span>
-                )}
-              </Button>
-            </form>
-          </Form>
+                  {successAmount && (
+                    <div className="p-3 bg-green-50 text-green-700 rounded-lg text-center font-bold animate-in fade-in zoom-in">
+                      Bonus reçu : +{successAmount.toLocaleString("fr-FR")} FCFA
+                    </div>
+                  )}
 
-          <div className="mt-8 space-y-4">
-            <div className="p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-100">
-              <h3 className="text-sm font-semibold text-teal-800 mb-2">Comment obtenir des codes bonus ?</h3>
-              <ul className="text-xs text-teal-700 space-y-1">
-                <li>Suivez nos réseaux sociaux</li>
-                <li>Participez à nos événements spéciaux</li>
-                <li>Invitez des amis sur la plateforme</li>
-                <li>Abonnez-vous à notre newsletter</li>
-              </ul>
-            </div>
-
-            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-              <h3 className="text-sm font-semibold text-amber-800 mb-1">Note importante</h3>
-              <p className="text-xs text-amber-700">
-                Chaque code ne peut être utilisé qu'une seule fois par utilisateur. 
-                Les codes peuvent avoir une date d'expiration et un nombre d'utilisations limité.
-              </p>
+                  <Button
+                    type="submit"
+                    className="w-full h-14 bg-[#0088FF] hover:bg-[#0077EE] active:bg-[#0066DD] text-white text-xl font-bold rounded-full shadow-lg transition-all"
+                    disabled={mutation.isPending}
+                    data-testid="button-exchange-code"
+                  >
+                    {mutation.isPending ? "Vérification..." : "Confirmer"}
+                  </Button>
+                </form>
+              </Form>
             </div>
           </div>
         </div>
