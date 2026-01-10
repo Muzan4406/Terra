@@ -5,6 +5,7 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import { 
   registerSchema, loginSchema, depositSchema, withdrawalSchema, walletSchema,
+  changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
   ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK, REFERRAL_LEVELS
 } from "@shared/schema";
 import { z } from "zod";
@@ -787,6 +788,149 @@ export async function registerRoutes(
     if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel);
     if (discussionGroup !== undefined) await storage.setSetting("discussionGroup", discussionGroup);
     res.json({ success: true });
+  });
+
+  app.post("/api/auth/change-password", requireAuth, async (req, res) => {
+    try {
+      const data = changePasswordSchema.parse(req.body);
+      const user = await storage.getUser(req.session.userId!);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      const isValid = await bcrypt.compare(data.currentPassword, user.password);
+      if (!isValid) {
+        return res.status(400).json({ message: "Mot de passe actuel incorrect" });
+      }
+
+      await storage.updateUser(user.id, { password: data.newPassword });
+      
+      res.json({ success: true, message: "Mot de passe modifié avec succès" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/bonus-codes/exchange", requireAuth, async (req, res) => {
+    try {
+      const data = exchangeCodeSchema.parse(req.body);
+      const user = await storage.getUser(req.session.userId!);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      const bonusCode = await storage.getBonusCodeByCode(data.code.toUpperCase());
+      if (!bonusCode) {
+        return res.status(404).json({ message: "Code invalide ou inexistant" });
+      }
+
+      if (!bonusCode.isActive) {
+        return res.status(400).json({ message: "Ce code n'est plus actif" });
+      }
+
+      if (new Date(bonusCode.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Ce code a expiré" });
+      }
+
+      if (bonusCode.currentUses >= bonusCode.maxUses) {
+        return res.status(400).json({ message: "Ce code a atteint sa limite d'utilisation" });
+      }
+
+      const existingUsage = await storage.getBonusCodeUsage(bonusCode.id, user.id);
+      if (existingUsage) {
+        return res.status(400).json({ message: "Vous avez déjà utilisé ce code" });
+      }
+
+      await storage.createBonusCodeUsage({
+        bonusCodeId: bonusCode.id,
+        userId: user.id,
+      });
+
+      await storage.updateBonusCode(bonusCode.id, {
+        currentUses: bonusCode.currentUses + 1,
+      });
+
+      await storage.updateUser(user.id, {
+        balance: user.balance + bonusCode.amount,
+      });
+
+      await storage.createEarning({
+        userId: user.id,
+        amount: bonusCode.amount,
+        type: "bonus",
+        description: `Code bonus: ${bonusCode.code}`,
+        sourceId: bonusCode.id,
+      });
+
+      res.json({ 
+        success: true, 
+        amount: bonusCode.amount,
+        message: `Bonus de ${bonusCode.amount} FCFA ajouté à votre solde!` 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Exchange bonus code error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/admin/bonus-codes", requireAdmin, async (req, res) => {
+    const codes = await storage.getBonusCodes();
+    res.json(codes);
+  });
+
+  app.post("/api/admin/bonus-codes", requireAdmin, async (req, res) => {
+    try {
+      const data = bonusCodeSchema.parse(req.body);
+      
+      const existing = await storage.getBonusCodeByCode(data.code.toUpperCase());
+      if (existing) {
+        return res.status(400).json({ message: "Ce code existe déjà" });
+      }
+
+      const code = await storage.createBonusCode({
+        code: data.code.toUpperCase(),
+        amount: data.amount,
+        maxUses: data.maxUses,
+        expiresAt: new Date(data.expiresAt),
+        isActive: true,
+        createdBy: req.session.userId!,
+      });
+
+      res.json(code);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Create bonus code error:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.patch("/api/admin/bonus-codes/:id", requireAdmin, async (req, res) => {
+    const code = await storage.updateBonusCode(req.params.id, req.body);
+    if (!code) {
+      return res.status(404).json({ message: "Code non trouvé" });
+    }
+    res.json(code);
+  });
+
+  app.delete("/api/admin/bonus-codes/:id", requireAdmin, async (req, res) => {
+    await storage.deleteBonusCode(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/bonus-codes/:id/usages", requireAdmin, async (req, res) => {
+    const usages = await storage.getBonusCodeUsages(req.params.id);
+    res.json(usages);
   });
 
   setInterval(async () => {
