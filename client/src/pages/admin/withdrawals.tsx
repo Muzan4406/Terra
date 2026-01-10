@@ -27,7 +27,7 @@ export default function AdminWithdrawalsPage() {
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
   const { data: withdrawals, isLoading } = useQuery<WithdrawalWithDetails[]>({
-    queryKey: ["/api/admin/withdrawals", filter],
+    queryKey: [`/api/admin/withdrawals?filter=${filter}`],
   });
 
   const actionMutation = useMutation({
@@ -43,7 +43,7 @@ export default function AdminWithdrawalsPage() {
       toast({ 
         title: variables.action === "approve" ? "Retrait approuvé" : "Retrait rejeté"
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawals"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0]?.toString().startsWith('/api/admin/withdrawals') || false });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
     },
     onError: (error: Error) => {

@@ -26,7 +26,7 @@ export default function AdminDepositsPage() {
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
   const { data: deposits, isLoading } = useQuery<DepositWithUser[]>({
-    queryKey: ["/api/admin/deposits", filter],
+    queryKey: [`/api/admin/deposits?filter=${filter}`],
   });
 
   const actionMutation = useMutation({
@@ -43,7 +43,7 @@ export default function AdminDepositsPage() {
         title: variables.action === "approve" ? "Dépôt approuvé" : "Dépôt rejeté",
         description: variables.ban ? "L'utilisateur a été banni" : undefined
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/deposits"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0]?.toString().startsWith('/api/admin/deposits') || false });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
     },
     onError: (error: Error) => {

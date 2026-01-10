@@ -53,7 +53,7 @@ export default function TeamPage() {
   const totalInvestment = (stats?.level1Investment || 0) + (stats?.level2Investment || 0) + (stats?.level3Investment || 0);
   const totalCommissions = stats?.totalCommissions || 0;
 
-  const level1Commission = Math.floor((stats?.level1Investment || 0) * 0.27);
+  const level1Commission = Math.floor((stats?.level1Investment || 0) * 0.25);
   const level2Commission = Math.floor((stats?.level2Investment || 0) * 0.02);
   const level3Commission = Math.floor((stats?.level3Investment || 0) * 0.01);
 
@@ -61,7 +61,7 @@ export default function TeamPage() {
     {
       level: 1,
       label: "LV1",
-      commissionRate: "27%",
+      commissionRate: "25%",
       teamSize: stats?.level1Count || 0,
       commissionEarned: level1Commission,
       medalColor: "bg-yellow-400",
