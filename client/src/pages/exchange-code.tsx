@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BottomNav } from "@/components/bottom-nav";
-import giftImage from "@assets/IMG-20260110-WA0008_1768060572054.jpg";
+import giftImage from "@assets/images_(32)_1768061232877.jpeg";
 
 const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Veuillez saisir le code cadeau"),
