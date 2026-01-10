@@ -87,8 +87,8 @@ export default function InvestPage() {
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-md mx-auto">
         <header className="py-6 px-4 bg-white">
-          <h1 className="text-xl font-bold text-center text-gray-800">
-            Liste des Appareils d'Investissement
+          <h1 className="text-base font-bold text-center text-gray-800">
+            Liste des Machines Cigna Group
           </h1>
         </header>
 
