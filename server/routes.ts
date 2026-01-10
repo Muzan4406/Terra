@@ -185,12 +185,14 @@ export async function registerRoutes(
         assignedByAdmin: false,
       });
 
+      const isFirstInvestment = !user.hasProduct;
+
       await storage.updateUser(user.id, {
         balance: user.balance - product.price,
         hasProduct: true,
       });
 
-      if (user.referrerId) {
+      if (user.referrerId && isFirstInvestment) {
         const referrer = await storage.getUser(user.referrerId);
         if (referrer) {
           const commission1 = Math.floor(product.price * REFERRAL_LEVELS[0].percentage / 100);
@@ -204,7 +206,7 @@ export async function registerRoutes(
             userId: referrer.id,
             amount: commission1,
             type: "referral",
-            description: `Commission niveau 1 (${user.fullName})`,
+            description: `Commission niveau 1 - Premier investissement de ${user.fullName}`,
             sourceId: user.id,
           });
 

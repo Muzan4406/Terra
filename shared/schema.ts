@@ -29,7 +29,7 @@ export const VIP_PRODUCTS = [
 ] as const;
 
 export const REFERRAL_LEVELS = [
-  { level: 1, percentage: 25 },
+  { level: 1, percentage: 27 },
   { level: 2, percentage: 2 },
   { level: 3, percentage: 1 },
 ] as const;
