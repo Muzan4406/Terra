@@ -137,18 +137,22 @@ export default function InvestPage() {
                     Détail &gt;&gt;
                   </span>
                   
-                  <div className="flex items-center gap-2">
-                    <span className="border border-gray-300 rounded-full px-4 py-1.5 text-sm text-gray-700">
-                      {formatNumber(product.price)} F CFA
-                    </span>
-                    
-                    {product.owned ? (
-                      <span className="bg-green-500 text-white text-sm px-5 py-1.5 rounded-md font-medium">
+                  {product.owned ? (
+                    <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
+                      <span className="px-4 py-2 text-sm text-gray-700 bg-white">
+                        {formatNumber(product.price)} F CFA
+                      </span>
+                      <span className="bg-green-500 text-white text-sm px-5 py-2 font-medium">
                         Actif
                       </span>
-                    ) : (
+                    </div>
+                  ) : (
+                    <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
+                      <span className="px-4 py-2 text-sm text-gray-700 bg-white">
+                        {formatNumber(product.price)} F CFA
+                      </span>
                       <button
-                        className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-5 py-1.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         disabled={user.balance < product.price || purchaseMutation.isPending}
                         onClick={() => purchaseMutation.mutate(product.id)}
                         data-testid={`button-buy-${product.level}`}
@@ -159,8 +163,8 @@ export default function InvestPage() {
                           "investir"
                         )}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
