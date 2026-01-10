@@ -139,7 +139,7 @@ export default function InvestPage() {
                   
                   {product.owned ? (
                     <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
-                      <span className="px-4 py-2 text-sm text-gray-700 bg-white">
+                      <span className="px-4 py-2 text-sm text-gray-700 bg-white font-bold">
                         {formatNumber(product.price)} F CFA
                       </span>
                       <span className="bg-green-500 text-white text-sm px-5 py-2 font-medium">
@@ -148,7 +148,7 @@ export default function InvestPage() {
                     </div>
                   ) : (
                     <div className="flex items-center overflow-hidden rounded-full border border-gray-300">
-                      <span className="px-4 py-2 text-sm text-gray-700 bg-white">
+                      <span className="px-4 py-2 text-sm text-gray-700 bg-white font-bold">
                         {formatNumber(product.price)} F CFA
                       </span>
                       <button
