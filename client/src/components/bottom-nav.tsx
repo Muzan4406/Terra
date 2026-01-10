@@ -18,15 +18,15 @@ export function BottomNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50 safe-area-inset-bottom">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50 pb-6">
+      <div className="flex justify-around items-center h-20 max-w-md mx-auto pt-2">
         {navItems.map((item) => {
           const isActive = location === item.path;
           return (
             <Link key={item.path} href={item.path}>
               <button
                 data-testid={`nav-${item.label.toLowerCase()}`}
-                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
+                className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2 rounded-md transition-colors ${
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -35,9 +35,9 @@ export function BottomNav() {
                 <img 
                   src={item.icon} 
                   alt={item.label} 
-                  className={`w-7 h-7 object-contain ${isActive ? "opacity-100" : "opacity-70"}`}
+                  className={`w-9 h-9 object-contain ${isActive ? "opacity-100" : "opacity-70"}`}
                 />
-                <span className={`text-xs font-medium ${isActive ? "text-primary" : ""}`}>{item.label}</span>
+                <span className={`text-xs font-bold ${isActive ? "text-primary" : ""}`}>{item.label}</span>
               </button>
             </Link>
           );
