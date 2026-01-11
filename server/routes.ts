@@ -375,8 +375,8 @@ export async function registerRoutes(
       }
 
       const todayWithdrawals = await storage.getUserTodayWithdrawals(user.id);
-      if (todayWithdrawals.length > 0) {
-        return res.status(400).json({ message: "Vous avez déjà effectué un retrait aujourd'hui" });
+      if (todayWithdrawals.length >= 3) {
+        return res.status(400).json({ message: "Vous avez atteint la limite de 3 retraits par jour" });
       }
 
       if (user.balance < data.amount) {

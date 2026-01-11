@@ -222,7 +222,7 @@ export default function WithdrawPage() {
             <h3 className="text-blue-600 font-bold mb-3">Instructions de retrait</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <p>1. Le montant minimum de retrait est de 1 200 FCFA.</p>
-              <p>2. Les heures de retrait sont de {withdrawalHours.start}h à {withdrawalHours.end}h, avec une limite d'un retrait par jour.</p>
+              <p>2. Les heures de retrait sont de {withdrawalHours.start}h à {withdrawalHours.end}h, avec une limite de 3 retraits par jour.</p>
               <p>3. 15% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
               <p>4. Les retraits seront disponibles sous 2 heures, et exceptionnellement sous 24 heures.</p>
             </div>
