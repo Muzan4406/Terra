@@ -14,7 +14,7 @@ export default function DepositPage() {
   const { user, refetchUser } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [amount, setAmount] = useState<string>("3000");
+  const [amount, setAmount] = useState<string>("");
   const [accountName, setAccountName] = useState<string>(user?.fullName || "");
   const [accountNumber, setAccountNumber] = useState<string>("");
   const [country, setCountry] = useState<string>(user?.country || "");
