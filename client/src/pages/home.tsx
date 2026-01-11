@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
+import { TelegramPopup } from "@/components/telegram-popup";
 import { 
   CreditCard, 
   Banknote, 
@@ -12,7 +13,7 @@ import {
   Bell
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import goldImage1 from "@assets/images_(30)_1768037288811.jpeg";
 import goldImage2 from "@assets/images_(31)_1768037288700.jpeg";
 import goldImage3 from "@assets/images_(32)_1768037288765.jpeg";
@@ -30,10 +31,17 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tickerOffset, setTickerOffset] = useState(0);
+  const [showTelegramPopup, setShowTelegramPopup] = useState(true);
 
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
   });
+
+  const handleCloseTelegramPopup = useCallback(() => {
+    setShowTelegramPopup(false);
+  }, []);
+
+  const telegramLink = settings?.officialChannel || "https://t.me/+OVhsmITUUu03ZThk";
 
   const carouselImages = [goldImage1, goldImage2, goldImage3, goldImage4];
 
@@ -257,6 +265,12 @@ export default function HomePage() {
       </div>
 
       <BottomNav />
+
+      <TelegramPopup 
+        isOpen={showTelegramPopup} 
+        onClose={handleCloseTelegramPopup}
+        telegramLink={telegramLink}
+      />
 
       <style>{`
         @keyframes marquee {
