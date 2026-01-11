@@ -41,7 +41,7 @@ export default function HomePage() {
     setShowTelegramPopup(false);
   }, []);
 
-  const telegramLink = settings?.officialChannel || "https://t.me/+OVhsmITUUu03ZThk";
+  const telegramLink = "https://t.me/+OVhsmITUUu03ZThk";
 
   const carouselImages = [goldImage1, goldImage2, goldImage3, goldImage4];
 
