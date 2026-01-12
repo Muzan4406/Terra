@@ -62,6 +62,7 @@ export interface IStorage {
   getWithdrawal(id: string): Promise<Withdrawal | undefined>;
   getUserWithdrawals(userId: string): Promise<Withdrawal[]>;
   getUserTodayWithdrawals(userId: string): Promise<Withdrawal[]>;
+  getUserWithdrawalCount(userId: string): Promise<number>;
   createWithdrawal(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<Withdrawal>;
   updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<Withdrawal | undefined>;
   
@@ -423,6 +424,15 @@ export class DatabaseStorage implements IStorage {
         gte(withdrawals.createdAt, today)
       )
     );
+  }
+
+  async getUserWithdrawalCount(userId: string): Promise<number> {
+    const result = await db.select({
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(withdrawals)
+    .where(eq(withdrawals.userId, userId));
+    return Number(result[0]?.count || 0);
   }
 
   async createWithdrawal(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<Withdrawal> {

@@ -722,13 +722,22 @@ export async function registerRoutes(
     const users = await storage.getAllUsers(filter === "all" ? undefined : filter);
     
     const usersWithDetails = await Promise.all(users.map(async u => {
-      const referrals = await storage.getUserReferrals(u.id, 1);
-      const products = await storage.getUserProducts(u.id);
+      const [referrals, products, totalInvestment, withdrawalCount, referrer] = await Promise.all([
+        storage.getUserReferrals(u.id, 1),
+        storage.getUserProducts(u.id),
+        storage.getUserTotalInvestment(u.id),
+        storage.getUserWithdrawalCount(u.id),
+        u.referrerId ? storage.getUser(u.referrerId) : Promise.resolve(null),
+      ]);
       return {
         ...u,
         password: undefined,
         referralCount: referrals.length,
         productCount: products.length,
+        totalInvestment,
+        withdrawalCount,
+        referrerName: referrer?.fullName || null,
+        referrerPhone: referrer?.phone || null,
       };
     }));
 

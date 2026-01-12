@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   ArrowLeft, Search, Edit, Ban, Users, ShoppingBag, Lock, 
-  Unlock, Award, Key, Wallet, Loader2, ChevronRight, Trash2, Crown
+  Unlock, Award, Key, Wallet, Loader2, ChevronRight, Trash2, Crown,
+  TrendingUp, ArrowDownCircle, UserCheck, CreditCard
 } from "lucide-react";
 import type { User, Product } from "@shared/schema";
 
@@ -37,6 +38,10 @@ interface UserProductItem {
 interface UserWithDetails extends User {
   referralCount: number;
   productCount: number;
+  totalInvestment: number;
+  withdrawalCount: number;
+  referrerName: string | null;
+  referrerPhone: string | null;
 }
 
 export default function AdminUsersPage() {
@@ -222,11 +227,25 @@ export default function AdminUsersPage() {
                         <p className="text-sm text-muted-foreground">
                           {getCountryFlag(u.country)} {u.phone}
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
                             <Wallet className="h-3 w-3" />
                             <MoneyDisplay amount={u.balance} />
                           </span>
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3 text-green-600" />
+                            Invest: <MoneyDisplay amount={u.totalInvestment} />
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <CreditCard className="h-3 w-3 text-blue-600" />
+                            Dépôts: <MoneyDisplay amount={u.totalDeposits} />
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <ArrowDownCircle className="h-3 w-3 text-orange-600" />
+                            {u.withdrawalCount} retraits
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
                             {u.referralCount} filleuls
@@ -235,6 +254,12 @@ export default function AdminUsersPage() {
                             <ShoppingBag className="h-3 w-3" />
                             {u.productCount} produits
                           </span>
+                          {u.referrerName && (
+                            <span className="flex items-center gap-1">
+                              <UserCheck className="h-3 w-3 text-purple-600" />
+                              Parrain: {u.referrerName} ({u.referrerPhone})
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           Code: {u.referralCode} | Inscrit: {formatDate(u.createdAt)}
