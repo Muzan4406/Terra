@@ -86,6 +86,8 @@ export interface IStorage {
     todayWithdrawals: number;
     totalDepositsAmount: number;
     totalWithdrawalsAmount: number;
+    totalWithdrawalsCount: number;
+    todayWithdrawalsAmount: number;
     usersWithProducts: number;
     pendingDeposits: number;
     pendingWithdrawals: number;
@@ -510,6 +512,8 @@ export class DatabaseStorage implements IStorage {
     todayWithdrawals: number;
     totalDepositsAmount: number;
     totalWithdrawalsAmount: number;
+    totalWithdrawalsCount: number;
+    todayWithdrawalsAmount: number;
     usersWithProducts: number;
     pendingDeposits: number;
     pendingWithdrawals: number;
@@ -527,6 +531,15 @@ export class DatabaseStorage implements IStorage {
     
     const approvedWithdrawals = await db.select().from(withdrawals).where(eq(withdrawals.status, "approved"));
     const totalWithdrawalsAmount = approvedWithdrawals.reduce((sum, w) => sum + w.netAmount, 0);
+    const totalWithdrawalsCount = approvedWithdrawals.length;
+    
+    const todayApprovedWithdrawals = await db.select().from(withdrawals).where(
+      and(
+        eq(withdrawals.status, "approved"),
+        gte(withdrawals.createdAt, today)
+      )
+    );
+    const todayWithdrawalsAmount = todayApprovedWithdrawals.reduce((sum, w) => sum + w.netAmount, 0);
     
     const [usersWithProdsResult] = await db.select({ count: count() }).from(users).where(eq(users.hasProduct, true));
     const [pendingDepsResult] = await db.select({ count: count() }).from(deposits).where(eq(deposits.status, "pending"));
@@ -539,6 +552,8 @@ export class DatabaseStorage implements IStorage {
       todayWithdrawals: todayWithsResult.count,
       totalDepositsAmount,
       totalWithdrawalsAmount,
+      totalWithdrawalsCount,
+      todayWithdrawalsAmount,
       usersWithProducts: usersWithProdsResult.count,
       pendingDeposits: pendingDepsResult.count,
       pendingWithdrawals: pendingWithsResult.count,

@@ -17,6 +17,8 @@ interface DashboardStats {
   todayWithdrawals: number;
   totalDepositsAmount: number;
   totalWithdrawalsAmount: number;
+  totalWithdrawalsCount: number;
+  todayWithdrawalsAmount: number;
   usersWithProducts: number;
   pendingDeposits: number;
   pendingWithdrawals: number;
@@ -120,6 +122,30 @@ export default function AdminDashboard() {
               </>
             )}
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Statistiques des retraits</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col items-center p-3 bg-red-500/10 rounded-lg text-center">
+                <p className="text-xl font-bold">{stats?.totalWithdrawalsCount || 0}</p>
+                <p className="text-xs text-muted-foreground">Nombre total</p>
+              </div>
+              <div className="flex flex-col items-center p-3 bg-orange-500/10 rounded-lg text-center">
+                <p className="text-lg font-bold">
+                  <MoneyDisplay amount={stats?.totalWithdrawalsAmount || 0} showCurrency={false} />
+                </p>
+                <p className="text-xs text-muted-foreground">Montant total</p>
+              </div>
+              <div className="flex flex-col items-center p-3 bg-yellow-500/10 rounded-lg text-center">
+                <p className="text-lg font-bold">
+                  <MoneyDisplay amount={stats?.todayWithdrawalsAmount || 0} showCurrency={false} />
+                </p>
+                <p className="text-xs text-muted-foreground">Aujourd'hui</p>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
