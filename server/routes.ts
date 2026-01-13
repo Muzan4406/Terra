@@ -367,7 +367,7 @@ export async function registerRoutes(
       }
 
       const country = ELIGIBLE_COUNTRIES.find(c => c.code === user.country);
-      const hours = country?.withdrawalHours || { start: 8, end: 17 };
+      const hours = country?.withdrawalHours || { start: 10, end: 17 };
       const currentHour = new Date().getHours();
       
       if (currentHour < hours.start || currentHour >= hours.end) {

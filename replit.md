@@ -23,8 +23,8 @@ Cigna Group is a comprehensive investment platform designed for 5 French-speakin
 - **Minimum Deposit**: 3,000 FCFA
 - **Minimum Withdrawal**: 1,200 FCFA
 - **Withdrawal Fee**: 15%
-- **Withdrawal Limit**: 1 per day
-- **Withdrawal Hours**: 8h-17h (9h-18h for Cameroon/Benin)
+- **Withdrawal Limit**: 3 per day
+- **Withdrawal Hours**: 10h-17h
 - **Withdrawal Requirements**: User must have made a deposit AND purchased a VIP product
 
 ## VIP Products

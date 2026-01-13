@@ -32,8 +32,8 @@ export default function RulesPage() {
       items: [
         "Retrait minimum: 1 200 FCFA",
         "Frais de retrait: 15%",
-        "Maximum 1 retrait par jour",
-        "Heures: 8h-17h (9h-18h pour Cameroun/Bénin)",
+        "Maximum 3 retraits par jour",
+        "Heures: 10h-17h",
         "Produit VIP requis pour débloquer les retraits",
       ],
     },

@@ -4,11 +4,11 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const ELIGIBLE_COUNTRIES = [
-  { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", withdrawalHours: { start: 9, end: 18 } },
-  { code: "BF", name: "Burkina Faso", flag: "BF", dialCode: "226", withdrawalHours: { start: 8, end: 17 } },
-  { code: "TG", name: "Togo", flag: "TG", dialCode: "228", withdrawalHours: { start: 8, end: 17 } },
-  { code: "BJ", name: "Bénin", flag: "BJ", dialCode: "229", withdrawalHours: { start: 9, end: 18 } },
-  { code: "CI", name: "Côte d'Ivoire", flag: "CI", dialCode: "225", withdrawalHours: { start: 8, end: 17 } },
+  { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", withdrawalHours: { start: 10, end: 17 } },
+  { code: "BF", name: "Burkina Faso", flag: "BF", dialCode: "226", withdrawalHours: { start: 10, end: 17 } },
+  { code: "TG", name: "Togo", flag: "TG", dialCode: "228", withdrawalHours: { start: 10, end: 17 } },
+  { code: "BJ", name: "Bénin", flag: "BJ", dialCode: "229", withdrawalHours: { start: 10, end: 17 } },
+  { code: "CI", name: "Côte d'Ivoire", flag: "CI", dialCode: "225", withdrawalHours: { start: 10, end: 17 } },
 ] as const;
 
 export const PAYMENT_METHODS_BY_COUNTRY: Record<string, string[]> = {

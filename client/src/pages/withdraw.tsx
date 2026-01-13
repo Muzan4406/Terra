@@ -85,7 +85,7 @@ export default function WithdrawPage() {
   if (!user) return null;
 
   const country = ELIGIBLE_COUNTRIES.find((c) => c.code === user.country);
-  const withdrawalHours = country?.withdrawalHours || { start: 8, end: 17 };
+  const withdrawalHours = country?.withdrawalHours || { start: 10, end: 17 };
   const currentHour = new Date().getHours();
   const isWithinHours = currentHour >= withdrawalHours.start && currentHour < withdrawalHours.end;
   const canWithdraw = user.hasProduct && !user.withdrawalBlocked && isWithinHours;
