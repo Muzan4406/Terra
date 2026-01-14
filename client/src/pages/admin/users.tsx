@@ -49,7 +49,7 @@ export default function AdminUsersPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"all" | "banned" | "blocked" | "promoter">("all");
+  const [filter, setFilter] = useState<"all" | "banned" | "blocked" | "promoter" | "admin">("all");
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [editBalance, setEditBalance] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="flex gap-1 flex-wrap">
-              {(["all", "banned", "blocked", "promoter"] as const).map((f) => (
+              {(["all", "banned", "blocked", "promoter", "admin"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={filter === f ? "default" : "outline"}
@@ -194,6 +194,7 @@ export default function AdminUsersPage() {
                   {f === "banned" && "Bannis"}
                   {f === "blocked" && "Retrait bloqué"}
                   {f === "promoter" && "Promoteurs"}
+                  {f === "admin" && "Admins"}
                 </Button>
               ))}
             </div>
