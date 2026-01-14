@@ -155,7 +155,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(filter?: string): Promise<User[]> {
-    let query = db.select().from(users);
     if (filter === "banned") {
       return db.select().from(users).where(eq(users.isBanned, true));
     }
@@ -164,6 +163,9 @@ export class DatabaseStorage implements IStorage {
     }
     if (filter === "promoter") {
       return db.select().from(users).where(eq(users.isPromoter, true));
+    }
+    if (filter === "admin") {
+      return db.select().from(users).where(eq(users.isAdmin, true));
     }
     return db.select().from(users).orderBy(desc(users.createdAt));
   }
@@ -613,8 +615,11 @@ export class DatabaseStorage implements IStorage {
         password: hashedPassword,
         referralCode: "ADMIN001",
         isAdmin: true,
+        isSuperAdmin: true,
         balance: 0,
       });
+    } else if (existingAdmin.isAdmin && !existingAdmin.isSuperAdmin) {
+      await this.updateUser(existingAdmin.id, { isSuperAdmin: true });
     }
   }
 
