@@ -914,7 +914,13 @@ export async function registerRoutes(
   });
   
   app.get("/api/admin/payment-channels/:id/history", requireAdmin, async (req, res) => {
-    const history = await storage.getPaymentChannelAuditHistory(req.params.id, 3);
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const history = await storage.getPaymentChannelAuditHistory(req.params.id, limit);
+    res.json(history);
+  });
+
+  app.get("/api/admin/payment-channels-audit/all", requireAdmin, async (req, res) => {
+    const history = await storage.getAllPaymentChannelAuditHistory();
     res.json(history);
   });
 

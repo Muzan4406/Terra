@@ -36,6 +36,7 @@ interface ChannelAuditEntry {
   newData: any;
   changedAt: string;
   changedBy: { fullName: string; phone: string };
+  channel?: { name: string; redirectUrl: string | null };
 }
 
 export default function AdminChannelsPage() {
@@ -59,6 +60,10 @@ export default function AdminChannelsPage() {
       return res.json();
     },
     enabled: !!viewingHistoryId,
+  });
+
+  const { data: allAuditHistory } = useQuery<ChannelAuditEntry[]>({
+    queryKey: ["/api/admin/payment-channels-audit/all"],
   });
 
   const formatDateTime = (date: string | Date) => {
@@ -367,7 +372,7 @@ export default function AdminChannelsPage() {
                       <div className="mt-4 pt-4 border-t border-border">
                         <div className="flex items-center gap-2 mb-3">
                           <History className="h-4 w-4 text-blue-500" />
-                          <span className="font-medium text-sm">Historique des modifications (3 dernières)</span>
+                          <span className="font-medium text-sm">Historique des modifications</span>
                         </div>
                         {channelHistory && channelHistory.length > 0 ? (
                           <div className="space-y-2">
@@ -412,6 +417,99 @@ export default function AdminChannelsPage() {
               ))}
             </div>
           )}
+
+          <Card className="mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <History className="h-5 w-5 text-red-500" />
+                Historique complet des modifications (Enquête fraude)
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Toutes les modifications effectuées sur les canaux de paiement
+              </p>
+            </CardHeader>
+            <CardContent>
+              {allAuditHistory && allAuditHistory.length > 0 ? (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {allAuditHistory.map((entry) => (
+                    <div key={entry.id} className="p-4 bg-muted/50 rounded-lg border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            className={
+                              entry.action === "create" ? "bg-green-500" : 
+                              entry.action === "update" ? "bg-blue-500" : 
+                              "bg-red-500"
+                            }
+                          >
+                            {getActionLabel(entry.action)}
+                          </Badge>
+                          <span className="font-medium text-sm">
+                            {entry.channel?.name || "Canal supprimé"}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDateTime(entry.changedAt)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1 text-sm mb-2">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-medium">{entry.changedBy.fullName}</span>
+                        <span className="text-muted-foreground">({entry.changedBy.phone})</span>
+                      </div>
+
+                      {entry.action === "update" && (
+                        <div className="mt-2 p-2 bg-background rounded border text-xs space-y-1">
+                          {entry.previousData && (
+                            <div>
+                              <span className="text-red-500 font-medium">Avant: </span>
+                              {entry.previousData.redirectUrl !== undefined && (
+                                <span className="break-all">URL: {entry.previousData.redirectUrl || "(vide)"}</span>
+                              )}
+                              {entry.previousData.name && <span> | Nom: {entry.previousData.name}</span>}
+                            </div>
+                          )}
+                          {entry.newData && (
+                            <div>
+                              <span className="text-green-600 font-medium">Après: </span>
+                              {entry.newData.redirectUrl !== undefined && (
+                                <span className="break-all">URL: {entry.newData.redirectUrl || "(vide)"}</span>
+                              )}
+                              {entry.newData.name && <span> | Nom: {entry.newData.name}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {entry.action === "create" && entry.newData && (
+                        <div className="mt-2 p-2 bg-background rounded border text-xs">
+                          <span className="text-green-600 font-medium">Créé avec: </span>
+                          {entry.newData.name && <span>Nom: {entry.newData.name}</span>}
+                          {entry.newData.redirectUrl && <span className="break-all"> | URL: {entry.newData.redirectUrl}</span>}
+                        </div>
+                      )}
+
+                      {entry.action === "delete" && entry.previousData && (
+                        <div className="mt-2 p-2 bg-background rounded border text-xs">
+                          <span className="text-red-500 font-medium">Supprimé: </span>
+                          {entry.previousData.name && <span>Nom: {entry.previousData.name}</span>}
+                          {entry.previousData.redirectUrl && <span className="break-all"> | URL: {entry.previousData.redirectUrl}</span>}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Aucun historique de modification enregistré.
+                  <br />
+                  <span className="text-xs">Note: Le suivi des modifications a commencé récemment. Les modifications antérieures ne sont pas disponibles.</span>
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

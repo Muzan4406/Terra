@@ -113,6 +113,7 @@ export interface IStorage {
   
   createPaymentChannelAudit(channelId: string, changedById: string, action: string, previousData?: any, newData?: any): Promise<PaymentChannelAudit>;
   getPaymentChannelAuditHistory(channelId: string, limit?: number): Promise<(PaymentChannelAudit & { changedBy: User })[]>;
+  getAllPaymentChannelAuditHistory(): Promise<(PaymentChannelAudit & { changedBy: User; channel?: PaymentChannel })[]>;
   
   initializeDefaults(): Promise<void>;
 }
@@ -797,8 +798,8 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getPaymentChannelAuditHistory(channelId: string, limit: number = 3): Promise<(PaymentChannelAudit & { changedBy: User })[]> {
-    const result = await db.select({
+  async getPaymentChannelAuditHistory(channelId: string, limit?: number): Promise<(PaymentChannelAudit & { changedBy: User })[]> {
+    let query = db.select({
       id: paymentChannelAudit.id,
       channelId: paymentChannelAudit.channelId,
       changedById: paymentChannelAudit.changedById,
@@ -811,8 +812,30 @@ export class DatabaseStorage implements IStorage {
     .from(paymentChannelAudit)
     .innerJoin(users, eq(paymentChannelAudit.changedById, users.id))
     .where(eq(paymentChannelAudit.channelId, channelId))
-    .orderBy(desc(paymentChannelAudit.changedAt))
-    .limit(limit);
+    .orderBy(desc(paymentChannelAudit.changedAt));
+    
+    if (limit) {
+      return await query.limit(limit);
+    }
+    return await query;
+  }
+
+  async getAllPaymentChannelAuditHistory(): Promise<(PaymentChannelAudit & { changedBy: User; channel?: PaymentChannel })[]> {
+    const result = await db.select({
+      id: paymentChannelAudit.id,
+      channelId: paymentChannelAudit.channelId,
+      changedById: paymentChannelAudit.changedById,
+      action: paymentChannelAudit.action,
+      previousData: paymentChannelAudit.previousData,
+      newData: paymentChannelAudit.newData,
+      changedAt: paymentChannelAudit.changedAt,
+      changedBy: users,
+      channel: paymentChannels,
+    })
+    .from(paymentChannelAudit)
+    .innerJoin(users, eq(paymentChannelAudit.changedById, users.id))
+    .leftJoin(paymentChannels, eq(paymentChannelAudit.channelId, paymentChannels.id))
+    .orderBy(desc(paymentChannelAudit.changedAt));
     
     return result;
   }
