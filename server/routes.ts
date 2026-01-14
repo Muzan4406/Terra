@@ -813,11 +813,27 @@ export async function registerRoutes(
 
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     const updates = req.body;
-    const user = await storage.updateUser(req.params.id, updates);
-    if (!user) {
+    const targetUser = await storage.getUser(req.params.id);
+    if (!targetUser) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
+    
+    // Track admin appointment if making someone an admin
+    if (updates.isAdmin === true && !targetUser.isAdmin) {
+      await storage.createAdminAppointment(req.params.id, req.session.userId!);
+    }
+    // Track admin revocation
+    if (updates.isAdmin === false && targetUser.isAdmin) {
+      await storage.revokeAdminAppointment(req.params.id);
+    }
+    
+    const user = await storage.updateUser(req.params.id, updates);
     res.json({ ...user, password: undefined });
+  });
+  
+  app.get("/api/admin/users/:id/appointment", requireAdmin, async (req, res) => {
+    const appointment = await storage.getAdminAppointment(req.params.id);
+    res.json(appointment || null);
   });
 
   app.post("/api/admin/users/:id/products", requireAdmin, async (req, res) => {
@@ -874,20 +890,32 @@ export async function registerRoutes(
 
   app.post("/api/admin/payment-channels", requireAdmin, async (req, res) => {
     const channel = await storage.createPaymentChannel(req.body);
+    await storage.createPaymentChannelAudit(channel.id, req.session.userId!, "create", null, req.body);
     res.json(channel);
   });
 
   app.patch("/api/admin/payment-channels/:id", requireAdmin, async (req, res) => {
-    const channel = await storage.updatePaymentChannel(req.params.id, req.body);
-    if (!channel) {
+    const previousChannel = await storage.getPaymentChannel(req.params.id);
+    if (!previousChannel) {
       return res.status(404).json({ message: "Canal non trouvé" });
     }
+    const channel = await storage.updatePaymentChannel(req.params.id, req.body);
+    await storage.createPaymentChannelAudit(req.params.id, req.session.userId!, "update", previousChannel, req.body);
     res.json(channel);
   });
 
   app.delete("/api/admin/payment-channels/:id", requireAdmin, async (req, res) => {
+    const channel = await storage.getPaymentChannel(req.params.id);
+    if (channel) {
+      await storage.createPaymentChannelAudit(req.params.id, req.session.userId!, "delete", channel, null);
+    }
     await storage.deletePaymentChannel(req.params.id);
     res.json({ success: true });
+  });
+  
+  app.get("/api/admin/payment-channels/:id/history", requireAdmin, async (req, res) => {
+    const history = await storage.getPaymentChannelAuditHistory(req.params.id, 3);
+    res.json(history);
   });
 
   app.get("/api/admin/settings", requireSuperAdmin, async (req, res) => {
