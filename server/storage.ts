@@ -690,6 +690,69 @@ export class DatabaseStorage implements IStorage {
     
     return result;
   }
+
+  async createAdminAppointment(adminId: string, appointedById: string): Promise<AdminAppointment> {
+    const [created] = await db.insert(adminAppointments).values({
+      adminId,
+      appointedById,
+    }).returning();
+    return created;
+  }
+
+  async getAdminAppointment(adminId: string): Promise<(AdminAppointment & { appointedBy: User }) | undefined> {
+    const result = await db.select({
+      id: adminAppointments.id,
+      adminId: adminAppointments.adminId,
+      appointedById: adminAppointments.appointedById,
+      appointedAt: adminAppointments.appointedAt,
+      revokedAt: adminAppointments.revokedAt,
+      appointedBy: users,
+    })
+    .from(adminAppointments)
+    .innerJoin(users, eq(adminAppointments.appointedById, users.id))
+    .where(and(eq(adminAppointments.adminId, adminId), sql`${adminAppointments.revokedAt} IS NULL`))
+    .orderBy(desc(adminAppointments.appointedAt))
+    .limit(1);
+    
+    return result[0] || undefined;
+  }
+
+  async revokeAdminAppointment(adminId: string): Promise<void> {
+    await db.update(adminAppointments)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(adminAppointments.adminId, adminId), sql`${adminAppointments.revokedAt} IS NULL`));
+  }
+
+  async createPaymentChannelAudit(channelId: string, changedById: string, action: string, previousData?: any, newData?: any): Promise<PaymentChannelAudit> {
+    const [created] = await db.insert(paymentChannelAudit).values({
+      channelId,
+      changedById,
+      action,
+      previousData,
+      newData,
+    }).returning();
+    return created;
+  }
+
+  async getPaymentChannelAuditHistory(channelId: string, limit: number = 3): Promise<(PaymentChannelAudit & { changedBy: User })[]> {
+    const result = await db.select({
+      id: paymentChannelAudit.id,
+      channelId: paymentChannelAudit.channelId,
+      changedById: paymentChannelAudit.changedById,
+      action: paymentChannelAudit.action,
+      previousData: paymentChannelAudit.previousData,
+      newData: paymentChannelAudit.newData,
+      changedAt: paymentChannelAudit.changedAt,
+      changedBy: users,
+    })
+    .from(paymentChannelAudit)
+    .innerJoin(users, eq(paymentChannelAudit.changedById, users.id))
+    .where(eq(paymentChannelAudit.channelId, channelId))
+    .orderBy(desc(paymentChannelAudit.changedAt))
+    .limit(limit);
+    
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();
