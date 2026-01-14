@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, MessageCircle, Send, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, MessageCircle, Send, Users, Loader2, History, Clock, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -26,6 +27,22 @@ interface PlatformSettings {
   discussionGroup: string;
 }
 
+interface SettingsAuditEntry {
+  id: string;
+  settingKey: string;
+  previousValue: string | null;
+  newValue: string;
+  changedById: string;
+  changedAt: string;
+  changedBy: { fullName: string; phone: string };
+}
+
+const settingLabels: Record<string, string> = {
+  customerService: "Service client",
+  officialChannel: "Chaîne officielle",
+  discussionGroup: "Groupe de discussion",
+};
+
 export default function AdminSettingsPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
@@ -35,6 +52,21 @@ export default function AdminSettingsPage() {
     queryKey: ["/api/admin/settings"],
     enabled: !!user?.isSuperAdmin,
   });
+
+  const { data: settingsHistory } = useQuery<SettingsAuditEntry[]>({
+    queryKey: ["/api/admin/settings/history"],
+    enabled: !!user?.isSuperAdmin,
+  });
+
+  const formatDateTime = (date: string | Date) => {
+    return new Date(date).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -58,6 +90,7 @@ export default function AdminSettingsPage() {
     onSuccess: () => {
       toast({ title: "Paramètres mis à jour" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/settings/public"] });
     },
     onError: (error: Error) => {
@@ -182,6 +215,53 @@ export default function AdminSettingsPage() {
                     </Button>
                   </form>
                 </Form>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <History className="h-5 w-5 text-blue-500" />
+                Historique des modifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {settingsHistory && settingsHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {settingsHistory.map((entry) => (
+                    <div key={entry.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge className="bg-blue-500">
+                          {settingLabels[entry.settingKey] || entry.settingKey}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDateTime(entry.changedAt)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm mb-2">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-medium">{entry.changedBy.fullName}</span>
+                        <span className="text-muted-foreground">({entry.changedBy.phone})</span>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {entry.previousValue && (
+                          <p className="text-red-500 dark:text-red-400 truncate">
+                            Ancien: {entry.previousValue}
+                          </p>
+                        )}
+                        <p className="text-green-600 dark:text-green-400 truncate">
+                          Nouveau: {entry.newValue}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucun historique disponible
+                </p>
               )}
             </CardContent>
           </Card>
