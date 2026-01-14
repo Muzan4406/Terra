@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, CreditCard, Link2, Zap, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, CreditCard, Link2, Zap, Loader2, History, Clock, User } from "lucide-react";
 import type { PaymentChannel } from "@shared/schema";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,16 +27,58 @@ const channelSchema = z.object({
 
 type ChannelFormData = z.infer<typeof channelSchema>;
 
+interface ChannelAuditEntry {
+  id: string;
+  channelId: string;
+  changedById: string;
+  action: string;
+  previousData: any;
+  newData: any;
+  changedAt: string;
+  changedBy: { fullName: string; phone: string };
+}
+
 export default function AdminChannelsPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState<PaymentChannel | null>(null);
+  const [viewingHistoryId, setViewingHistoryId] = useState<string | null>(null);
 
   const { data: channels, isLoading } = useQuery<PaymentChannel[]>({
     queryKey: ["/api/admin/payment-channels"],
   });
+
+  const { data: channelHistory } = useQuery<ChannelAuditEntry[]>({
+    queryKey: ["/api/admin/payment-channels", viewingHistoryId, "history"],
+    queryFn: async () => {
+      if (!viewingHistoryId) return [];
+      const res = await fetch(`/api/admin/payment-channels/${viewingHistoryId}/history`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!viewingHistoryId,
+  });
+
+  const formatDateTime = (date: string | Date) => {
+    return new Date(date).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case "create": return "Création";
+      case "update": return "Modification";
+      case "delete": return "Suppression";
+      default: return action;
+    }
+  };
 
   const form = useForm<ChannelFormData>({
     resolver: zodResolver(channelSchema),
@@ -285,6 +327,15 @@ export default function AdminChannelsPage() {
                         <Button
                           variant="outline"
                           size="icon"
+                          onClick={() => setViewingHistoryId(viewingHistoryId === channel.id ? null : channel.id)}
+                          data-testid={`history-${channel.id}`}
+                          className={viewingHistoryId === channel.id ? "bg-blue-100 dark:bg-blue-900/30" : ""}
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
                           onClick={() => {
                             setEditingChannel(channel);
                             form.reset({
@@ -311,6 +362,51 @@ export default function AdminChannelsPage() {
                         </Button>
                       </div>
                     </div>
+                    
+                    {viewingHistoryId === channel.id && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center gap-2 mb-3">
+                          <History className="h-4 w-4 text-blue-500" />
+                          <span className="font-medium text-sm">Historique des modifications (3 dernières)</span>
+                        </div>
+                        {channelHistory && channelHistory.length > 0 ? (
+                          <div className="space-y-2">
+                            {channelHistory.map((entry) => (
+                              <div key={entry.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-1">
+                                  <Badge 
+                                    className={
+                                      entry.action === "create" ? "bg-green-500" : 
+                                      entry.action === "update" ? "bg-blue-500" : 
+                                      "bg-red-500"
+                                    }
+                                  >
+                                    {getActionLabel(entry.action)}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {formatDateTime(entry.changedAt)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm mt-2">
+                                  <User className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium">{entry.changedBy.fullName}</span>
+                                  <span className="text-muted-foreground">({entry.changedBy.phone})</span>
+                                </div>
+                                {entry.action === "update" && entry.newData && (
+                                  <div className="mt-2 text-xs text-muted-foreground">
+                                    {entry.newData.name && <p>Nom: {entry.newData.name}</p>}
+                                    {entry.newData.redirectUrl !== undefined && <p>URL: {entry.newData.redirectUrl || "(vide)"}</p>}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Aucun historique disponible</p>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
