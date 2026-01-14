@@ -37,6 +37,17 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+async function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Non authentifié" });
+  }
+  const user = await storage.getUser(req.session.userId);
+  if (!user?.isSuperAdmin) {
+    return res.status(403).json({ message: "Seul l'administrateur principal peut modifier ces paramètres" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -888,7 +899,7 @@ export async function registerRoutes(
     });
   });
 
-  app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
+  app.patch("/api/admin/settings", requireSuperAdmin, async (req, res) => {
     const { customerService, officialChannel, discussionGroup } = req.body;
     if (customerService !== undefined) await storage.setSetting("customerService", customerService);
     if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel);

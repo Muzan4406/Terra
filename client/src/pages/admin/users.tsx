@@ -223,7 +223,8 @@ export default function AdminUsersPage() {
                           {u.isBanned && <Badge variant="destructive">Banni</Badge>}
                           {u.withdrawalBlocked && <Badge variant="secondary"><Lock className="h-3 w-3 mr-1" />Retrait</Badge>}
                           {u.isPromoter && <Badge className="bg-amber-500">Promoteur</Badge>}
-                          {u.isAdmin && <Badge>Admin</Badge>}
+                          {u.isSuperAdmin && <Badge className="bg-purple-600"><Crown className="h-3 w-3 mr-1" />Super Admin</Badge>}
+                          {u.isAdmin && !u.isSuperAdmin && <Badge>Admin</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {getCountryFlag(u.country)} {u.phone}

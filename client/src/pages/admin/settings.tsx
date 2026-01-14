@@ -64,8 +64,8 @@ export default function AdminSettingsPage() {
     },
   });
 
-  if (!user?.isAdmin) {
-    navigate("/");
+  if (!user?.isSuperAdmin) {
+    navigate("/admin");
     return null;
   }
 

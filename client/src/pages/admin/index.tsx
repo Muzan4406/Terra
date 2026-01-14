@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     { icon: Users, label: "Gestion des utilisateurs", path: "/admin/users", color: "text-blue-500" },
     { icon: CreditCard, label: "Canaux de paiement", path: "/admin/channels", color: "text-purple-500" },
     { icon: Gift, label: "Codes bonus", path: "/admin/bonus-codes", color: "text-teal-500" },
-    { icon: Settings, label: "Paramètres", path: "/admin/settings", color: "text-gray-500" },
+    ...(user?.isSuperAdmin ? [{ icon: Settings, label: "Paramètres", path: "/admin/settings", color: "text-gray-500" }] : []),
   ];
 
   return (
