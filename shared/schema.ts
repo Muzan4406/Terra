@@ -213,6 +213,19 @@ export const platformSettings = pgTable("platform_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const platformSettingsAudit = pgTable("platform_settings_audit", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  settingKey: text("setting_key").notNull(),
+  previousValue: text("previous_value"),
+  newValue: text("new_value").notNull(),
+  changedById: varchar("changed_by_id", { length: 36 }).notNull(),
+  changedAt: timestamp("changed_at").notNull().defaultNow(),
+});
+
+export const platformSettingsAuditRelations = relations(platformSettingsAudit, ({ one }) => ({
+  changedBy: one(users, { fields: [platformSettingsAudit.changedById], references: [users.id] }),
+}));
+
 export const platformImages = pgTable("platform_images", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   location: text("location").notNull().unique(),
@@ -363,6 +376,7 @@ export type Withdrawal = typeof withdrawals.$inferSelect;
 export type Earning = typeof earnings.$inferSelect;
 export type ClaimedTask = typeof claimedTasks.$inferSelect;
 export type PlatformSetting = typeof platformSettings.$inferSelect;
+export type PlatformSettingsAudit = typeof platformSettingsAudit.$inferSelect;
 export type PlatformImage = typeof platformImages.$inferSelect;
 export type BonusCode = typeof bonusCodes.$inferSelect;
 export type BonusCodeUsage = typeof bonusCodeUsages.$inferSelect;

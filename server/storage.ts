@@ -1,11 +1,11 @@
 import { 
   users, products, userProducts, wallets, paymentChannels, 
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
-  bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit,
+  bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit, platformSettingsAudit,
   type User, type InsertUser, type Product, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
   type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage,
-  type AdminAppointment, type PaymentChannelAudit, VIP_PRODUCTS
+  type AdminAppointment, type PaymentChannelAudit, type PlatformSettingsAudit, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, or, count } from "drizzle-orm";
@@ -74,8 +74,10 @@ export interface IStorage {
   createClaimedTask(data: Omit<ClaimedTask, "id" | "claimedAt">): Promise<ClaimedTask>;
   
   getSetting(key: string): Promise<string | undefined>;
-  setSetting(key: string, value: string): Promise<void>;
+  setSetting(key: string, value: string, changedById?: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
+  getSettingsAuditHistory(settingKey: string): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]>;
+  getAllSettingsAuditHistory(): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]>;
   
   getImage(location: string): Promise<string | undefined>;
   setImage(location: string, imageUrl: string): Promise<void>;
@@ -483,12 +485,30 @@ export class DatabaseStorage implements IStorage {
     return setting?.value;
   }
 
-  async setSetting(key: string, value: string): Promise<void> {
+  async setSetting(key: string, value: string, changedById?: string): Promise<void> {
     const existing = await this.getSetting(key);
+    
+    if (changedById && existing !== undefined && existing !== value) {
+      await db.insert(platformSettingsAudit).values({
+        settingKey: key,
+        previousValue: existing,
+        newValue: value,
+        changedById,
+      });
+    }
+    
     if (existing !== undefined) {
       await db.update(platformSettings).set({ value, updatedAt: new Date() }).where(eq(platformSettings.key, key));
     } else {
       await db.insert(platformSettings).values({ key, value });
+      if (changedById) {
+        await db.insert(platformSettingsAudit).values({
+          settingKey: key,
+          previousValue: null,
+          newValue: value,
+          changedById,
+        });
+      }
     }
   }
 
@@ -499,6 +519,49 @@ export class DatabaseStorage implements IStorage {
       result[s.key] = s.value;
     }
     return result;
+  }
+
+  async getSettingsAuditHistory(settingKey: string): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]> {
+    const audits = await db
+      .select({
+        id: platformSettingsAudit.id,
+        settingKey: platformSettingsAudit.settingKey,
+        previousValue: platformSettingsAudit.previousValue,
+        newValue: platformSettingsAudit.newValue,
+        changedById: platformSettingsAudit.changedById,
+        changedAt: platformSettingsAudit.changedAt,
+        changedBy: {
+          fullName: users.fullName,
+          phone: users.phone,
+        },
+      })
+      .from(platformSettingsAudit)
+      .innerJoin(users, eq(platformSettingsAudit.changedById, users.id))
+      .where(eq(platformSettingsAudit.settingKey, settingKey))
+      .orderBy(desc(platformSettingsAudit.changedAt))
+      .limit(5);
+    return audits;
+  }
+
+  async getAllSettingsAuditHistory(): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]> {
+    const audits = await db
+      .select({
+        id: platformSettingsAudit.id,
+        settingKey: platformSettingsAudit.settingKey,
+        previousValue: platformSettingsAudit.previousValue,
+        newValue: platformSettingsAudit.newValue,
+        changedById: platformSettingsAudit.changedById,
+        changedAt: platformSettingsAudit.changedAt,
+        changedBy: {
+          fullName: users.fullName,
+          phone: users.phone,
+        },
+      })
+      .from(platformSettingsAudit)
+      .innerJoin(users, eq(platformSettingsAudit.changedById, users.id))
+      .orderBy(desc(platformSettingsAudit.changedAt))
+      .limit(10);
+    return audits;
   }
 
   async getImage(location: string): Promise<string | undefined> {
