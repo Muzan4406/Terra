@@ -75,6 +75,23 @@ export default function AdminUsersPage() {
     enabled: !!managingUserId,
   });
 
+  const { data: adminAppointment } = useQuery<{
+    id: string;
+    adminId: string;
+    appointedById: string;
+    appointedAt: string;
+    appointedBy: { fullName: string; phone: string };
+  } | null>({
+    queryKey: ["/api/admin/users", managingUserId, "appointment"],
+    queryFn: async () => {
+      if (!managingUserId) return null;
+      const res = await fetch(`/api/admin/users/${managingUserId}/appointment`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!managingUserId,
+  });
+
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
       const res = await apiRequest("PATCH", `/api/admin/users/${userId}`, updates);
@@ -157,6 +174,16 @@ export default function AdminUsersPage() {
       day: "2-digit",
       month: "short",
       year: "numeric",
+    });
+  };
+
+  const formatDateTime = (date: string | Date) => {
+    return new Date(date).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -434,6 +461,19 @@ export default function AdminUsersPage() {
                                   })}
                                 />
                               </div>
+                              {u.isAdmin && adminAppointment && (
+                                <div className="col-span-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                    Nommé administrateur par:
+                                  </p>
+                                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                                    {adminAppointment.appointedBy.fullName} ({adminAppointment.appointedBy.phone})
+                                  </p>
+                                  <p className="text-xs text-blue-500 dark:text-blue-500">
+                                    Le {formatDateTime(adminAppointment.appointedAt)}
+                                  </p>
+                                </div>
+                              )}
                               <div className="flex items-center justify-between col-span-2">
                                 <Label>Requiert filleul investisseur</Label>
                                 <Switch
