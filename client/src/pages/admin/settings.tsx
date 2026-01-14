@@ -33,6 +33,7 @@ export default function AdminSettingsPage() {
 
   const { data: settings, isLoading } = useQuery<PlatformSettings>({
     queryKey: ["/api/admin/settings"],
+    enabled: !!user?.isSuperAdmin,
   });
 
   const form = useForm<SettingsFormData>({

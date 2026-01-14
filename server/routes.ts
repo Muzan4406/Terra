@@ -890,7 +890,7 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+  app.get("/api/admin/settings", requireSuperAdmin, async (req, res) => {
     const settings = await storage.getAllSettings();
     res.json({
       customerService: settings.customerService || "",
