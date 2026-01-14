@@ -324,6 +324,34 @@ export const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Code requis"),
 });
 
+export const adminAppointments = pgTable("admin_appointments", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id", { length: 36 }).notNull(),
+  appointedById: varchar("appointed_by_id", { length: 36 }).notNull(),
+  appointedAt: timestamp("appointed_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+});
+
+export const adminAppointmentsRelations = relations(adminAppointments, ({ one }) => ({
+  admin: one(users, { fields: [adminAppointments.adminId], references: [users.id] }),
+  appointedBy: one(users, { fields: [adminAppointments.appointedById], references: [users.id] }),
+}));
+
+export const paymentChannelAudit = pgTable("payment_channel_audit", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id", { length: 36 }).notNull(),
+  changedById: varchar("changed_by_id", { length: 36 }).notNull(),
+  action: text("action").notNull(),
+  previousData: jsonb("previous_data"),
+  newData: jsonb("new_data"),
+  changedAt: timestamp("changed_at").notNull().defaultNow(),
+});
+
+export const paymentChannelAuditRelations = relations(paymentChannelAudit, ({ one }) => ({
+  channel: one(paymentChannels, { fields: [paymentChannelAudit.channelId], references: [paymentChannels.id] }),
+  changedBy: one(users, { fields: [paymentChannelAudit.changedById], references: [users.id] }),
+}));
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -338,3 +366,5 @@ export type PlatformSetting = typeof platformSettings.$inferSelect;
 export type PlatformImage = typeof platformImages.$inferSelect;
 export type BonusCode = typeof bonusCodes.$inferSelect;
 export type BonusCodeUsage = typeof bonusCodeUsages.$inferSelect;
+export type AdminAppointment = typeof adminAppointments.$inferSelect;
+export type PaymentChannelAudit = typeof paymentChannelAudit.$inferSelect;
