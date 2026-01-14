@@ -1,10 +1,11 @@
 import { 
   users, products, userProducts, wallets, paymentChannels, 
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
-  bonusCodes, bonusCodeUsages,
+  bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit,
   type User, type InsertUser, type Product, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
-  type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage, VIP_PRODUCTS
+  type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage,
+  type AdminAppointment, type PaymentChannelAudit, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, or, count } from "drizzle-orm";
@@ -103,6 +104,13 @@ export interface IStorage {
   getBonusCodeUsage(bonusCodeId: string, userId: string): Promise<BonusCodeUsage | undefined>;
   createBonusCodeUsage(data: Omit<BonusCodeUsage, "id" | "usedAt">): Promise<BonusCodeUsage>;
   getBonusCodeUsages(bonusCodeId: string): Promise<(BonusCodeUsage & { user: User })[]>;
+  
+  createAdminAppointment(adminId: string, appointedById: string): Promise<AdminAppointment>;
+  getAdminAppointment(adminId: string): Promise<(AdminAppointment & { appointedBy: User }) | undefined>;
+  revokeAdminAppointment(adminId: string): Promise<void>;
+  
+  createPaymentChannelAudit(channelId: string, changedById: string, action: string, previousData?: any, newData?: any): Promise<PaymentChannelAudit>;
+  getPaymentChannelAuditHistory(channelId: string, limit?: number): Promise<(PaymentChannelAudit & { changedBy: User })[]>;
   
   initializeDefaults(): Promise<void>;
 }
