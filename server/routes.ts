@@ -929,10 +929,16 @@ export async function registerRoutes(
 
   app.patch("/api/admin/settings", requireSuperAdmin, async (req, res) => {
     const { customerService, officialChannel, discussionGroup } = req.body;
-    if (customerService !== undefined) await storage.setSetting("customerService", customerService);
-    if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel);
-    if (discussionGroup !== undefined) await storage.setSetting("discussionGroup", discussionGroup);
+    const userId = req.session.userId!;
+    if (customerService !== undefined) await storage.setSetting("customerService", customerService, userId);
+    if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel, userId);
+    if (discussionGroup !== undefined) await storage.setSetting("discussionGroup", discussionGroup, userId);
     res.json({ success: true });
+  });
+
+  app.get("/api/admin/settings/history", requireSuperAdmin, async (req, res) => {
+    const history = await storage.getAllSettingsAuditHistory();
+    res.json(history);
   });
 
   app.post("/api/auth/change-password", requireAuth, async (req, res) => {
