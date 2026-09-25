@@ -12,10 +12,6 @@ import { useLocation } from "wouter";
 import { useEffect, useState, useCallback } from "react";
 import { solarImages } from "@/lib/solar-images";
 import { BrandLogo } from "@/components/brand-logo";
-import walletIcon from "@assets/images_(27)_1790362738657.jpeg";
-import depositIcon from "@assets/depot-3d-icon-png-download-13937730_1790362738683.png";
-import bankIcon from "@assets/images_(25)_1790362738741.jpeg";
-import tasksIcon from "@assets/images_(24)_1790362738807.jpeg";
 
 interface PlatformSettings {
   customerService: string;
@@ -34,7 +30,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [tickerOffset, setTickerOffset] = useState(0);
   const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(true);
 
   const { data: settings } = useQuery<PlatformSettings>({
@@ -44,13 +39,6 @@ export default function HomePage() {
   const handleCloseWhatsAppPopup = useCallback(() => {
     setShowWhatsAppPopup(false);
   }, []);
-
-  const notifications = [
-    "*7426 Recharger XOF 50,000",
-    "*2047 Recharger XOF 250,000",
-    "*0558 Recharger XOF 100,000",
-    "*8934 Retrait XOF 75,000",
-  ];
 
   const formatNumber = (num: number) => {
     return num.toLocaleString("fr-FR");
@@ -62,13 +50,6 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTickerOffset((prev) => (prev + 1) % notifications.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [notifications.length]);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -100,22 +81,16 @@ export default function HomePage() {
 
   const actionButtons: HomeAction[] = [
     { 
-      image: depositIcon,
-      label: "RECHARGER", 
+      image: solarImages[0].src,
+      label: "DÉPOSER", 
       path: "/deposit", 
       testId: "button-recharge",
     },
     { 
-      image: walletIcon,
-      label: "RETRAIT", 
+      image: solarImages[4].src,
+      label: "RETIRER", 
       path: "/withdraw", 
       testId: "button-withdraw",
-    },
-    { 
-      image: tasksIcon,
-      label: "TÂCHES", 
-      path: "/tasks", 
-      testId: "button-tasks",
     },
   ];
 
@@ -185,9 +160,6 @@ export default function HomePage() {
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="home-summary-icon flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                  <img src={bankIcon} alt="" className="h-full w-full scale-110 object-contain mix-blend-multiply" />
-                </span>
                 <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
               </div>
               <span className="rounded-full bg-white/45 px-2 py-0.5 text-[10px] font-semibold text-slate-800/75">XOF</span>
@@ -218,8 +190,8 @@ export default function HomePage() {
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl">
-                    <img src={btn.image} alt="" className="h-full w-full scale-110 object-contain mix-blend-multiply" />
+                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                    <img src={btn.image} alt="" className="h-full w-full object-cover" />
                   </span>
                   <span className="min-w-0 text-sm font-bold leading-tight text-slate-700">{btn.label}</span>
                 </button>
@@ -227,14 +199,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          <div className="home-news flex min-h-10 shrink-0 items-center gap-2.5 rounded-xl border border-amber-100 bg-amber-50/90 px-3 py-2">
-            <span className="shrink-0 rounded-md bg-amber-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-              Actu
-            </span>
-            <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700" data-testid="text-home-notification">
-              {notifications[tickerOffset]}
-            </p>
-          </div>
         </main>
 
       </div>
@@ -254,22 +218,18 @@ export default function HomePage() {
           .home-content { gap: 0.5rem; padding-top: 0.5rem; }
           .home-account-summary { padding: 0.625rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
-          .home-summary-icon { width: 1.5rem; height: 1.5rem; }
           .home-account-amount { font-size: 1rem; }
           .home-action-tile { min-height: 3.5rem; gap: 0.75rem; padding: 0.5rem 0.75rem; }
           .home-action-icon { width: 2.5rem; height: 2.5rem; }
-          .home-news { min-height: 2rem; padding-top: 0.375rem; padding-bottom: 0.375rem; }
         }
         @media (max-height: 540px) {
           .home-hero { height: 5.75rem; }
           .home-content { gap: 0.375rem; padding-top: 0.375rem; }
           .home-account-summary { padding: 0.5rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
-          .home-summary-icon { width: 1.25rem; height: 1.25rem; }
           .home-account-summary p { margin-bottom: 0; }
           .home-action-tile { min-height: 3rem; }
           .home-action-icon { width: 2rem; height: 2rem; }
-          .home-news { min-height: 1.75rem; }
         }
       `}</style>
     </div>
