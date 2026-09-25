@@ -33,7 +33,6 @@ import AdminSettingsPage from "@/pages/admin/settings";
 import AdminBonusCodesPage from "@/pages/admin/bonus-codes";
 import AdminUserTeamPage from "@/pages/admin/user-team";
 import { Loader2 } from "lucide-react";
-import { solarImages } from "@/lib/solar-images";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -253,13 +252,6 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <div className="site-app">
-            <div
-              className="site-background"
-              aria-hidden="true"
-              style={{
-                backgroundImage: `linear-gradient(rgba(244, 241, 229, 0.69), rgba(244, 241, 229, 0.69)), url("${solarImages[4].src}")`,
-              }}
-            />
             <Toaster />
             <div className="site-page">
               <Router />

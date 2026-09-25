@@ -316,17 +316,6 @@
   min-height: 100dvh;
 }
 
-.site-background {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-color: hsl(var(--background));
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
 .site-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -416,11 +405,6 @@ body {
 
 h1, h2, h3, h4 {
   letter-spacing: -0.035em;
-}
-
-.site-background {
-  background-color: hsl(var(--background));
-  background-blend-mode: normal;
 }
 
 .site-page {
