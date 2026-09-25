@@ -20,26 +20,26 @@ export default function CustomerServicePage() {
   const serviceLinks = [
     {
       id: "customerService",
-      title: "Service client en ligne",
+      title: "Service client WhatsApp",
       subtitle: "Assistance clientèle principale",
       description: "Service en ligne 24h/24 et 7j/7",
-      url: settings?.customerService || "https://t.me/+DOnUcJs7idVmN2E0",
+      url: settings?.customerService || "",
       testId: "link-customer-service",
     },
     {
       id: "officialChannel",
-      title: "Chaîne officielle",
+      title: "Chaîne WhatsApp officielle",
       subtitle: "Actualités et annonces",
       description: "Restez informé des dernières nouvelles",
-      url: settings?.officialChannel || "https://t.me/+DOnUcJs7idVmN2E0",
+      url: settings?.officialChannel || "",
       testId: "link-official-channel",
     },
     {
       id: "discussionGroup",
-      title: "Groupe officiel",
+      title: "Groupe WhatsApp officiel",
       subtitle: "Communauté d'investisseurs",
       description: "Échangez avec d'autres membres",
-      url: settings?.discussionGroup || "https://t.me/+DOnUcJs7idVmN2E0",
+      url: settings?.discussionGroup || "",
       testId: "link-discussion-group",
     },
   ];
@@ -99,8 +99,9 @@ export default function CustomerServicePage() {
             serviceLinks.map((link) => (
               <button
                 key={link.id}
-                onClick={() => window.open(link.url, "_blank")}
-                className="w-full text-left rounded-xl p-4 transition-transform active:scale-98"
+                onClick={() => link.url && window.open(link.url, "_blank", "noopener,noreferrer")}
+                disabled={!link.url}
+                className="w-full text-left rounded-xl p-4 transition-transform active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: 'linear-gradient(135deg, #FFD93D 0%, #FF9500 100%)',
                 }}
@@ -110,7 +111,7 @@ export default function CustomerServicePage() {
                   <div className="flex-1">
                     <h3 className="text-white font-semibold text-lg">{link.title}</h3>
                     <p className="text-white/90 text-sm">{link.subtitle}</p>
-                    <p className="text-white/80 text-xs mt-0.5">{link.description}</p>
+                    <p className="text-white/80 text-xs mt-0.5">{link.url ? link.description : "Lien WhatsApp non configuré"}</p>
                   </div>
                   <ChevronRight className="h-6 w-6 text-white flex-shrink-0" />
                 </div>

@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
-import { TelegramPopup } from "@/components/telegram-popup";
+import { WhatsAppPopup } from "@/components/whatsapp-popup";
 import { 
   CreditCard, 
   Banknote, 
@@ -28,17 +28,15 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tickerOffset, setTickerOffset] = useState(0);
-  const [showTelegramPopup, setShowTelegramPopup] = useState(true);
+  const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(true);
 
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
   });
 
-  const handleCloseTelegramPopup = useCallback(() => {
-    setShowTelegramPopup(false);
+  const handleCloseWhatsAppPopup = useCallback(() => {
+    setShowWhatsAppPopup(false);
   }, []);
-
-  const telegramLink = "https://t.me/+OVhsmITUUu03ZThk";
 
   const notifications = [
     "*7426 Recharger XOF 50,000",
@@ -65,6 +63,18 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [notifications.length]);
 
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    window.scrollTo(0, 0);
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+    };
+  }, []);
+
   const nextSlide = () => {
     setCurrentSlide((previous) => (previous + 1) % solarImages.length);
   };
@@ -75,7 +85,7 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="fixed inset-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-gray-50">
         <Skeleton className="h-screen w-full max-w-md" />
       </div>
     );
@@ -121,9 +131,9 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-md mx-auto bg-white min-h-screen shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-gray-50">
+      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-white shadow-sm">
+        <div className="flex shrink-0 items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
           <h1>
             <BrandLogo className="h-8 w-auto" />
           </h1>
@@ -132,7 +142,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="relative h-52 w-full overflow-hidden bg-gray-900">
+        <div className="home-hero relative w-full shrink-0 overflow-hidden bg-gray-900">
           {solarImages.map((image, index) => (
             <div
               key={image.src}
@@ -179,7 +189,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="px-4 py-5">
+        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden px-4 py-3 pb-[108px]">
+        <div className="home-actions">
           <div className="grid grid-cols-4 gap-3">
             {actionButtons.map((btn, index) => (
               <button
@@ -188,16 +199,16 @@ export default function HomePage() {
                 onClick={() => navigate(btn.path)}
                 data-testid={btn.testId}
               >
-                <div className={`w-16 h-16 rounded-full ${btn.bgColor} border-2 ${btn.borderColor} flex items-center justify-center shadow-md group-hover:shadow-lg group-active:scale-95 transition-all`}>
+                <div className={`home-action-icon w-14 h-14 rounded-full ${btn.bgColor} border-2 ${btn.borderColor} flex items-center justify-center shadow-md group-hover:shadow-lg group-active:scale-95 transition-all`}>
                   <btn.icon className={`h-7 w-7 ${btn.iconColor}`} />
                 </div>
-                <span className="text-xs text-gray-700 font-semibold text-center leading-tight">{btn.label}</span>
+                <span className="home-action-label text-xs text-gray-700 font-semibold text-center leading-tight">{btn.label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="mx-4 flex items-center gap-2 py-3 px-4 bg-amber-50 rounded-lg border border-amber-100 overflow-hidden">
+        <div className="mx-4 flex shrink-0 items-center gap-2 py-3 px-4 bg-amber-50 rounded-lg border border-amber-100 overflow-hidden">
           <div className="flex-shrink-0 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
             HOT
           </div>
@@ -210,30 +221,31 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
-            <p className="text-2xl font-bold text-gray-900" data-testid="text-balance">
+        <div className="home-stats mx-4 grid shrink-0 grid-cols-2 gap-3">
+          <div className="rounded-xl p-3 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
+            <p className="break-words text-xl font-bold leading-tight text-gray-900" data-testid="text-balance">
               XOF {formatNumber(user.balance)}
             </p>
             <p className="text-sm text-gray-800 mt-1">Solde du compte</p>
           </div>
 
-          <div className="rounded-xl p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
-            <p className="text-2xl font-bold text-gray-900" data-testid="text-earnings">
+          <div className="rounded-xl p-3 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
+            <p className="break-words text-xl font-bold leading-tight text-gray-900" data-testid="text-earnings">
               XOF {formatNumber(user.totalEarnings)}
             </p>
             <p className="text-sm text-gray-800 mt-1">Revenu cumulé</p>
           </div>
+        </div>
         </div>
 
       </div>
 
       <BottomNav />
 
-      <TelegramPopup 
-        isOpen={showTelegramPopup} 
-        onClose={handleCloseTelegramPopup}
-        telegramLink={telegramLink}
+      <WhatsAppPopup
+        isOpen={showWhatsAppPopup && !!settings?.officialChannel}
+        onClose={handleCloseWhatsAppPopup}
+        whatsappLink={settings?.officialChannel || ""}
       />
 
       <style>{`
@@ -243,6 +255,14 @@ export default function HomePage() {
         }
         .animate-marquee {
           animation: marquee 15s linear infinite;
+        }
+        .home-hero { height: clamp(138px, 24vh, 208px); }
+        @media (max-height: 700px) {
+          .home-hero { height: clamp(116px, 21vh, 148px); }
+          .home-actions { transform: scale(0.94); transform-origin: center; }
+          .home-action-icon { width: 3rem; height: 3rem; }
+          .home-action-label { font-size: 0.625rem; }
+          .home-stats { gap: 0.5rem; }
         }
       `}</style>
     </div>

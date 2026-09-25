@@ -196,7 +196,7 @@ export async function registerRoutes(
       const user = await storage.getUser(req.session.userId!);
       const product = await storage.getProduct(productId);
       
-      if (!user || !product) {
+      if (!user || !product || !product.isActive) {
         return res.status(404).json({ message: "Produit non trouvé" });
       }
 
@@ -614,15 +614,53 @@ export async function registerRoutes(
   app.get("/api/settings/public", async (req, res) => {
     const settings = await storage.getAllSettings();
     res.json({
-      customerService: settings.customerService || "https://t.me/+DOnUcJs7idVmN2E0",
-      officialChannel: settings.officialChannel || "https://t.me/+DOnUcJs7idVmN2E0",
-      discussionGroup: settings.discussionGroup || "https://t.me/+DOnUcJs7idVmN2E0",
+      customerService: settings.customerService || "",
+      officialChannel: settings.officialChannel || "",
+      discussionGroup: settings.discussionGroup || "",
     });
   });
 
   app.get("/api/admin/dashboard", requireAdmin, async (req, res) => {
     const stats = await storage.getDashboardStats();
     res.json(stats);
+  });
+
+  app.get("/api/admin/products", requireAdmin, async (_req, res) => {
+    res.json(await storage.getAllProducts());
+  });
+
+  const productUpdateSchema = z.object({
+    name: z.string().trim().min(1, "Le nom du produit est requis").optional(),
+    price: z.number().int().positive("Le prix doit être supérieur à zéro").optional(),
+    dailyReturn: z.number().int().positive("Le rendement doit être supérieur à zéro").optional(),
+    duration: z.number().int().positive("La durée doit être supérieure à zéro").optional(),
+    totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro").optional(),
+    imageUrl: z.union([z.string().url("URL invalide"), z.literal("")]).nullable().optional(),
+    isActive: z.boolean().optional(),
+  }).strict().refine((updates) => Object.keys(updates).length > 0, {
+    message: "Aucune modification fournie",
+  });
+
+  app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const updates = productUpdateSchema.parse(req.body);
+      const normalizedUpdates = {
+        ...updates,
+        ...(updates.imageUrl === "" ? { imageUrl: null } : {}),
+      };
+      const product = await storage.updateProduct(req.params.id, normalizedUpdates);
+      if (!product) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+      await storage.deactivateCompletedProductInvestments(product.id, product.duration);
+      res.json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Données invalides" });
+      }
+      console.error("Product update error:", error);
+      res.status(500).json({ message: "Erreur serveur lors de la mise à jour du produit" });
+    }
   });
 
   app.get("/api/admin/deposits", requireAdmin, async (req, res) => {

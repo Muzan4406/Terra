@@ -41,6 +41,7 @@ export default function AdminDashboard() {
     { icon: ArrowDownToLine, label: "Dépôts en attente", path: "/admin/deposits", count: stats?.pendingDeposits, color: "text-green-500" },
     { icon: ArrowUpFromLine, label: "Retraits en attente", path: "/admin/withdrawals", count: stats?.pendingWithdrawals, color: "text-red-500" },
     { icon: Users, label: "Gestion des utilisateurs", path: "/admin/users", color: "text-blue-500" },
+    { icon: ShoppingBag, label: "Gestion des produits", path: "/admin/products", color: "text-amber-500" },
     { icon: CreditCard, label: "Canaux de paiement", path: "/admin/channels", color: "text-purple-500" },
     { icon: Gift, label: "Codes bonus", path: "/admin/bonus-codes", color: "text-teal-500" },
     ...(user?.isSuperAdmin ? [{ icon: Settings, label: "Paramètres", path: "/admin/settings", color: "text-gray-500" }] : []),

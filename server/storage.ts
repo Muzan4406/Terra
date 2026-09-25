@@ -30,10 +30,12 @@ export interface IStorage {
   getUserReferrals(userId: string, level: number): Promise<User[]>;
   
   getProducts(): Promise<Product[]>;
+  getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductByLevel(level: number): Promise<Product | undefined>;
   createProduct(product: Omit<Product, "id">): Promise<Product>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
+  deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void>;
   
   getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]>;
   getUserTotalInvestment(userId: string): Promise<number>;
@@ -210,6 +212,10 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).where(eq(products.isActive, true)).orderBy(products.level);
   }
 
+  async getAllProducts(): Promise<Product[]> {
+    return db.select().from(products).orderBy(products.level);
+  }
+
   async getProduct(id: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.id, id));
     return product || undefined;
@@ -228,6 +234,16 @@ export class DatabaseStorage implements IStorage {
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> {
     const [updated] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
     return updated || undefined;
+  }
+
+  async deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void> {
+    await db.update(userProducts)
+      .set({ isActive: false })
+      .where(and(
+        eq(userProducts.productId, productId),
+        eq(userProducts.isActive, true),
+        gte(userProducts.cyclesCompleted, duration),
+      ));
   }
 
   async getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]> {
@@ -662,14 +678,14 @@ export class DatabaseStorage implements IStorage {
     }
 
     const defaultSettings = {
-      customerService: "https://t.me/+DOnUcJs7idVmN2E0",
-      officialChannel: "https://t.me/+DOnUcJs7idVmN2E0",
-      discussionGroup: "https://t.me/+DOnUcJs7idVmN2E0",
+      customerService: "",
+      officialChannel: "",
+      discussionGroup: "",
     };
 
     for (const [key, value] of Object.entries(defaultSettings)) {
       const existing = await this.getSetting(key);
-      if (!existing) {
+      if (existing === undefined || /t\.me\//i.test(existing)) {
         await this.setSetting(key, value);
       }
     }

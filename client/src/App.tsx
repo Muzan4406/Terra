@@ -28,6 +28,7 @@ import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
 import AdminUsersPage from "@/pages/admin/users";
 import AdminChannelsPage from "@/pages/admin/channels";
+import AdminProductsPage from "@/pages/admin/products";
 import AdminSettingsPage from "@/pages/admin/settings";
 import AdminBonusCodesPage from "@/pages/admin/bonus-codes";
 import AdminUserTeamPage from "@/pages/admin/user-team";
@@ -217,6 +218,11 @@ function Router() {
       <Route path="/admin/channels">
         <AdminRoute>
           <AdminChannelsPage />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/products">
+        <AdminRoute>
+          <AdminProductsPage />
         </AdminRoute>
       </Route>
       <Route path="/admin/settings">

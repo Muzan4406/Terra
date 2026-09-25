@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -103,21 +104,27 @@ export default function ExchangeCodePage() {
         <div className="flex-1 px-4 py-6 relative z-10 pb-6">
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              Vous pouvez obtenir le code cadeau depuis le groupe telegram
+              Vous pouvez obtenir le code cadeau depuis le groupe WhatsApp officiel.
             </p>
 
             <a
-              href={settings?.officialChannel || "#"}
+              href={settings?.officialChannel || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-8 group active:bg-gray-100 transition-colors"
-              data-testid="link-telegram-group"
+              aria-disabled={!settings?.officialChannel}
+              onClick={(event) => {
+                if (!settings?.officialChannel) event.preventDefault();
+              }}
+              data-testid="link-whatsapp-group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#24A1DE] rounded-full flex items-center justify-center shadow-md">
-                  <Send className="w-6 h-6 text-white -ml-0.5 mt-0.5 transform rotate-[-30deg]" />
+                <div className="w-12 h-12 bg-[#25D366] rounded-full flex items-center justify-center shadow-md">
+                  <SiWhatsapp className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-gray-900 font-bold text-lg">Groupe officiel Telegram</span>
+                <span className="text-gray-900 font-bold text-lg">
+                  {settings?.officialChannel ? "WhatsApp officiel" : "WhatsApp non configuré"}
+                </span>
               </div>
               <ChevronRight className="w-6 h-6 text-gray-300 group-hover:text-gray-400" />
             </a>

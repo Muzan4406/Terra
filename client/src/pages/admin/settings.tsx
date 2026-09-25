@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, MessageCircle, Send, Users, Loader2, History, Clock, User } from "lucide-react";
+import { ArrowLeft, Save, MessageCircle, Radio, Users, Loader2, History, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -120,7 +120,7 @@ export default function AdminSettingsPage() {
         <div className="p-4 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Liens Telegram</CardTitle>
+              <CardTitle className="text-lg">Liens WhatsApp</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -144,7 +144,7 @@ export default function AdminSettingsPage() {
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://t.me/..." 
+                              placeholder="https://wa.me/..."
                               data-testid="input-customer-service"
                             />
                           </FormControl>
@@ -159,13 +159,13 @@ export default function AdminSettingsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
-                            <Send className="h-4 w-4 text-primary" />
+                            <Radio className="h-4 w-4 text-primary" />
                             Chaîne officielle
                           </FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://t.me/..." 
+                              placeholder="https://whatsapp.com/channel/..."
                               data-testid="input-official-channel"
                             />
                           </FormControl>
@@ -186,7 +186,7 @@ export default function AdminSettingsPage() {
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://t.me/..." 
+                              placeholder="https://chat.whatsapp.com/..."
                               data-testid="input-discussion-group"
                             />
                           </FormControl>
