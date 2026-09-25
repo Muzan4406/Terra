@@ -85,7 +85,7 @@ export default function HomePage() {
           <section className="home-welcome" aria-label="Bienvenue">
             <p className="text-[15px] font-semibold leading-tight text-[#183e32]">Bonjour,</p>
             <h2 className="mt-0.5 text-[25px] font-bold leading-[1.15] tracking-[-0.045em] text-[#14553f]">
-              Bienvenue sur TerraOil
+              Bienvenue sur Terra
             </h2>
             <p className="mt-1.5 text-sm text-[#687a70]">Votre espace personnel</p>
           </section>
@@ -136,7 +136,7 @@ export default function HomePage() {
           <section className="home-services mt-7" aria-labelledby="home-services-heading">
             <div className="mb-3.5 flex items-end justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a8d7e]">TerraOil</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a8d7e]">Terra</p>
                 <h2 id="home-services-heading" className="mt-0.5 text-[19px] font-bold tracking-[-0.035em] text-[#183e32]">
                   Nos services
                 </h2>

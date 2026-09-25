@@ -343,7 +343,7 @@ a {
   }
 }
 
-/* TerraOil — a warm, legible field-journal for everyday account management. */
+/* Terra — a warm, legible field-journal for everyday account management. */
 :root {
   --background: 42 39% 94%;
   --foreground: 157 27% 15%;
@@ -649,7 +649,8 @@ h1, h2, h3, h4 {
   }
 }
 
-.country-select-content {
+.country-select-content,
+.operator-select-content {
   background-color: #fbf8f0 !important;
   color: #26372d;
   opacity: 1;

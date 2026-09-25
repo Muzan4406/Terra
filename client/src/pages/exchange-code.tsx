@@ -104,7 +104,7 @@ export default function ExchangeCodePage() {
         <div className="flex-1 px-4 py-6 relative z-10 pb-6">
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              Saisissez un code bonus communiqué par TerraOil. Les conditions associées s’appliquent.
+              Saisissez un code bonus communiqué par Terra. Les conditions associées s’appliquent.
             </p>
 
             <a

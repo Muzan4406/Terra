@@ -71,7 +71,7 @@ export default function AccountPage() {
     },
     { 
       icon: Info, 
-      label: "À propos de TerraOil",
+      label: "À propos de Terra",
       iconBg: "bg-blue-100",
       iconColor: "text-blue-500",
       action: () => navigate("/about"),

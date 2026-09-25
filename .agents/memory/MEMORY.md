@@ -1,0 +1,1 @@
+- [Terra logo lockup](terra-logo-lockup.md) — use one transparent horizontal brand asset in compact headers; derive favicon and social preview from the same artwork.

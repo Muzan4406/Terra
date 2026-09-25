@@ -13,7 +13,7 @@ export default function NotFound() {
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Erreur 404</p>
           <h1 className="mt-2 text-2xl font-bold text-foreground">Cette page est introuvable</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Le lien a peut-être changé ou la page n’est plus disponible. Retournez à votre espace TerraOil.
+            Le lien a peut-être changé ou la page n’est plus disponible. Retournez à votre espace Terra.
           </p>
           <Link
             href="/"

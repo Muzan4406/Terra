@@ -15,7 +15,7 @@ export default function AboutPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">À propos de TerraOil</h1>
+          <h1 className="text-xl font-bold">À propos de Terra</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -53,7 +53,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold">Un espace centralisé</h3>
                   <p className="text-sm text-muted-foreground">
-                    TerraOil rassemble les fonctions essentielles de votre compte dans un espace conçu pour être facile à consulter.
+                    Terra rassemble les fonctions essentielles de votre compte dans un espace conçu pour être facile à consulter.
                   </p>
                 </div>
               </div>

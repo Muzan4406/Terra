@@ -1,7 +1,7 @@
-# Terra oil - Investment Platform
+# Terra - Investment Platform
 
 ## Project Overview
-Terra oil is an investment platform for 5 French-speaking African countries: Cameroun, Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can access VIP products, track account activity, and use a 3-level referral system.
+Terra is an investment platform for 5 French-speaking African countries: Cameroun, Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can access VIP products, track account activity, and use a 3-level referral system.
 
 ## Tech Stack
 - **Frontend**: React with TypeScript, Vite, TailwindCSS, shadcn/ui components

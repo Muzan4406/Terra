@@ -16,7 +16,7 @@ export function PaymentMethodSelect({ country, value, onValueChange, disabled }:
       <SelectTrigger data-testid="select-payment-method" className="w-full">
         <SelectValue placeholder="Moyen de paiement" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="operator-select-content">
         {methods.map((method) => (
           <SelectItem key={method} value={method} data-testid={`payment-${method}`}>
             {method}

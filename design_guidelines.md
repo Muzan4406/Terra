@@ -1,4 +1,4 @@
-# Terra oil Investment Platform - Design Guidelines
+# Terra Investment Platform - Design Guidelines
 
 ## Design Approach
 **Mobile-first financial interface**: Emphasize clear account information, restrained styling, and accessible controls for mobile users.
@@ -6,7 +6,7 @@
 ## Core Design Principles
 1. **Financial Transparency**: Prominent balances, clear transaction states, visible VIP tier benefits
 2. **Mobile-First Efficiency**: 44px minimum touch targets, bottom navigation, minimal scrolling to critical actions
-3. **Consistent Branding**: Use the Terra oil name consistently and avoid unrelated third-party brand assets
+3. **Consistent Branding**: Use the Terra name consistently and avoid unrelated third-party brand assets
 4. **Status-Driven Feedback**: Clear visual states for pending deposits, active investments, withdrawal locks
 
 ## Color System
@@ -58,9 +58,9 @@
 ## Component Specifications
 
 ### Hero Section (Home Screen Top)
-Use the supplied solar-energy photography in a responsive carousel. Keep the Terra oil name and welcome text readable over a dark gradient.
+Use the supplied solar-energy photography in a responsive carousel. Keep the Terra name and welcome text readable over a dark gradient.
 
-Show the Terra oil name and a short description of the account features.
+Show the Terra name and a short description of the account features.
 
 ### Balance Cards (Horizontal Pair)
 `grid grid-cols-2 gap-3 -mt-8` to overlap hero. Each card: `bg-white rounded-xl p-4 shadow-lg border border-slate-200`. Left: Total Balance with blue accent. Right: Total Revenue with green accent. Large number `text-2xl font-bold`, label `text-xs text-slate-500 uppercase tracking-wide`.
@@ -88,11 +88,11 @@ Sidebar: `bg-slate-900 w-64 fixed h-full` with white nav items. Active: `bg-blue
 
 ## Solar Imagery
 
-Use the shared solar image collection for the home carousel, product cards, and supporting page banners. Crop with `object-cover`, keep image corners consistent with nearby cards, and provide descriptive alt text. Keep the Terra oil wordmark as text; navigation remains icon-based.
+Use the shared solar image collection for the home carousel, product cards, and supporting page banners. Crop with `object-cover`, keep image corners consistent with nearby cards, and provide descriptive alt text. Keep the Terra wordmark clear; navigation remains icon-based.
 
 ## Brand Logo
 
-Use the cropped Terra oil logo in primary branded headers and authentication screens. Preserve its aspect ratio with `object-contain`; do not crop the wordmark. The favicon uses the orange mark, and social previews use the prepared Open Graph image.
+Use the transparent Terra logo in primary branded headers and authentication screens. Preserve its aspect ratio with `object-contain`; do not crop the wordmark. The favicon uses the solar mark, and social previews use the Terra Open Graph image.
 
 ## Accessibility
 - WCAG AA contrast ratios (blue-600 on white = 4.5:1)

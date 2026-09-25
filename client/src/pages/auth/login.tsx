@@ -63,7 +63,7 @@ export default function LoginPage() {
         <h1 className="flex justify-center">
           <BrandLogo className="h-10 w-auto" />
         </h1>
-        <p className="mt-2 text-sm text-gray-500">Retrouvez votre compte TerraOil</p>
+        <p className="mt-2 text-sm text-gray-500">Retrouvez votre compte Terra</p>
       </div>
 
       <div className="auth-form-panel px-6 py-8 max-w-md mx-auto w-full">
@@ -152,7 +152,7 @@ export default function LoginPage() {
         </Form>
 
         <div className="flex justify-between mt-8 text-sm">
-          <span className="text-gray-500">Nouveau sur TerraOil ?</span>
+          <span className="text-gray-500">Nouveau sur Terra ?</span>
           <Link href="/register">
             <span className="text-gray-700 font-medium cursor-pointer" data-testid="link-register">
               S'inscrire

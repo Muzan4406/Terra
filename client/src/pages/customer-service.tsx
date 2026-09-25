@@ -86,7 +86,7 @@ export default function CustomerServicePage() {
             <h2 className="text-2xl font-semibold text-primary mb-3">Comment pouvons-nous vous aider ?</h2>
             <p className="text-center text-gray-600 text-sm leading-relaxed px-4 mb-8">
               Choisissez le canal adapté à votre demande.<br />
-              Les liens disponibles sont configurés par l’équipe TerraOil.
+              Les liens disponibles sont configurés par l’équipe Terra.
             </p>
           </div>
         </div>

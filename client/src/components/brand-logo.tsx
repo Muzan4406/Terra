@@ -5,8 +5,8 @@ interface BrandLogoProps {
 export function BrandLogo({ className = "" }: BrandLogoProps) {
   return (
     <img
-      src="/terra-oil-logo.png"
-      alt="Terra oil"
+      src="/terra-logo.png"
+      alt="Terra — solaire et durable"
       className={`block object-contain ${className}`}
     />
   );
