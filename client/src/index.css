@@ -550,17 +550,59 @@ h1, h2, h3, h4 {
 }
 
 .site-page .home-account-summary {
-  background: linear-gradient(130deg, hsl(37 65% 77% / .96), hsl(31 59% 66% / .93)) !important;
-  border-color: hsl(32 46% 64% / .6) !important;
+  background: linear-gradient(112deg, hsl(158 47% 25%), hsl(159 43% 20%) 72%, hsl(160 42% 18%)) !important;
+  border: 1px solid hsl(156 34% 44% / .42) !important;
 }
 
-.site-page .home-action-tile {
-  border-color: hsl(var(--border) / .82) !important;
-  background-color: hsl(43 40% 98% / .9) !important;
+.site-page .home-summary-image {
+  position: absolute;
+  z-index: 0;
+  inset-block: 0;
+  right: 0;
+  width: 46%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .34;
+  mask-image: linear-gradient(to right, transparent 0%, #000 75%);
 }
 
-.site-page .home-action-icon {
-  box-shadow: 0 8px 20px hsl(157 27% 15% / .14);
+.site-page .home-shell {
+  background-color: hsl(42 35% 96%);
+  box-shadow: 0 12px 36px hsl(157 27% 15% / .08);
+}
+
+.site-page .home-header {
+  min-height: 4.25rem;
+  border-bottom: 1px solid hsl(39 25% 84% / .72);
+  background: hsl(42 35% 96% / .94);
+}
+
+.site-page .home-content {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.site-page .home-content::-webkit-scrollbar {
+  display: none;
+}
+
+.site-page .home-service-tile {
+  border-color: hsl(156 18% 84%);
+  background: linear-gradient(145deg, hsl(151 28% 95%), hsl(151 22% 91%));
+  box-shadow: 0 5px 16px hsl(157 27% 15% / .055);
+}
+
+.site-page .home-service-tile:nth-child(2) {
+  background: linear-gradient(145deg, hsl(43 38% 96%), hsl(42 34% 91%));
+}
+
+.site-page .home-service-tile:hover {
+  border-color: hsl(155 26% 70%);
+  box-shadow: 0 9px 22px hsl(157 27% 15% / .09);
+}
+
+.site-page .home-service-image-wrap {
+  box-shadow: 0 6px 16px hsl(157 27% 15% / .13);
 }
 
 .site-page .max-w-md.mx-auto > header h1,

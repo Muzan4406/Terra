@@ -3,13 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { WhatsAppPopup } from "@/components/whatsapp-popup";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Bell
-} from "lucide-react";
+import { Bell, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { solarImages } from "@/lib/solar-images";
 import { BrandLogo } from "@/components/brand-logo";
 
@@ -19,9 +15,11 @@ interface PlatformSettings {
   discussionGroup: string;
 }
 
-interface HomeAction {
+interface HomeService {
   image: string;
+  imageAlt: string;
   label: string;
+  description: string;
   path: string;
   testId: string;
 }
@@ -29,7 +27,6 @@ interface HomeAction {
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(true);
 
   const { data: settings } = useQuery<PlatformSettings>({
@@ -40,167 +37,142 @@ export default function HomePage() {
     setShowWhatsAppPopup(false);
   }, []);
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString("fr-FR");
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((previous) => (previous + 1) % solarImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousDocumentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    window.scrollTo(0, 0);
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousDocumentOverflow;
-    };
-  }, []);
-
-  const nextSlide = () => {
-    setCurrentSlide((previous) => (previous + 1) % solarImages.length);
-  };
-
-  const previousSlide = () => {
-    setCurrentSlide((previous) => (previous - 1 + solarImages.length) % solarImages.length);
-  };
+  const formatNumber = (num: number) => num.toLocaleString("fr-FR");
 
   if (!user) {
     return (
-      <div className="fixed inset-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-[#f2eee3]">
+      <div className="fixed inset-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-[#f3f2e9]">
         <Skeleton className="h-screen w-full max-w-md" />
       </div>
     );
   }
 
-  const actionButtons: HomeAction[] = [
-    { 
+  const services: HomeService[] = [
+    {
       image: solarImages[0].src,
-      label: "DÉPOSER", 
-      path: "/deposit", 
+      imageAlt: "Installation de panneaux solaires",
+      label: "Dépôt",
+      description: "Investissez dans l’énergie solaire",
+      path: "/deposit",
       testId: "button-recharge",
     },
-    { 
+    {
       image: solarImages[4].src,
-      label: "RETIRER", 
-      path: "/withdraw", 
+      imageAlt: "Maison équipée de panneaux solaires",
+      label: "Retrait",
+      description: "Retirez vos gains facilement",
+      path: "/withdraw",
       testId: "button-withdraw",
     },
   ];
 
   return (
-    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f2eee3]">
-      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-[#fbf8f0]/90 shadow-[0_12px_36px_rgba(40,54,42,0.08)] backdrop-blur-sm">
-        <div className="flex min-h-14 shrink-0 items-center justify-between border-b border-[#e9e2d4] bg-[#fbf8f0]/95 px-4 py-2.5">
-          <h1>
-            <BrandLogo className="h-8 w-auto" />
+    <div className="site-page fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f3f2e9]">
+      <div className="home-shell mx-auto flex h-full max-w-md flex-col overflow-hidden">
+        <header className="home-header flex shrink-0 items-center justify-between px-5">
+          <h1 className="leading-none">
+            <BrandLogo className="h-9 w-auto" />
           </h1>
-          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f2e6cd] text-[#9a682d]">
-            <Bell className="h-4 w-4" />
-          </div>
-        </div>
-
-        <div className="home-hero relative w-full shrink-0 overflow-hidden bg-gray-900">
-          {solarImages.map((image, index) => (
-            <div
-              key={image.src}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                index === currentSlide ? "opacity-100" : "opacity-0"
-              }`}
-              aria-hidden={index !== currentSlide}
-            >
-              <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
-            </div>
-          ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#132b25]/75 via-[#132b25]/10 to-black/10" />
-          <div className="absolute bottom-4 left-4 right-14 text-white sm:left-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-white/85">TerraOil · votre espace</p>
-            <h2 className="mt-1 font-serif text-[clamp(1.25rem,5vw,1.7rem)] font-semibold leading-tight tracking-[-0.025em]">Vos repères, réunis au même endroit</h2>
-          </div>
-          <button
-            type="button"
-            onClick={previousSlide}
-            aria-label="Image précédente"
-            className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/50"
+          <div
+            aria-hidden="true"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e8eee8] text-[#174f3d]"
           >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={nextSlide}
-            aria-label="Image suivante"
-            className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/50"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          <div className="absolute bottom-2 right-4 flex gap-1.5">
-            {solarImages.map((image, index) => (
-              <button
-                key={image.src}
-                type="button"
-                onClick={() => setCurrentSlide(index)}
-                aria-label={`Afficher l’image ${index + 1}`}
-                aria-current={index === currentSlide}
-                className={`h-2.5 w-2.5 rounded-full border border-white/40 transition-transform ${index === currentSlide ? "scale-110 bg-white" : "bg-white/50"}`}
-              />
-            ))}
+            <Bell className="h-[19px] w-[19px]" />
           </div>
-        </div>
+        </header>
 
-        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-3 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+        <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+          <section className="home-welcome" aria-label="Bienvenue">
+            <p className="text-[15px] font-semibold leading-tight text-[#183e32]">Bonjour,</p>
+            <h2 className="mt-0.5 text-[25px] font-bold leading-[1.15] tracking-[-0.045em] text-[#14553f]">
+              Bienvenue sur TerraOil
+            </h2>
+            <p className="mt-1.5 text-sm text-[#687a70]">Votre espace personnel</p>
+          </section>
+
           <section
             aria-label="Résumé du compte"
-            className="home-account-summary shrink-0 rounded-2xl border border-[#ddc399] bg-gradient-to-br from-[#efdbba] to-[#d6ad7c] p-3.5 shadow-sm sm:p-4"
+            className="home-account-summary relative isolate mt-5 overflow-hidden rounded-[1.35rem] p-5 text-white shadow-[0_12px_25px_rgba(17,65,49,0.16)]"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-               <h2 className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#39453b]/80">Vue d’ensemble</h2>
-              </div>
-              <span className="rounded-full bg-[#fbf8f0]/55 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] text-[#39453b]/80">XOF</span>
-            </div>
-            <div className="grid grid-cols-2 divide-x divide-white/50">
-              <div className="min-w-0 pr-3">
-                  <p className="mb-1 text-xs font-medium text-[#39453b]/80">Solde du compte</p>
-                 <p className="home-account-amount truncate text-xl font-bold leading-tight tabular-nums text-[#26372d]" data-testid="text-balance">
-                  {formatNumber(user.balance)}
+            <img
+              src={solarImages[3].src}
+              alt=""
+              aria-hidden="true"
+              className="home-summary-image"
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[12px] font-semibold tracking-[0.025em] text-white/80">
+                  Solde d’investissement
                 </p>
+                <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-white/85">
+                  XOF
+                </span>
               </div>
-              <div className="min-w-0 pl-3">
-                  <p className="mb-1 text-xs font-medium text-[#39453b]/80">Revenus cumulés</p>
-                 <p className="home-account-amount truncate text-xl font-bold leading-tight tabular-nums text-[#26372d]" data-testid="text-earnings">
-                  {formatNumber(user.totalEarnings)}
-                </p>
+              <p
+                className="mt-2 truncate text-[clamp(2rem,9vw,2.65rem)] font-bold leading-none tracking-[-0.055em] tabular-nums"
+                data-testid="text-balance"
+              >
+                {formatNumber(user.balance)} <span className="text-[0.68em] font-semibold tracking-normal">F</span>
+              </p>
+
+              <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/20 pt-3.5">
+                <div className="min-w-0">
+                  <p className="text-[11px] leading-tight text-white/70">Revenus cumulés</p>
+                  <p className="mt-1 truncate text-[15px] font-semibold tabular-nums" data-testid="text-earnings">
+                    {formatNumber(user.totalEarnings)} F
+                  </p>
+                </div>
+                <div className="min-w-0 border-l border-white/20 pl-4">
+                  <p className="text-[11px] leading-tight text-white/70">Revenus du jour</p>
+                  <p className="mt-1 truncate text-[15px] font-semibold tabular-nums">
+                    {formatNumber(user.todayEarnings)} F
+                  </p>
+                </div>
               </div>
             </div>
           </section>
 
-          <section className="home-actions shrink-0" aria-label="Actions rapides">
-            <h2 className="sr-only">Actions rapides</h2>
+          <section className="home-services mt-7" aria-labelledby="home-services-heading">
+            <div className="mb-3.5 flex items-end justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7a8d7e]">TerraOil</p>
+                <h2 id="home-services-heading" className="mt-0.5 text-[19px] font-bold tracking-[-0.035em] text-[#183e32]">
+                  Nos services
+                </h2>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              {actionButtons.map((btn) => (
+              {services.map((service) => (
                 <button
-                  key={btn.testId}
-                  className="home-action-tile group flex min-h-36 min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-[#e5ddce] bg-[#fbf8f0] p-3.5 text-center shadow-sm transition-all hover:border-[#d6bd91] hover:shadow-md active:scale-[0.98] sm:min-h-40 sm:p-4"
-                  onClick={() => navigate(btn.path)}
-                  data-testid={btn.testId}
+                  key={service.testId}
+                  type="button"
+                  onClick={() => navigate(service.path)}
+                  data-testid={service.testId}
+                  className="home-service-tile group min-w-0 rounded-[1.15rem] border p-3.5 text-left transition-transform active:scale-[0.98]"
                 >
-                  <span className="home-action-icon flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] sm:h-[4.5rem] sm:w-[4.5rem]">
-                    <img src={btn.image} alt="" className="h-full w-full object-cover" />
+                  <span className="home-service-image-wrap block h-[4.15rem] w-[4.15rem] overflow-hidden rounded-full">
+                    <img
+                      src={service.image}
+                      alt={service.imageAlt}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                   </span>
-                  <span className="min-w-0 text-sm font-bold leading-tight tracking-[0.09em] text-[#3a4b40]">{btn.label}</span>
+                  <span className="mt-3 flex items-center justify-between gap-1">
+                    <span className="text-[16px] font-bold leading-tight tracking-[-0.025em] text-[#183e32]">
+                      {service.label}
+                    </span>
+                    <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#315e4d]" aria-hidden="true" />
+                  </span>
+                  <span className="mt-1.5 block text-[11px] leading-[1.4] text-[#687a70]">
+                    {service.description}
+                  </span>
                 </button>
               ))}
             </div>
           </section>
-
         </main>
-
       </div>
 
       <BottomNav />
@@ -210,28 +182,6 @@ export default function HomePage() {
         onClose={handleCloseWhatsAppPopup}
         whatsappLink={settings?.officialChannel || ""}
       />
-
-      <style>{`
-        .home-hero { height: clamp(138px, 24vh, 208px); }
-        @media (max-height: 700px) {
-          .home-hero { height: clamp(112px, 19vh, 138px); }
-          .home-content { gap: 0.5rem; padding-top: 0.5rem; }
-          .home-account-summary { padding: 0.625rem; }
-          .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
-          .home-account-amount { font-size: 1rem; }
-          .home-action-tile { min-height: 8rem; gap: 0.75rem; padding: 0.75rem; }
-          .home-action-icon { width: 3.5rem; height: 3.5rem; }
-        }
-        @media (max-height: 540px) {
-          .home-hero { height: 5.75rem; }
-          .home-content { gap: 0.375rem; padding-top: 0.375rem; }
-          .home-account-summary { padding: 0.5rem; }
-          .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
-          .home-account-summary p { margin-bottom: 0; }
-          .home-action-tile { min-height: 6.5rem; gap: 0.5rem; padding: 0.5rem; }
-          .home-action-icon { width: 3rem; height: 3rem; }
-        }
-      `}</style>
     </div>
   );
 }
