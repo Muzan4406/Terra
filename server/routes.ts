@@ -54,10 +54,15 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Trust proxy for secure cookies behind Replit's reverse proxy
   app.set("trust proxy", 1);
+
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error("SESSION_SECRET doit être configuré.");
+  }
   
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || "cigna-group-secret-key-2024",
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       store: new SessionStore({ checkPeriod: 86400000 }),

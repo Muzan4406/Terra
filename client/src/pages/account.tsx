@@ -10,9 +10,6 @@ import {
   Headphones, RefreshCw, Lock, Shield, LogOut,
   ArrowRight, Package
 } from "lucide-react";
-import bannerImage from "@assets/smilingdoctor-globalhealth-blog-1200x673_1768031545518.webp";
-import bankImage from "@assets/images_(30)_1768037288811.jpeg";
-import invoiceImage from "@assets/images_(31)_1768037288700.jpeg";
 
 interface PlatformSettings {
   customerService: string;
@@ -121,16 +118,8 @@ export default function AccountPage() {
             </button>
           </div>
           
-          <div className="absolute right-0 top-0 w-32 h-32 opacity-30">
-            <img 
-              src={bannerImage} 
-              alt="" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-
           <div className="relative z-10">
-            <h1 className="text-2xl font-bold text-white mb-1">Cigna Group</h1>
+            <h1 className="text-2xl font-bold text-white mb-1">Terra oil</h1>
             <p className="text-white text-lg font-medium" data-testid="text-phone">
               {getCountryDialCode(user.country)} {user.phone}
             </p>
@@ -175,7 +164,6 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <img src={bankImage} alt="" className="w-16 h-16 object-cover rounded-lg opacity-80" />
             </button>
             
             <button
@@ -189,7 +177,6 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
               </div>
-              <img src={invoiceImage} alt="" className="w-16 h-16 object-cover rounded-lg opacity-80" />
             </button>
           </div>
         </div>

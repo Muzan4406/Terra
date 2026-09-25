@@ -1,7 +1,7 @@
-# Cigna Group - Investment Platform
+# Terra oil - Investment Platform
 
 ## Project Overview
-Cigna Group is a comprehensive investment platform designed for 5 French-speaking African countries: Cameroun, Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can invest in VIP products that generate daily returns over 100 days, with a 3-level referral system for earning commissions.
+Terra oil is an investment platform for 5 French-speaking African countries: Cameroun, Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can access VIP products, track account activity, and use a 3-level referral system.
 
 ## Tech Stack
 - **Frontend**: React with TypeScript, Vite, TailwindCSS, shadcn/ui components

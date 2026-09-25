@@ -69,31 +69,8 @@ export default function CustomerServicePage() {
 
           <div className="relative z-10 flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-200">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <defs>
-                    <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#C68642" />
-                      <stop offset="100%" stopColor="#8D5524" />
-                    </linearGradient>
-                    <linearGradient id="hairGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#2C1810" />
-                      <stop offset="100%" stopColor="#1a0f0a" />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="50" cy="50" r="50" fill="#e0e0e0" />
-                  <ellipse cx="50" cy="42" rx="25" ry="28" fill="url(#skinGradient)" />
-                  <ellipse cx="50" cy="20" rx="28" ry="18" fill="url(#hairGradient)" />
-                  <ellipse cx="50" cy="85" rx="35" ry="25" fill="#1a365d" />
-                  <rect x="35" y="60" width="30" height="15" fill="white" />
-                  <circle cx="42" cy="40" r="3" fill="#2C1810" />
-                  <circle cx="58" cy="40" r="3" fill="#2C1810" />
-                  <ellipse cx="50" cy="52" rx="4" ry="2" fill="#C68642" />
-                  <path d="M44 56 Q50 60 56 56" stroke="#8B4513" strokeWidth="2" fill="none" />
-                  <ellipse cx="75" cy="42" rx="12" ry="8" fill="#333" />
-                  <ellipse cx="75" cy="42" rx="8" ry="5" fill="#555" />
-                  <rect x="67" y="38" width="3" height="20" fill="#333" />
-                </svg>
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-teal-50 flex items-center justify-center">
+                <span className="text-4xl font-bold text-teal-700" aria-hidden="true">T</span>
               </div>
               <div className="absolute -right-1 top-4 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
                 SUR

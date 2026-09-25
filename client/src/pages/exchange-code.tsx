@@ -17,7 +17,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BottomNav } from "@/components/bottom-nav";
-import giftImage from "@assets/images_(32)_1768061232877.jpeg";
 
 const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Veuillez saisir le code cadeau"),
@@ -95,17 +94,8 @@ export default function ExchangeCodePage() {
           <h1 className="text-xl font-bold text-gray-900">Échanger cadeau</h1>
         </div>
 
-        {/* Hero Image */}
-        <div className="w-full aspect-[4/3] bg-gray-200 overflow-hidden">
-          <img 
-            src={giftImage} 
-            alt="Gift" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-
         {/* Form Container */}
-        <div className="flex-1 px-4 -mt-10 relative z-10 pb-6">
+        <div className="flex-1 px-4 py-6 relative z-10 pb-6">
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
               Vous pouvez obtenir le code cadeau depuis le groupe telegram

@@ -5,7 +5,6 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { REFERRAL_TASKS, PRODUCT_TASK } from "@shared/schema";
-import heroImage from "@assets/Img_2026_01_09_18_57_15_1768064264987.jpeg";
 
 interface TaskStatus {
   referralTasks: { taskId: number; completed: boolean; claimed: boolean; currentCount: number }[];
@@ -95,12 +94,9 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
       <div className="max-w-md mx-auto">
-        <div className="relative">
-          <img 
-            src={heroImage} 
-            alt="Tâches" 
-            className="w-full h-48 object-cover"
-          />
+        <div className="bg-white px-4 py-6 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-800">Tâches et récompenses</h1>
+          <p className="text-sm text-gray-500 mt-1">Suivez votre progression et vos récompenses.</p>
         </div>
 
         <div className="bg-white border-b border-gray-200">

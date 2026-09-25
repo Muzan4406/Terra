@@ -1,17 +1,12 @@
 import { useLocation, Link } from "wouter";
-
-import homeIcon from "@assets/images_(15)_1768062331204.png";
-import tasksIcon from "@assets/2098276_1768062331254.png";
-import investIcon from "@assets/4985809_1768062331285.png";
-import teamIcon from "@assets/377005_1768062331316.png";
-import accountIcon from "@assets/images_(16)_1768062331347.png";
+import { ClipboardList, Home, TrendingUp, User, Users } from "lucide-react";
 
 const navItems = [
-  { path: "/", icon: homeIcon, label: "Accueil" },
-  { path: "/tasks", icon: tasksIcon, label: "Tâches" },
-  { path: "/invest", icon: investIcon, label: "Investir" },
-  { path: "/team", icon: teamIcon, label: "Équipe" },
-  { path: "/account", icon: accountIcon, label: "Compte" },
+  { path: "/", icon: Home, label: "Accueil" },
+  { path: "/tasks", icon: ClipboardList, label: "Tâches" },
+  { path: "/invest", icon: TrendingUp, label: "Investir" },
+  { path: "/team", icon: Users, label: "Équipe" },
+  { path: "/account", icon: User, label: "Compte" },
 ];
 
 export function BottomNav() {
@@ -32,11 +27,7 @@ export function BottomNav() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <img 
-                  src={item.icon} 
-                  alt={item.label} 
-                  className={`w-7 h-7 object-contain ${isActive ? "opacity-100" : "opacity-70"}`}
-                />
+                <item.icon className={`w-6 h-6 ${isActive ? "opacity-100" : "opacity-70"}`} aria-hidden="true" />
                 <span className={`text-xs font-bold ${isActive ? "text-primary" : ""}`}>{item.label}</span>
               </button>
             </Link>

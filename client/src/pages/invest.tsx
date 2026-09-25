@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2, X, CheckCircle, TrendingUp, Clock, Coins } from "lucide-react";
+import { Loader2, CheckCircle, TrendingUp, Clock, Coins } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,45 +27,19 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Product, UserProduct } from "@shared/schema";
 
-import product1Img from "@assets/79d84350-9aa4-4031-ad23-c22766584042_1768037288627.webp";
-import product2Img from "@assets/images_(30)_1768037288811.jpeg";
-import product3Img from "@assets/images_(31)_1768037288700.jpeg";
-import product4Img from "@assets/images_(32)_1768037288765.jpeg";
-import product5Img from "@assets/images_(33)_1768037288733.jpeg";
-
 interface ProductWithOwnership extends Product {
   owned: boolean;
   ownedCount: number;
   userProduct?: UserProduct;
 }
 
-const productImages = [
-  product1Img,
-  product2Img,
-  product3Img,
-  product4Img,
-  product5Img,
-  product3Img,
-];
-
-const productDescriptions = [
-  "Machine d'entrée de gamme idéale pour commencer votre parcours d'investissement. Rendement stable et fiable.",
-  "Équipement de diagnostic avancé offrant un excellent rapport qualité-prix pour les investisseurs débutants.",
-  "Scanner médical de haute précision avec des rendements quotidiens attractifs.",
-  "Appareil d'imagerie médicale performant pour des gains réguliers et sécurisés.",
-  "Technologie de pointe en imagerie offrant des retours sur investissement élevés.",
-  "Notre machine premium avec les meilleurs rendements du marché pour les investisseurs expérimentés.",
-];
-
 export default function InvestPage() {
   const { user, refetchUser } = useAuth();
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<ProductWithOwnership | null>(null);
-  const [selectedProductIndex, setSelectedProductIndex] = useState<number>(0);
   const [showDetails, setShowDetails] = useState(false);
   const [showConfirmPurchase, setShowConfirmPurchase] = useState(false);
   const [productToPurchase, setProductToPurchase] = useState<ProductWithOwnership | null>(null);
-  const [productToPurchaseIndex, setProductToPurchaseIndex] = useState<number>(0);
 
   const { data: products, isLoading } = useQuery<ProductWithOwnership[]>({
     queryKey: ["/api/products"],
@@ -108,15 +82,13 @@ export default function InvestPage() {
     return ((dailyReturn / price) * 100).toFixed(1);
   };
 
-  const handleShowDetails = (product: ProductWithOwnership, index: number) => {
+  const handleShowDetails = (product: ProductWithOwnership) => {
     setSelectedProduct(product);
-    setSelectedProductIndex(index);
     setShowDetails(true);
   };
 
-  const handlePurchaseClick = (product: ProductWithOwnership, index: number) => {
+  const handlePurchaseClick = (product: ProductWithOwnership) => {
     setProductToPurchase(product);
-    setProductToPurchaseIndex(index);
     setShowConfirmPurchase(true);
   };
 
@@ -145,28 +117,17 @@ export default function InvestPage() {
       <div className="max-w-md mx-auto">
         <header className="py-6 px-4 bg-white">
           <h1 className="text-base font-bold text-center text-gray-800">
-            Liste des Machines Cigna Group
+            Produits Terra oil
           </h1>
         </header>
 
         <div className="px-4 py-2 space-y-4">
-          {products?.map((product, index) => {
-            const productImage = productImages[index] || productImages[0];
-            
-            return (
+          {products?.map((product) => (
               <div 
                 key={product.id} 
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
               >
                 <div className="flex gap-4">
-                  <div className="w-24 h-28 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                    <img 
-                      src={productImage} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-lg text-blue-600">
@@ -201,7 +162,7 @@ export default function InvestPage() {
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                   <button 
                     className="text-blue-600 text-sm font-medium cursor-pointer hover:underline"
-                    onClick={() => handleShowDetails(product, index)}
+                    onClick={() => handleShowDetails(product)}
                     data-testid={`button-details-${product.level}`}
                   >
                     Détail &gt;&gt;
@@ -214,7 +175,7 @@ export default function InvestPage() {
                     <button
                       className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       disabled={purchaseMutation.isPending}
-                      onClick={() => handlePurchaseClick(product, index)}
+                      onClick={() => handlePurchaseClick(product)}
                       data-testid={`button-buy-${product.level}`}
                     >
                       {product.ownedCount > 0 ? `Acheter (${product.ownedCount})` : "investir"}
@@ -222,8 +183,7 @@ export default function InvestPage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
+          ))}
         </div>
       </div>
 
@@ -234,22 +194,14 @@ export default function InvestPage() {
               {selectedProduct?.name}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Détails de la machine
+              Détails du produit
             </DialogDescription>
           </DialogHeader>
           
           {selectedProduct && (
             <div className="space-y-3">
-              <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-100">
-                <img 
-                  src={productImages[selectedProductIndex] || productImages[0]} 
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
               <p className="text-gray-600 text-xs">
-                {productDescriptions[selectedProductIndex] || productDescriptions[0]}
+                Consultez les montants et la durée indiqués avant de confirmer votre choix.
               </p>
               
               <div className="space-y-2 bg-gray-50 rounded-lg p-3">
@@ -310,7 +262,7 @@ export default function InvestPage() {
               onClick={() => {
                 if (selectedProduct) {
                   setShowDetails(false);
-                  handlePurchaseClick(selectedProduct, selectedProductIndex);
+                  handlePurchaseClick(selectedProduct);
                 }
               }}
             >
@@ -328,17 +280,10 @@ export default function InvestPage() {
             <AlertDialogTitle>Confirmer l'achat</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                <p>Voulez-vous vraiment acheter cette machine?</p>
+                <p>Voulez-vous vraiment acheter ce produit?</p>
                 {productToPurchase && (
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                        <img 
-                          src={productImages[productToPurchaseIndex] || productImages[0]} 
-                          alt={productToPurchase.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
                       <div>
                         <p className="font-bold text-gray-800">{productToPurchase.name}</p>
                         <p className="text-blue-600 font-bold">{formatNumber(productToPurchase.price)} F CFA</p>

@@ -1,17 +1,17 @@
-# Cigna Group Investment Platform - Design Guidelines
+# Terra oil Investment Platform - Design Guidelines
 
 ## Design Approach
-**Hybrid Fintech-Mobile Strategy**: Combining Revolut's financial clarity and Stripe's restrained professionalism with Wave's mobile-first accessibility. Establishes trust through Cigna's healthcare brand equity while optimizing for African mobile markets.
+**Mobile-first financial interface**: Emphasize clear account information, restrained styling, and accessible controls for mobile users.
 
 ## Core Design Principles
 1. **Financial Transparency**: Prominent balances, clear transaction states, visible VIP tier benefits
 2. **Mobile-First Efficiency**: 44px minimum touch targets, bottom navigation, minimal scrolling to critical actions
-3. **Trust Through Branding**: Professional blue palette reinforcing Cigna healthcare credibility
+3. **Consistent Branding**: Use the Terra oil name consistently and avoid unrelated third-party brand assets
 4. **Status-Driven Feedback**: Clear visual states for pending deposits, active investments, withdrawal locks
 
 ## Color System
 
-**Primary Palette** (Cigna-inspired professional blues):
+**Primary Palette** (professional blues):
 - Primary Blue: `bg-blue-600` (#2563eb) - CTAs, active states, tier badges
 - Primary Hover: `bg-blue-700` - Button hover states
 - Deep Blue: `bg-blue-900` - Headers, important labels
@@ -58,9 +58,9 @@
 ## Component Specifications
 
 ### Hero Section (Home Screen Top)
-Full-width edge-to-edge image featuring Cigna medical professionals or healthcare facility. Height: `h-48` on mobile, `h-64` on tablet. Overlay gradient: `bg-gradient-to-t from-blue-900/60 to-transparent`. 
+Use a text-led panel without photography. A restrained gradient may distinguish the welcome message from the account content.
 
-Overlaid elements: Cigna wordmark (top-left), "Investissez dans votre avenir" headline (`text-2xl font-bold text-white`), quick action button with `backdrop-blur-md bg-white/20 border border-white/40` treatment.
+Show the Terra oil name and a short description of the account features.
 
 ### Balance Cards (Horizontal Pair)
 `grid grid-cols-2 gap-3 -mt-8` to overlap hero. Each card: `bg-white rounded-xl p-4 shadow-lg border border-slate-200`. Left: Total Balance with blue accent. Right: Total Revenue with green accent. Large number `text-2xl font-bold`, label `text-xs text-slate-500 uppercase tracking-wide`.
@@ -86,15 +86,9 @@ Input fields: `border border-slate-300 rounded-lg px-4 py-3 text-base focus:bord
 ### Admin Dashboard
 Sidebar: `bg-slate-900 w-64 fixed h-full` with white nav items. Active: `bg-blue-600 text-white`. Main content: `ml-64 p-8 bg-slate-50`. Stat cards: `grid grid-cols-4 gap-6`, each `bg-white rounded-xl p-6 border border-slate-200`. Tables: `bg-white rounded-xl overflow-hidden` with `border border-slate-200`, striped rows `even:bg-slate-50`.
 
-## Images
+## Image-free Interface
 
-**Hero Image**: Professional medical/healthcare environment photo. Dimensions: 1200x600px minimum. Position: Top of home screen, full-width, `object-cover object-center`.
-
-**Secondary Banner**: Trust-building image (Cigna facilities or satisfied clients). Position: Mid-page after investment tiers. Same dimensions/treatment.
-
-**Profile Avatars**: Circular 80px × 80px placeholders or user uploads.
-
-**About Section**: Grid of 2-3 medical professional photos establishing credibility.
+Do not display photos, uploaded pictures, image-based logos, or image-based navigation on the site. Use text, CSS surfaces, and small interface icons where needed. Profile placeholders should use text initials rather than uploaded photos.
 
 ## Accessibility
 - WCAG AA contrast ratios (blue-600 on white = 4.5:1)
