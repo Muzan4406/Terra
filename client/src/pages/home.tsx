@@ -96,7 +96,7 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-gray-50">
-      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-white shadow-sm">
+      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-white/70 shadow-sm backdrop-blur-sm">
         <div className="flex shrink-0 items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
           <h1>
             <BrandLogo className="h-8 w-auto" />
