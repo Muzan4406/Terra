@@ -1,7 +1,11 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, jsonb, real, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
 
 export const ELIGIBLE_COUNTRIES = [
   { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", withdrawalHours: { start: 10, end: 17 } },
@@ -365,6 +369,36 @@ export const paymentChannelAuditRelations = relations(paymentChannelAudit, ({ on
   changedBy: one(users, { fields: [paymentChannelAudit.changedById], references: [users.id] }),
 }));
 
+export const supportMessages = pgTable("support_messages", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  senderId: varchar("sender_id", { length: 36 }).references(() => users.id, { onDelete: "set null" }),
+  senderType: text("sender_type").$type<"user" | "admin" | "system">().notNull(),
+  body: text("body").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().default(sql`clock_timestamp()`),
+});
+
+export const supportAttachments = pgTable("support_attachments", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  messageId: varchar("message_id", { length: 36 }).notNull().references(() => supportMessages.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  data: bytea("data").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const supportMessagesRelations = relations(supportMessages, ({ one, many }) => ({
+  user: one(users, { fields: [supportMessages.userId], references: [users.id] }),
+  attachments: many(supportAttachments),
+}));
+
+export const supportAttachmentsRelations = relations(supportAttachments, ({ one }) => ({
+  message: one(supportMessages, { fields: [supportAttachments.messageId], references: [supportMessages.id] }),
+  user: one(users, { fields: [supportAttachments.userId], references: [users.id] }),
+}));
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -382,3 +416,5 @@ export type BonusCode = typeof bonusCodes.$inferSelect;
 export type BonusCodeUsage = typeof bonusCodeUsages.$inferSelect;
 export type AdminAppointment = typeof adminAppointments.$inferSelect;
 export type PaymentChannelAudit = typeof paymentChannelAudit.$inferSelect;
+export type SupportMessage = typeof supportMessages.$inferSelect;
+export type SupportAttachment = typeof supportAttachments.$inferSelect;

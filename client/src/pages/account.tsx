@@ -82,7 +82,7 @@ export default function AccountPage() {
       label: "Service client", 
       iconBg: "bg-green-100",
       iconColor: "text-green-500",
-      action: () => navigate("/customer-service"),
+      action: () => navigate("/customer-service/chat"),
       testId: "menu-support" 
     },
     { 

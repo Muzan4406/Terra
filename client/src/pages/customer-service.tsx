@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Headphones } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { solarImages } from "@/lib/solar-images";
 
@@ -89,6 +89,24 @@ export default function CustomerServicePage() {
               Les liens disponibles sont configurés par l’équipe Terra.
             </p>
           </div>
+        </div>
+
+        <div className="px-4 pb-3">
+          <button
+            type="button"
+            onClick={() => navigate("/customer-service/chat")}
+            className="flex min-h-[76px] w-full items-center gap-3 rounded-2xl bg-[#174f3d] p-4 text-left text-white shadow-md transition-colors hover:bg-[#103f30]"
+            data-testid="button-open-support-chat"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15">
+              <Headphones className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">Discuter avec le service client</span>
+              <span className="mt-0.5 block text-xs text-white/75">Échange direct et sécurisé avec l’équipe Terra</span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
+          </button>
         </div>
 
         <div className="px-4 pb-8 space-y-3">

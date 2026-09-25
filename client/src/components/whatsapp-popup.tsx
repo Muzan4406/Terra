@@ -31,10 +31,6 @@ export function WhatsAppPopup({ isOpen, onClose, whatsappLink }: WhatsAppPopupPr
     return () => clearInterval(timer);
   }, [isOpen, onClose]);
 
-  const handleBackdropClick = (event: React.MouseEvent) => {
-    if (event.target === event.currentTarget) onClose();
-  };
-
   const handleFollow = () => {
     window.open(whatsappLink, "_blank", "noopener,noreferrer");
     onClose();
@@ -44,20 +40,30 @@ export function WhatsAppPopup({ isOpen, onClose, whatsappLink }: WhatsAppPopupPr
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={handleBackdropClick}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           data-testid="whatsapp-popup-backdrop"
         >
+          <motion.button
+            type="button"
+            aria-label="Fermer la fenêtre WhatsApp"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 cursor-default bg-black/60"
+          />
           <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 20 }}
+            initial={{ scale: 0.8, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.8, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white opacity-100 shadow-xl"
+            style={{ backgroundColor: "#ffffff" }}
             data-testid="whatsapp-popup"
           >
             <div className="relative flex flex-col items-center px-6 pb-6 pt-8">

@@ -2,13 +2,15 @@ import {
   users, products, userProducts, wallets, paymentChannels, 
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
   bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit, platformSettingsAudit,
+  supportMessages, supportAttachments,
   type User, type InsertUser, type Product, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
   type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage,
-  type AdminAppointment, type PaymentChannelAudit, type PlatformSettingsAudit, VIP_PRODUCTS
+  type AdminAppointment, type PaymentChannelAudit, type PlatformSettingsAudit,
+  type SupportMessage, type SupportAttachment, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, gte, lte, or, count } from "drizzle-orm";
+import { eq, and, asc, desc, inArray, sql, gte, lte, or, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 function generateReferralCode(): string {
@@ -116,8 +118,28 @@ export interface IStorage {
   createPaymentChannelAudit(channelId: string, changedById: string, action: string, previousData?: any, newData?: any): Promise<PaymentChannelAudit>;
   getPaymentChannelAuditHistory(channelId: string, limit?: number): Promise<(PaymentChannelAudit & { changedBy: User })[]>;
   getAllPaymentChannelAuditHistory(): Promise<(PaymentChannelAudit & { changedBy: User; channel?: PaymentChannel })[]>;
+
+  getSupportMessages(userId: string): Promise<SupportMessageWithAttachments[]>;
+  getSupportConversations(): Promise<SupportConversationSummary[]>;
+  createSupportUserMessage(userId: string, body: string, files: SupportAttachmentUpload[]): Promise<void>;
+  createAdminSupportMessage(userId: string, adminId: string, body: string, files: SupportAttachmentUpload[]): Promise<void>;
+  getSupportAttachment(id: string): Promise<SupportAttachment | undefined>;
   
   initializeDefaults(): Promise<void>;
+}
+
+export type SupportAttachmentUpload = Pick<SupportAttachment, "fileName" | "mimeType" | "size" | "data">;
+export type SupportMessageWithAttachments = Pick<SupportMessage, "id" | "senderType" | "body" | "createdAt"> & {
+  attachments: Array<Pick<SupportAttachment, "id" | "messageId" | "fileName" | "mimeType" | "size">>;
+};
+export interface SupportConversationSummary {
+  userId: string;
+  fullName: string;
+  phone: string;
+  country: string;
+  lastMessage: string;
+  lastSenderType: SupportMessage["senderType"];
+  lastMessageAt: Date;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -854,6 +876,116 @@ export class DatabaseStorage implements IStorage {
     .orderBy(desc(paymentChannelAudit.changedAt));
     
     return result;
+  }
+
+  async getSupportMessages(userId: string): Promise<SupportMessageWithAttachments[]> {
+    const messages = await db.select()
+      .from(supportMessages)
+      .where(eq(supportMessages.userId, userId))
+      .orderBy(desc(supportMessages.createdAt))
+      .limit(300);
+
+    if (messages.length === 0) return [];
+
+    const orderedMessages = messages.reverse();
+    const attachments = await db.select({
+      id: supportAttachments.id,
+      messageId: supportAttachments.messageId,
+      fileName: supportAttachments.fileName,
+      mimeType: supportAttachments.mimeType,
+      size: supportAttachments.size,
+    })
+      .from(supportAttachments)
+      .where(inArray(supportAttachments.messageId, orderedMessages.map((message) => message.id)));
+    const attachmentsByMessage = new Map<string, typeof attachments>();
+    for (const attachment of attachments) {
+      const items = attachmentsByMessage.get(attachment.messageId) || [];
+      items.push(attachment);
+      attachmentsByMessage.set(attachment.messageId, items);
+    }
+
+    return orderedMessages.map((message) => ({
+      id: message.id,
+      senderType: message.senderType,
+      body: message.body,
+      createdAt: message.createdAt,
+      attachments: attachmentsByMessage.get(message.id) || [],
+    }));
+  }
+
+  async getSupportConversations(): Promise<SupportConversationSummary[]> {
+    const recentMessages = await db.select({
+      userId: supportMessages.userId,
+      fullName: users.fullName,
+      phone: users.phone,
+      country: users.country,
+      lastMessage: supportMessages.body,
+      lastSenderType: supportMessages.senderType,
+      lastMessageAt: supportMessages.createdAt,
+    })
+      .from(supportMessages)
+      .innerJoin(users, eq(supportMessages.userId, users.id))
+      .orderBy(desc(supportMessages.createdAt))
+      .limit(2000);
+
+    const latestByUser = new Map<string, SupportConversationSummary>();
+    for (const message of recentMessages) {
+      if (!latestByUser.has(message.userId)) {
+        latestByUser.set(message.userId, message);
+      }
+    }
+    return Array.from(latestByUser.values());
+  }
+
+  async createSupportUserMessage(userId: string, body: string, files: SupportAttachmentUpload[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [message] = await tx.insert(supportMessages).values({
+        userId,
+        senderId: userId,
+        senderType: "user",
+        body,
+      }).returning();
+
+      if (files.length > 0) {
+        await tx.insert(supportAttachments).values(files.map((file) => ({
+          ...file,
+          messageId: message.id,
+          userId,
+        })));
+      }
+
+      await tx.insert(supportMessages).values({
+        userId,
+        senderType: "system",
+        body: "Bonjour, votre message a bien été reçu. L’équipe Terra vous répondra dès que possible.",
+      });
+    });
+  }
+
+  async createAdminSupportMessage(userId: string, adminId: string, body: string, files: SupportAttachmentUpload[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [message] = await tx.insert(supportMessages).values({
+        userId,
+        senderId: adminId,
+        senderType: "admin",
+        body,
+      }).returning();
+
+      if (files.length > 0) {
+        await tx.insert(supportAttachments).values(files.map((file) => ({
+          ...file,
+          messageId: message.id,
+          userId,
+        })));
+      }
+    });
+  }
+
+  async getSupportAttachment(id: string): Promise<SupportAttachment | undefined> {
+    const [attachment] = await db.select()
+      .from(supportAttachments)
+      .where(eq(supportAttachments.id, id));
+    return attachment || undefined;
   }
 }
 

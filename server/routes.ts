@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, type SupportAttachmentUpload } from "./storage";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import { 
@@ -10,8 +10,57 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import MemoryStore from "memorystore";
+import multer from "multer";
 
 const SessionStore = MemoryStore(session);
+const supportMessageSchema = z.object({
+  message: z.string().trim().max(2000, "Le message ne peut pas dépasser 2 000 caractères").default(""),
+});
+const supportImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { files: 4, fileSize: 5 * 1024 * 1024 },
+});
+
+function parseSupportUploads(req: Request, res: Response, next: NextFunction) {
+  supportImageUpload.array("attachments", 4)(req, res, (error) => {
+    if (error) {
+      const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
+        ? "Chaque image doit faire 5 Mo maximum"
+        : error instanceof multer.MulterError && ["LIMIT_FILE_COUNT", "LIMIT_UNEXPECTED_FILE"].includes(error.code)
+          ? "Vous pouvez joindre jusqu’à 4 images"
+          : "Images invalides. Utilisez des fichiers JPG, PNG ou WebP.";
+      return res.status(400).json({ message });
+    }
+    next();
+  });
+}
+
+function getSupportUploads(req: Request, res: Response): SupportAttachmentUpload[] | null {
+  const files = (req.files || []) as Express.Multer.File[];
+  const uploads: SupportAttachmentUpload[] = [];
+
+  for (const file of files) {
+    const buffer = file.buffer;
+    const isPng = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const isJpeg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    const isWebp = buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
+    const verifiedMimeType = isPng ? "image/png" : isJpeg ? "image/jpeg" : isWebp ? "image/webp" : null;
+
+    if (!verifiedMimeType || file.mimetype !== verifiedMimeType) {
+      res.status(400).json({ message: "Une image jointe n’est pas valide." });
+      return null;
+    }
+
+    uploads.push({
+      fileName: file.originalname.replace(/[\\/\0]/g, "_").slice(0, 180) || "capture",
+      mimeType: verifiedMimeType,
+      size: file.size,
+      data: buffer,
+    });
+  }
+
+  return uploads;
+}
 
 declare module "express-session" {
   interface SessionData {
@@ -611,7 +660,56 @@ export async function registerRoutes(
     res.json(referralDetails);
   });
 
-  app.get("/api/settings/public", async (req, res) => {
+  app.get("/api/support/messages", requireAuth, async (req, res) => {
+    try {
+      res.json(await storage.getSupportMessages(req.session.userId!));
+    } catch {
+      res.status(500).json({ message: "Impossible de charger la conversation." });
+    }
+  });
+
+  app.post("/api/support/messages", requireAuth, parseSupportUploads, async (req, res) => {
+    const parsed = supportMessageSchema.safeParse({ message: req.body?.message ?? "" });
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.issues[0]?.message || "Message invalide." });
+    }
+
+    const files = getSupportUploads(req, res);
+    if (!files) return;
+    if (!parsed.data.message && files.length === 0) {
+      return res.status(400).json({ message: "Écrivez un message ou joignez une capture d’écran." });
+    }
+
+    try {
+      await storage.createSupportUserMessage(req.session.userId!, parsed.data.message, files);
+      res.status(201).json({ success: true });
+    } catch {
+      res.status(500).json({ message: "Votre message n’a pas pu être envoyé." });
+    }
+  });
+
+  app.get("/api/support/attachments/:id", requireAuth, async (req, res) => {
+    try {
+      const attachment = await storage.getSupportAttachment(req.params.id);
+      if (!attachment) return res.status(404).json({ message: "Image introuvable." });
+
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) return res.status(401).json({ message: "Non authentifié." });
+      if (!user.isAdmin && attachment.userId !== user.id) {
+        return res.status(403).json({ message: "Accès refusé." });
+      }
+
+      res.setHeader("Content-Type", attachment.mimeType);
+      res.setHeader("Content-Length", attachment.size);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "private, no-store");
+      res.send(attachment.data);
+    } catch {
+      res.status(500).json({ message: "Impossible de charger cette image." });
+    }
+  });
+
+  app.get("/api/settings/public", async (_req, res) => {
     const settings = await storage.getAllSettings();
     res.json({
       customerService: settings.customerService || "",
@@ -623,6 +721,46 @@ export async function registerRoutes(
   app.get("/api/admin/dashboard", requireAdmin, async (req, res) => {
     const stats = await storage.getDashboardStats();
     res.json(stats);
+  });
+
+  app.get("/api/admin/support/conversations", requireAdmin, async (_req, res) => {
+    try {
+      res.json(await storage.getSupportConversations());
+    } catch {
+      res.status(500).json({ message: "Impossible de charger les conversations." });
+    }
+  });
+
+  app.get("/api/admin/support/conversations/:userId/messages", requireAdmin, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.userId);
+      if (!user) return res.status(404).json({ message: "Utilisateur introuvable." });
+      res.json(await storage.getSupportMessages(user.id));
+    } catch {
+      res.status(500).json({ message: "Impossible de charger cette conversation." });
+    }
+  });
+
+  app.post("/api/admin/support/conversations/:userId/messages", requireAdmin, parseSupportUploads, async (req, res) => {
+    const parsed = supportMessageSchema.safeParse({ message: req.body?.message ?? "" });
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.issues[0]?.message || "Message invalide." });
+    }
+
+    const files = getSupportUploads(req, res);
+    if (!files) return;
+    if (!parsed.data.message && files.length === 0) {
+      return res.status(400).json({ message: "Écrivez un message ou joignez une image." });
+    }
+
+    try {
+      const user = await storage.getUser(req.params.userId);
+      if (!user) return res.status(404).json({ message: "Utilisateur introuvable." });
+      await storage.createAdminSupportMessage(user.id, req.session.userId!, parsed.data.message, files);
+      res.status(201).json({ success: true });
+    } catch {
+      res.status(500).json({ message: "La réponse n’a pas pu être envoyée." });
+    }
   });
 
   app.get("/api/admin/products", requireAdmin, async (_req, res) => {
