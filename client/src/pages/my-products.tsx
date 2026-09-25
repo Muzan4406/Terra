@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { ArrowLeft, Crown, Calendar, TrendingUp, CheckCircle, Clock } from "lucide-react";
 import { Link } from "wouter";
+import { solarImages } from "@/lib/solar-images";
 
 interface UserProduct {
   id: string;
@@ -103,8 +104,14 @@ export default function MyProductsPage() {
                         className="bg-white rounded-xl overflow-hidden shadow-sm"
                         data-testid={`card-product-${userProduct.id}`}
                       >
-                        <div className={`bg-gradient-to-r ${getLevelColor(userProduct.product.level)} p-4`}>
-                          <div className="flex items-center justify-between">
+                        <div className={`relative overflow-hidden bg-gradient-to-r ${getLevelColor(userProduct.product.level)} p-4`}>
+                          <img
+                            src={solarImages[(userProduct.product.level - 1) % solarImages.length].src}
+                            alt={solarImages[(userProduct.product.level - 1) % solarImages.length].alt}
+                            className="absolute inset-0 h-full w-full object-cover opacity-50"
+                          />
+                          <div className="absolute inset-0 bg-slate-950/40" />
+                          <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Crown className="w-5 h-5 text-white" />
                               <span className="text-white font-bold text-lg">
@@ -195,8 +202,14 @@ export default function MyProductsPage() {
                       className="bg-white rounded-xl overflow-hidden shadow-sm opacity-70"
                       data-testid={`card-product-completed-${userProduct.id}`}
                     >
-                      <div className="bg-gray-300 p-4">
-                        <div className="flex items-center justify-between">
+                      <div className="relative overflow-hidden bg-gray-300 p-4">
+                        <img
+                          src={solarImages[(userProduct.product.level - 1) % solarImages.length].src}
+                          alt={solarImages[(userProduct.product.level - 1) % solarImages.length].alt}
+                          className="absolute inset-0 h-full w-full object-cover opacity-50"
+                        />
+                        <div className="absolute inset-0 bg-slate-950/40" />
+                        <div className="relative z-10 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Crown className="w-5 h-5 text-white" />
                             <span className="text-white font-bold text-lg">

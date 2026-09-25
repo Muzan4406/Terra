@@ -58,7 +58,7 @@
 ## Component Specifications
 
 ### Hero Section (Home Screen Top)
-Use a text-led panel without photography. A restrained gradient may distinguish the welcome message from the account content.
+Use the supplied solar-energy photography in a responsive carousel. Keep the Terra oil name and welcome text readable over a dark gradient.
 
 Show the Terra oil name and a short description of the account features.
 
@@ -86,9 +86,9 @@ Input fields: `border border-slate-300 rounded-lg px-4 py-3 text-base focus:bord
 ### Admin Dashboard
 Sidebar: `bg-slate-900 w-64 fixed h-full` with white nav items. Active: `bg-blue-600 text-white`. Main content: `ml-64 p-8 bg-slate-50`. Stat cards: `grid grid-cols-4 gap-6`, each `bg-white rounded-xl p-6 border border-slate-200`. Tables: `bg-white rounded-xl overflow-hidden` with `border border-slate-200`, striped rows `even:bg-slate-50`.
 
-## Image-free Interface
+## Solar Imagery
 
-Do not display photos, uploaded pictures, image-based logos, or image-based navigation on the site. Use text, CSS surfaces, and small interface icons where needed. Profile placeholders should use text initials rather than uploaded photos.
+Use the shared solar image collection for the home carousel, product cards, and supporting page banners. Crop with `object-cover`, keep image corners consistent with nearby cards, and provide descriptive alt text. Keep the Terra oil wordmark as text; navigation remains icon-based.
 
 ## Accessibility
 - WCAG AA contrast ratios (blue-600 on white = 4.5:1)

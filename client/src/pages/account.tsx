@@ -10,6 +10,7 @@ import {
   Headphones, RefreshCw, Lock, Shield, LogOut,
   ArrowRight, Package
 } from "lucide-react";
+import { solarImages } from "@/lib/solar-images";
 
 interface PlatformSettings {
   customerService: string;
@@ -104,11 +105,12 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
       <div className="max-w-md mx-auto bg-white">
-        <div 
-          className="relative pt-6 pb-4 px-4"
-          style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #87ceeb 100%)' }}
-        >
-          <div className="absolute top-2 right-2">
+        <div className="relative overflow-hidden px-4 pb-4 pt-6">
+          <div className="absolute inset-0">
+            <img src={solarImages[4].src} alt={solarImages[4].alt} className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 to-emerald-900/55" />
+          </div>
+          <div className="absolute right-2 top-2 z-20">
             <button 
               className="flex items-center gap-1 text-white/80 text-xs"
               data-testid="button-language"
@@ -164,6 +166,7 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
               </div>
+              <img src={solarImages[0].src} alt={solarImages[0].alt} className="h-16 w-16 rounded-lg object-cover opacity-90" />
             </button>
             
             <button
@@ -177,6 +180,7 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
               </div>
+              <img src={solarImages[3].src} alt={solarImages[3].alt} className="h-16 w-16 rounded-lg object-cover opacity-90" />
             </button>
           </div>
         </div>

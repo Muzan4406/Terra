@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { solarImages } from "@/lib/solar-images";
 
 interface PlatformSettings {
   customerService: string;
@@ -58,6 +59,11 @@ export default function CustomerServicePage() {
             Service client
           </h1>
         </header>
+
+        <div className="relative h-40 w-full overflow-hidden">
+          <img src={solarImages[0].src} alt={solarImages[0].alt} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-teal-950/45 to-transparent" />
+        </div>
 
         <div className="relative px-4 pt-8 pb-4">
           <div 

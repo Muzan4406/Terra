@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2, Users, Globe, Award, Heart, Wallet } from "lucide-react";
+import { solarImages } from "@/lib/solar-images";
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -20,6 +21,24 @@ export default function AboutPage() {
           <div className="text-center py-6">
             <h2 className="text-2xl font-bold">Terra oil</h2>
             <p className="text-muted-foreground">Votre espace de suivi</p>
+          </div>
+
+          <div className="space-y-3">
+            <img
+              src={solarImages[1].src}
+              alt={solarImages[1].alt}
+              className="h-44 w-full rounded-xl object-cover"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              {[solarImages[2], solarImages[4]].map((image) => (
+                <img
+                  key={image.src}
+                  src={image.src}
+                  alt={image.alt}
+                  className="h-28 w-full rounded-lg object-cover"
+                />
+              ))}
+            </div>
           </div>
 
           <Card>
