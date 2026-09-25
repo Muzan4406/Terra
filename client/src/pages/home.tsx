@@ -189,54 +189,59 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden px-4 py-3 pb-[108px]">
-        <div className="home-actions">
-          <div className="grid grid-cols-4 gap-3">
-            {actionButtons.map((btn, index) => (
-              <button
-                key={index}
-                className="flex flex-col items-center gap-2 group"
-                onClick={() => navigate(btn.path)}
-                data-testid={btn.testId}
-              >
-                <div className={`home-action-icon w-14 h-14 rounded-full ${btn.bgColor} border-2 ${btn.borderColor} flex items-center justify-center shadow-md group-hover:shadow-lg group-active:scale-95 transition-all`}>
-                  <btn.icon className={`h-7 w-7 ${btn.iconColor}`} />
-                </div>
-                <span className="home-action-label text-xs text-gray-700 font-semibold text-center leading-tight">{btn.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 py-3 pb-[108px]">
+          <section
+            aria-label="Résumé du compte"
+            className="home-account-summary shrink-0 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-[#e7c49d] to-[#c99b6d] p-3 shadow-sm"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
+              <span className="rounded-full bg-white/45 px-2 py-0.5 text-[10px] font-semibold text-slate-800/75">XOF</span>
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-white/50">
+              <div className="min-w-0 pr-3">
+                <p className="mb-1 text-[11px] font-medium text-slate-800/75">Solde disponible</p>
+                <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-balance">
+                  {formatNumber(user.balance)}
+                </p>
+              </div>
+              <div className="min-w-0 pl-3">
+                <p className="mb-1 text-[11px] font-medium text-slate-800/75">Revenu cumulé</p>
+                <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-earnings">
+                  {formatNumber(user.totalEarnings)}
+                </p>
+              </div>
+            </div>
+          </section>
 
-        <div className="mx-4 flex shrink-0 items-center gap-2 py-3 px-4 bg-amber-50 rounded-lg border border-amber-100 overflow-hidden">
-          <div className="flex-shrink-0 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
-            HOT
-          </div>
-          <div className="overflow-hidden flex-1">
-            <div className="whitespace-nowrap animate-marquee text-sm text-gray-700">
-              {notifications.map((notif, i) => (
-                <span key={i} className="mx-4">{notif}</span>
+          <section className="home-actions shrink-0" aria-label="Actions rapides">
+            <h2 className="sr-only">Actions rapides</h2>
+            <div className="grid grid-cols-2 gap-2.5">
+              {actionButtons.map((btn) => (
+                <button
+                  key={btn.testId}
+                  className="home-action-tile group flex min-h-14 min-w-0 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-left shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
+                  onClick={() => navigate(btn.path)}
+                  data-testid={btn.testId}
+                >
+                  <span className={`home-action-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${btn.bgColor} border ${btn.borderColor}`}>
+                    <btn.icon className={`h-5 w-5 ${btn.iconColor}`} />
+                  </span>
+                  <span className="min-w-0 text-xs font-bold leading-tight text-slate-700">{btn.label}</span>
+                </button>
               ))}
             </div>
-          </div>
-        </div>
+          </section>
 
-        <div className="home-stats mx-4 grid shrink-0 grid-cols-2 gap-3">
-          <div className="rounded-xl p-3 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
-            <p className="break-words text-xl font-bold leading-tight text-gray-900" data-testid="text-balance">
-              XOF {formatNumber(user.balance)}
+          <div className="home-news flex min-h-10 shrink-0 items-center gap-2.5 rounded-xl border border-amber-100 bg-amber-50/90 px-3 py-2">
+            <span className="shrink-0 rounded-md bg-amber-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+              Actu
+            </span>
+            <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700" data-testid="text-home-notification">
+              {notifications[tickerOffset]}
             </p>
-            <p className="text-sm text-gray-800 mt-1">Solde du compte</p>
           </div>
-
-          <div className="rounded-xl p-3 shadow-sm" style={{ background: "linear-gradient(135deg, #d4a574 0%, #c4956a 100%)" }}>
-            <p className="break-words text-xl font-bold leading-tight text-gray-900" data-testid="text-earnings">
-              XOF {formatNumber(user.totalEarnings)}
-            </p>
-            <p className="text-sm text-gray-800 mt-1">Revenu cumulé</p>
-          </div>
-        </div>
-        </div>
+        </main>
 
       </div>
 
@@ -249,20 +254,26 @@ export default function HomePage() {
       />
 
       <style>{`
-        @keyframes marquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 15s linear infinite;
-        }
         .home-hero { height: clamp(138px, 24vh, 208px); }
         @media (max-height: 700px) {
-          .home-hero { height: clamp(116px, 21vh, 148px); }
-          .home-actions { transform: scale(0.94); transform-origin: center; }
-          .home-action-icon { width: 3rem; height: 3rem; }
-          .home-action-label { font-size: 0.625rem; }
-          .home-stats { gap: 0.5rem; }
+          .home-hero { height: clamp(112px, 19vh, 138px); }
+          .home-content { gap: 0.5rem; padding-top: 0.5rem; }
+          .home-account-summary { padding: 0.625rem; }
+          .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
+          .home-account-amount { font-size: 1rem; }
+          .home-action-tile { min-height: 2.75rem; gap: 0.5rem; padding: 0.375rem 0.5rem; }
+          .home-action-icon { width: 2rem; height: 2rem; }
+          .home-action-icon svg { width: 1rem; height: 1rem; }
+          .home-news { min-height: 2rem; padding-top: 0.375rem; padding-bottom: 0.375rem; }
+        }
+        @media (max-height: 540px) {
+          .home-hero { height: 5.75rem; }
+          .home-content { gap: 0.375rem; padding-top: 0.375rem; }
+          .home-account-summary { padding: 0.5rem; }
+          .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
+          .home-account-summary p { margin-bottom: 0; }
+          .home-action-tile { min-height: 2.375rem; }
+          .home-news { min-height: 1.75rem; }
         }
       `}</style>
     </div>
