@@ -77,7 +77,7 @@ export default function HomePage() {
             aria-hidden="true"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e8eee8] text-[#174f3d]"
           >
-            <Bell className="h-[19px] w-[19px]" />
+            <Bell className="h-4 w-4" />
           </div>
         </header>
 
@@ -103,7 +103,7 @@ export default function HomePage() {
             <div className="relative z-10">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[12px] font-semibold tracking-[0.025em] text-white/80">
-                  Solde d’investissement
+                  Solde du compte
                 </p>
                 <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-white/85">
                   XOF
