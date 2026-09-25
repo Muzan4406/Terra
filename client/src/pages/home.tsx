@@ -182,18 +182,18 @@ export default function HomePage() {
 
           <section className="home-actions shrink-0" aria-label="Actions rapides">
             <h2 className="sr-only">Actions rapides</h2>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {actionButtons.map((btn) => (
                 <button
                   key={btn.testId}
-                  className="home-action-tile group flex min-h-16 min-w-0 items-center gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-left shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
+                  className="home-action-tile group flex min-h-40 min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 text-center shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                  <span className="home-action-icon flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full">
                     <img src={btn.image} alt="" className="h-full w-full object-cover" />
                   </span>
-                  <span className="min-w-0 text-sm font-bold leading-tight text-slate-700">{btn.label}</span>
+                  <span className="min-w-0 text-sm font-bold leading-tight tracking-wide text-slate-700">{btn.label}</span>
                 </button>
               ))}
             </div>
@@ -219,8 +219,8 @@ export default function HomePage() {
           .home-account-summary { padding: 0.625rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
           .home-account-amount { font-size: 1rem; }
-          .home-action-tile { min-height: 3.5rem; gap: 0.75rem; padding: 0.5rem 0.75rem; }
-          .home-action-icon { width: 2.5rem; height: 2.5rem; }
+          .home-action-tile { min-height: 8rem; gap: 0.75rem; padding: 0.75rem; }
+          .home-action-icon { width: 4rem; height: 4rem; }
         }
         @media (max-height: 540px) {
           .home-hero { height: 5.75rem; }
@@ -228,8 +228,8 @@ export default function HomePage() {
           .home-account-summary { padding: 0.5rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
           .home-account-summary p { margin-bottom: 0; }
-          .home-action-tile { min-height: 3rem; }
-          .home-action-icon { width: 2rem; height: 2rem; }
+          .home-action-tile { min-height: 6.5rem; gap: 0.5rem; padding: 0.5rem; }
+          .home-action-icon { width: 3rem; height: 3rem; }
         }
       `}</style>
     </div>
