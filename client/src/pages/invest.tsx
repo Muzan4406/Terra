@@ -140,9 +140,6 @@ export default function InvestPage() {
                       <h3 className="font-bold text-lg text-blue-600">
                         {product.name}
                       </h3>
-                      <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
-                        Hot
-                      </span>
                     </div>
                     
                     <div className="space-y-1 text-sm">

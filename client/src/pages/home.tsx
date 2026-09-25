@@ -185,8 +185,8 @@ export default function HomePage() {
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="home-summary-icon flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
-                  <img src={bankIcon} alt="" className="h-full w-full object-contain" />
+                <span className="home-summary-icon flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                  <img src={bankIcon} alt="" className="h-full w-full scale-110 object-contain mix-blend-multiply" />
                 </span>
                 <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
               </div>
@@ -218,8 +218,8 @@ export default function HomePage() {
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
-                    <img src={btn.image} alt="" className="h-full w-full object-contain" />
+                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+                    <img src={btn.image} alt="" className="h-full w-full scale-110 object-contain mix-blend-multiply" />
                   </span>
                   <span className="min-w-0 text-sm font-bold leading-tight text-slate-700">{btn.label}</span>
                 </button>
