@@ -101,7 +101,7 @@ export default function WalletsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Gestion des portefeuilles</h1>
+          <h1 className="text-xl font-bold">Mes portefeuilles de paiement</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -210,7 +210,7 @@ export default function WalletsPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun portefeuille enregistré</p>
+                <p className="text-muted-foreground">Aucun portefeuille pour le moment</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Ajoutez un portefeuille pour effectuer des retraits
                 </p>

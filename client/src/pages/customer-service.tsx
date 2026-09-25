@@ -20,15 +20,15 @@ export default function CustomerServicePage() {
   const serviceLinks = [
     {
       id: "customerService",
-      title: "Service client WhatsApp",
-      subtitle: "Assistance clientèle principale",
+      title: "Écrire au service client",
+      subtitle: "Pour toute question concernant votre compte",
       description: "Service en ligne 24h/24 et 7j/7",
       url: settings?.customerService || "",
       testId: "link-customer-service",
     },
     {
       id: "officialChannel",
-      title: "Chaîne WhatsApp officielle",
+      title: "Chaîne officielle",
       subtitle: "Actualités et annonces",
       description: "Restez informé des dernières nouvelles",
       url: settings?.officialChannel || "",
@@ -36,7 +36,7 @@ export default function CustomerServicePage() {
     },
     {
       id: "discussionGroup",
-      title: "Groupe WhatsApp officiel",
+      title: "Groupe de discussion",
       subtitle: "Communauté d'investisseurs",
       description: "Échangez avec d'autres membres",
       url: settings?.discussionGroup || "",
@@ -45,17 +45,17 @@ export default function CustomerServicePage() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #4ECDC4 0%, #44A08D 50%, #093637 100%)' }}>
+    <div className="min-h-screen">
       <div className="max-w-md mx-auto">
-        <header className="flex items-center gap-4 px-4 py-4" style={{ background: 'linear-gradient(90deg, #4ECDC4 0%, #44A08D 100%)' }}>
+        <header className="flex items-center gap-4 border-b border-border/70 bg-card/75 px-4 py-4 backdrop-blur-lg">
           <button 
             onClick={() => navigate("/account")}
-            className="text-white hover:text-white/80"
+            className="text-foreground hover:text-primary"
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-semibold text-white flex-1 text-center pr-5">
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center pr-5">
             Service client
           </h1>
         </header>
@@ -67,7 +67,7 @@ export default function CustomerServicePage() {
 
         <div className="relative px-4 pt-8 pb-4">
           <div 
-            className="absolute top-0 left-0 right-0 h-64 bg-white"
+            className="absolute top-0 left-0 right-0 h-64 bg-card/75"
             style={{
               borderRadius: '0 0 50% 50% / 0 0 100px 100px',
             }}
@@ -75,19 +75,18 @@ export default function CustomerServicePage() {
 
           <div className="relative z-10 flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-teal-50 flex items-center justify-center">
-                <span className="text-4xl font-bold text-teal-700" aria-hidden="true">T</span>
+              <div className="w-32 h-32 rounded-full border-4 border-card shadow-lg bg-accent/45 flex items-center justify-center">
+                <span className="font-serif text-4xl font-bold text-primary" aria-hidden="true">T</span>
               </div>
-              <div className="absolute -right-1 top-4 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                SUR
+              <div className="absolute -right-1 top-4 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full font-medium">
+                AIDE
               </div>
             </div>
 
-            <h2 className="text-2xl font-semibold text-teal-500 mb-3">Accueillir</h2>
+            <h2 className="text-2xl font-semibold text-primary mb-3">Comment pouvons-nous vous aider ?</h2>
             <p className="text-center text-gray-600 text-sm leading-relaxed px-4 mb-8">
-              Comment puis-je vous aider aujourd'hui ?<br />
-              Veuillez cliquer sur le bouton ci-dessous pour<br />
-              envoyer un message.
+              Choisissez le canal adapté à votre demande.<br />
+              Les liens disponibles sont configurés par l’équipe TerraOil.
             </p>
           </div>
         </div>
@@ -101,19 +100,16 @@ export default function CustomerServicePage() {
                 key={link.id}
                 onClick={() => link.url && window.open(link.url, "_blank", "noopener,noreferrer")}
                 disabled={!link.url}
-                className="w-full text-left rounded-xl p-4 transition-transform active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
-                style={{
-                  background: 'linear-gradient(135deg, #FFD93D 0%, #FF9500 100%)',
-                }}
+                className="w-full text-left rounded-xl border border-border/80 bg-card/85 p-4 shadow-sm transition-transform active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
                 data-testid={link.testId}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg">{link.title}</h3>
-                    <p className="text-white/90 text-sm">{link.subtitle}</p>
-                    <p className="text-white/80 text-xs mt-0.5">{link.url ? link.description : "Lien WhatsApp non configuré"}</p>
+                    <h3 className="text-foreground font-semibold text-lg">{link.title}</h3>
+                    <p className="text-muted-foreground text-sm">{link.subtitle}</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">{link.url ? link.description : "Ce lien n’est pas encore configuré."}</p>
                   </div>
-                  <ChevronRight className="h-6 w-6 text-white flex-shrink-0" />
+                  <ChevronRight className="h-6 w-6 text-primary flex-shrink-0" />
                 </div>
               </button>
             ))

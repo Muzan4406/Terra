@@ -85,7 +85,7 @@ export default function ChangePasswordPage() {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-xl font-semibold">Modifier le mot de passe</h1>
+          <h1 className="text-xl font-semibold">Sécurité du compte</h1>
         </div>
 
         <div className="bg-white rounded-t-3xl min-h-[calc(100vh-80px)] p-6">
@@ -96,7 +96,7 @@ export default function ChangePasswordPage() {
           </div>
 
           <p className="text-center text-gray-600 mb-8">
-            Entrez votre mot de passe actuel et choisissez un nouveau mot de passe sécurisé.
+            Confirmez votre mot de passe actuel, puis définissez un nouveau mot de passe.
           </p>
 
           <Form {...form}>
@@ -213,7 +213,7 @@ export default function ChangePasswordPage() {
           </Form>
 
           <div className="mt-8 p-4 bg-blue-50 rounded-xl">
-            <h3 className="text-sm font-semibold text-blue-800 mb-2">Conseils de sécurité :</h3>
+                    <h3 className="text-sm font-semibold text-blue-800 mb-2">Quelques repères de sécurité</h3>
             <ul className="text-xs text-blue-600 space-y-1">
               <li>Utilisez au moins 6 caractères</li>
               <li>Combinez lettres, chiffres et symboles</li>

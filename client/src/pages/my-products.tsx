@@ -76,12 +76,10 @@ export default function MyProductsPage() {
     <div className="min-h-screen bg-gray-100 pb-20">
       <div className="max-w-md mx-auto">
         <div className="bg-white p-4 flex items-center gap-3 shadow-sm">
-          <Link href="/account">
-            <button className="p-2 hover:bg-gray-100 rounded-full" data-testid="button-back">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
+          <Link href="/account" className="p-2 hover:bg-gray-100 rounded-full" data-testid="button-back" aria-label="Retour au compte">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-800">Mes produits VIP</h1>
+          <h1 className="text-xl font-bold text-gray-800">Mes produits</h1>
         </div>
 
         <div className="p-4 space-y-4">
@@ -138,7 +136,7 @@ export default function MyProductsPage() {
                             <div className="bg-green-50 rounded-lg p-3 text-center">
                               <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
                                 <TrendingUp className="w-4 h-4" />
-                                <span className="text-xs font-medium">Revenu cumulé</span>
+                    <span className="text-xs font-medium">Montant cumulé</span>
                               </div>
                               <p className="text-xl font-bold text-green-700" data-testid="text-cumulative-revenue">
                                 {formatNumber(cumulativeRevenue)} F
@@ -154,7 +152,7 @@ export default function MyProductsPage() {
                           </div>
                           
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-500 text-sm">Revenu journalier</span>
+                              <span className="text-gray-500 text-sm">Montant quotidien</span>
                             <span className="font-semibold text-green-600">
                               +{formatNumber(userProduct.product.dailyReturn)} FCFA
                             </span>
@@ -244,15 +242,14 @@ export default function MyProductsPage() {
               <Crown className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">Aucun produit VIP</p>
               <p className="text-sm text-gray-400 mt-1">
-                Investissez dans un produit VIP pour commencer à gagner
+                        Les produits associés à votre compte apparaîtront ici.
               </p>
-              <Link href="/invest">
-                <button 
-                  className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600"
-                  data-testid="button-invest"
-                >
-                  Voir les produits
-                </button>
+              <Link
+                href="/invest"
+                className="mt-4 inline-flex bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600"
+                data-testid="button-invest"
+              >
+                Voir les produits disponibles
               </Link>
             </div>
           )}

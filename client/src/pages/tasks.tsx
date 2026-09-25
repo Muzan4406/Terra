@@ -96,8 +96,8 @@ export default function TasksPage() {
     <div className="min-h-screen bg-gray-100 pb-24">
       <div className="max-w-md mx-auto">
         <div className="bg-white px-4 py-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-800">Tâches et récompenses</h1>
-          <p className="text-sm text-gray-500 mt-1">Suivez votre progression et vos récompenses.</p>
+          <h1 className="text-xl font-bold text-gray-800">Défis et récompenses</h1>
+          <p className="text-sm text-gray-500 mt-1">Consultez vos objectifs, votre progression et les récompenses disponibles.</p>
         </div>
         <div className="h-44 w-full overflow-hidden">
           <img src={solarImages[2].src} alt={solarImages[2].alt} className="h-full w-full object-cover" />
@@ -107,11 +107,11 @@ export default function TasksPage() {
           <div className="flex">
             <div className="flex-1 py-4 text-center border-r border-gray-200">
               <p className="text-3xl font-bold text-gray-800">{totalReferrals}</p>
-              <p className="text-sm text-gray-500">Total des personnes</p>
+              <p className="text-sm text-gray-500">Membres parrainés</p>
             </div>
             <div className="flex-1 py-4 text-center">
               <p className="text-3xl font-bold text-gray-800">FCFA {totalRewards.toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Total des récompenses</p>
+              <p className="text-sm text-gray-500">Récompenses reçues</p>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function TasksPage() {
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-lg font-bold text-gray-800">Tâche {task.number}</span>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">{task.description.replace(` pour recevoir ${task.reward}F`, '')} :</p>
+                    <p className="text-sm text-gray-600">{task.description.replace(` pour recevoir ${task.reward}F`, '')}</p>
                     <p className="text-orange-500 font-semibold">FCFA {task.reward.toLocaleString()}</p>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function TasksPage() {
                 <div className="flex justify-between text-center mb-4">
                   <div className="flex-1">
                     <p className="text-2xl font-bold text-gray-800">{task.current}</p>
-                    <p className="text-sm text-gray-500">Actuel</p>
+                    <p className="text-sm text-gray-500">Réalisé</p>
                   </div>
                   <div className="flex-1">
                     <p className="text-2xl font-bold text-gray-800">{task.objective}</p>
@@ -151,7 +151,7 @@ export default function TasksPage() {
                     className="w-full py-3 bg-green-100 text-green-600 rounded-lg font-medium"
                     disabled
                   >
-                    Réclamé
+                    Récompense reçue
                   </button>
                 ) : task.completed ? (
                   <button 
@@ -167,7 +167,7 @@ export default function TasksPage() {
                     className="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-medium"
                     disabled
                   >
-                    En cours
+                    Objectif en cours
                   </button>
                 )}
               </div>

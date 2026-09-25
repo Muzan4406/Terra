@@ -43,13 +43,13 @@ export default function HistoryPage() {
       case "approved":
         return (
           <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-full font-medium">
-            Paiement réussi
+            Validé
           </span>
         );
       case "pending":
         return (
           <span className="bg-yellow-500 text-white text-xs px-3 py-1 rounded-full font-medium">
-            En attente
+            En cours
           </span>
         );
       case "rejected":
@@ -87,7 +87,7 @@ export default function HistoryPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-lg font-semibold text-gray-900 flex-1 text-center pr-5">
-            Enregistrements de fonds
+            Historique des opérations
           </h1>
         </header>
 

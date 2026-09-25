@@ -120,8 +120,8 @@ export default function HomePage() {
           ))}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15" />
           <div className="absolute bottom-4 left-4 right-4 text-white">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/80">Terra oil</p>
-            <h2 className="mt-1 text-2xl font-bold">Bienvenue dans votre espace</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/80">TerraOil · votre espace</p>
+            <h2 className="mt-1 text-2xl font-bold">Vos repères, réunis au même endroit</h2>
           </div>
           <button
             type="button"
@@ -160,19 +160,19 @@ export default function HomePage() {
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
+               <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Vue d’ensemble</h2>
               </div>
               <span className="rounded-full bg-white/45 px-2 py-0.5 text-[10px] font-semibold text-slate-800/75">XOF</span>
             </div>
             <div className="grid grid-cols-2 divide-x divide-white/50">
               <div className="min-w-0 pr-3">
-                <p className="mb-1 text-[11px] font-medium text-slate-800/75">Solde disponible</p>
+                 <p className="mb-1 text-[11px] font-medium text-slate-800/75">Solde du compte</p>
                 <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-balance">
                   {formatNumber(user.balance)}
                 </p>
               </div>
               <div className="min-w-0 pl-3">
-                <p className="mb-1 text-[11px] font-medium text-slate-800/75">Revenu cumulé</p>
+                 <p className="mb-1 text-[11px] font-medium text-slate-800/75">Revenus cumulés</p>
                 <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-earnings">
                   {formatNumber(user.totalEarnings)}
                 </p>

@@ -18,18 +18,18 @@ export function BottomNav() {
         {navItems.map((item) => {
           const isActive = location === item.path;
           return (
-            <Link key={item.path} href={item.path}>
-              <button
-                data-testid={`nav-${item.label.toLowerCase()}`}
-                className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2 transition-all ${
-                  isActive
-                    ? "bg-accent/70 text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <item.icon className={`w-6 h-6 ${isActive ? "opacity-100" : "opacity-70"}`} aria-hidden="true" />
-                <span className={`text-xs font-bold ${isActive ? "text-primary" : ""}`}>{item.label}</span>
-              </button>
+            <Link
+              key={item.path}
+              href={item.path}
+              data-testid={`nav-${item.label.toLowerCase()}`}
+              className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2 transition-all ${
+                isActive
+                  ? "bg-accent/70 text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <item.icon className={`w-6 h-6 ${isActive ? "opacity-100" : "opacity-70"}`} aria-hidden="true" />
+              <span className={`text-xs font-bold ${isActive ? "text-primary" : ""}`}>{item.label}</span>
             </Link>
           );
         })}

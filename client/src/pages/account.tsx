@@ -36,8 +36,8 @@ export default function AccountPage() {
     if (user) {
       navigator.clipboard.writeText(user.referralCode);
       toast({
-        title: "Copié!",
-        description: "L'ID utilisateur a été copié.",
+       title: "Code copié",
+       description: "Votre identifiant de parrainage est prêt à être partagé.",
       });
     }
   };
@@ -63,7 +63,7 @@ export default function AccountPage() {
   const menuItems = [
     { 
       icon: Package, 
-      label: "Mes produits VIP", 
+      label: "Mes produits",
       iconBg: "bg-purple-100",
       iconColor: "text-purple-500",
       action: () => navigate("/my-products"),
@@ -71,7 +71,7 @@ export default function AccountPage() {
     },
     { 
       icon: Info, 
-      label: "À propos de nous", 
+      label: "À propos de TerraOil",
       iconBg: "bg-blue-100",
       iconColor: "text-blue-500",
       action: () => navigate("/about"),
@@ -87,7 +87,7 @@ export default function AccountPage() {
     },
     { 
       icon: RefreshCw, 
-      label: "Échange de code", 
+      label: "Utiliser un code bonus",
       iconBg: "bg-teal-100",
       iconColor: "text-teal-500",
       action: () => navigate("/exchange-code"),
@@ -117,7 +117,7 @@ export default function AccountPage() {
               data-testid="button-language"
             >
               <Globe className="h-4 w-4" />
-              <span>langue</span>
+              <span>Langue</span>
             </button>
           </div>
           
@@ -147,7 +147,7 @@ export default function AccountPage() {
               <p className="text-white font-bold text-base leading-tight truncate w-full" data-testid="text-total-earnings">
                 {formatNumber(user.totalEarnings)}
               </p>
-              <p className="text-white/70 text-xs mt-1">Revenu cumulé</p>
+              <p className="text-white/70 text-xs mt-1">Revenus cumulés</p>
             </div>
             <div className="text-center flex flex-col items-center justify-center min-w-0">
               <p className="text-white font-bold text-base leading-tight truncate w-full" data-testid="text-today-earnings">
@@ -164,7 +164,7 @@ export default function AccountPage() {
               data-testid="button-bank-account"
             >
               <div>
-                <p className="text-white font-bold text-sm mb-2">Compte bancaire</p>
+                <p className="text-white font-bold text-sm mb-2">Mes portefeuilles</p>
                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>
@@ -178,7 +178,7 @@ export default function AccountPage() {
               data-testid="button-invoice"
             >
               <div>
-                <p className="text-white font-bold text-sm mb-2">Ma facture</p>
+                <p className="text-white font-bold text-sm mb-2">Mon historique</p>
                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                   <ArrowRight className="h-4 w-4 text-white" />
                 </div>

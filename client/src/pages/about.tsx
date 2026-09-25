@@ -15,7 +15,7 @@ export default function AboutPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">À propos de Terra oil</h1>
+          <h1 className="text-xl font-bold">À propos de TerraOil</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -23,7 +23,7 @@ export default function AboutPage() {
             <h2 className="flex justify-center">
               <BrandLogo className="h-10 w-auto" />
             </h2>
-            <p className="text-muted-foreground">Votre espace de suivi</p>
+            <p className="text-muted-foreground">Un espace pour consulter et gérer votre compte</p>
           </div>
 
           <div className="space-y-3">
@@ -53,7 +53,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold">Un espace centralisé</h3>
                   <p className="text-sm text-muted-foreground">
-                    Terra oil rassemble les principales fonctions de votre compte dans une interface simple à consulter.
+                    TerraOil rassemble les fonctions essentielles de votre compte dans un espace conçu pour être facile à consulter.
                   </p>
                 </div>
               </div>
@@ -89,8 +89,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold">Présence en Afrique</h3>
                   <p className="text-sm text-muted-foreground">
-                    Nous opérons dans 5 pays africains francophones: Cameroun, Burkina Faso, Togo, 
-                    Bénin et Côte d'Ivoire, offrant des opportunités d'investissement uniques.
+                    La plateforme est accessible au Cameroun, au Burkina Faso, au Togo, au Bénin et en Côte d'Ivoire.
                   </p>
                 </div>
               </div>

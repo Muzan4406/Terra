@@ -174,7 +174,7 @@ export default function AdminBonusCodesPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold">Codes bonus</h1>
+          <h1 className="text-xl font-bold">Codes bonus</h1>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
@@ -390,9 +390,9 @@ export default function AdminBonusCodesPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <Gift className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">Aucun code bonus</p>
+            <p className="text-lg font-medium mb-2">Aucun code bonus pour le moment</p>
                 <p className="text-muted-foreground mb-4">
-                  Créez votre premier code bonus pour récompenser vos utilisateurs
+                  Créez un code pour créditer une récompense selon les conditions définies.
                 </p>
                 <Button onClick={() => setIsCreateOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />

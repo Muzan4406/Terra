@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -350,5 +351,274 @@ a {
   button,
   a {
     transition-duration: 180ms;
+  }
+}
+
+/* TerraOil — a warm, legible field-journal for everyday account management. */
+:root {
+  --background: 42 39% 94%;
+  --foreground: 157 27% 15%;
+  --card: 43 40% 98% / .88;
+  --card-foreground: 157 27% 15%;
+  --card-border: 39 25% 84%;
+  --border: 39 25% 84%;
+  --sidebar: 43 35% 92%;
+  --sidebar-foreground: 157 27% 15%;
+  --sidebar-border: 39 25% 84%;
+  --sidebar-primary: 158 39% 24%;
+  --sidebar-primary-foreground: 42 39% 96%;
+  --sidebar-accent: 39 38% 87%;
+  --sidebar-accent-foreground: 157 27% 15%;
+  --sidebar-ring: 158 39% 30%;
+  --popover: 43 40% 98% / .96;
+  --popover-foreground: 157 27% 15%;
+  --popover-border: 39 25% 84%;
+  --primary: 158 39% 24%;
+  --primary-foreground: 42 39% 96%;
+  --secondary: 38 46% 86%;
+  --secondary-foreground: 157 27% 18%;
+  --muted: 40 24% 89%;
+  --muted-foreground: 156 11% 39%;
+  --accent: 38 69% 77%;
+  --accent-foreground: 157 27% 15%;
+  --destructive: 4 56% 43%;
+  --destructive-foreground: 42 39% 96%;
+  --input: 39 20% 79%;
+  --ring: 31 63% 48%;
+  --chart-1: 158 39% 24%;
+  --chart-2: 31 63% 48%;
+  --chart-3: 191 25% 42%;
+  --chart-4: 7 49% 51%;
+  --chart-5: 45 62% 59%;
+  --font-sans: "DM Sans", sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --radius: 1rem;
+  --shadow-2xs: 0 1px 2px hsl(157 27% 15% / .04);
+  --shadow-xs: 0 2px 6px hsl(157 27% 15% / .05);
+  --shadow-sm: 0 6px 16px hsl(157 27% 15% / .07);
+  --shadow: 0 9px 24px hsl(157 27% 15% / .08);
+  --shadow-md: 0 14px 32px hsl(157 27% 15% / .10);
+  --shadow-lg: 0 20px 46px hsl(157 27% 15% / .13);
+  --shadow-xl: 0 24px 60px hsl(157 27% 15% / .15);
+  --shadow-2xl: 0 32px 80px hsl(157 27% 15% / .18);
+}
+
+html {
+  background: hsl(var(--background));
+}
+
+body {
+  font-family: var(--font-sans);
+  letter-spacing: -0.012em;
+  background: transparent;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.035em;
+}
+
+.site-background {
+  background-color: hsl(var(--background));
+  background-blend-mode: normal;
+}
+
+.site-page {
+  position: relative;
+}
+
+.site-page > :first-child {
+  color: hsl(var(--foreground));
+}
+
+/* Preserve the shared solar-home photograph, visible as a quiet watermark. */
+.site-page > div[class*="min-h-screen"],
+.site-page > div[class*="min-h-\\[100dvh\\]"] {
+  background-color: transparent !important;
+}
+
+.site-page > div.fixed.inset-0.bg-gray-50 {
+  background-color: transparent !important;
+}
+
+.auth-hero-image {
+  width: min(calc(100% - 2rem), 30rem);
+  height: clamp(8.5rem, 22vh, 11rem);
+  margin: 1.5rem auto 0;
+  border-radius: 1.75rem;
+  box-shadow: 0 18px 42px hsl(157 27% 15% / .18);
+}
+
+.auth-form-panel {
+  width: min(calc(100% - 2rem), 30rem);
+  max-width: 30rem;
+  margin: 1rem auto 2rem;
+  border: 1px solid hsl(43 40% 98% / .82);
+  border-radius: 1.75rem;
+  background: hsl(43 40% 98% / .91);
+  box-shadow: 0 22px 52px hsl(157 27% 15% / .12);
+  backdrop-filter: blur(18px);
+}
+
+.site-page .max-w-md.mx-auto,
+.site-page .max-w-4xl.mx-auto {
+  width: min(100%, 72rem);
+}
+
+.site-page .max-w-md.mx-auto.bg-white,
+.site-page .max-w-md.mx-auto.bg-white\/70 {
+  background-color: hsl(43 40% 98% / .78) !important;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 18px 50px hsl(157 27% 15% / .08);
+}
+
+.site-page header.bg-card,
+.site-page header.bg-white,
+.site-page .bg-white.p-4,
+.site-page .bg-white.px-4 {
+  background-color: hsl(43 40% 98% / .84) !important;
+  backdrop-filter: blur(12px);
+  border-color: hsl(var(--border) / .8);
+}
+
+.site-page .bg-white:not([class*="bg-gradient"]),
+.site-page .bg-gray-50:not([class*="bg-gradient"]),
+.site-page .bg-gray-100:not([class*="bg-gradient"]) {
+  background-color: hsl(43 40% 98% / .78);
+}
+
+.site-page [class*="rounded-xl"].shadow-sm,
+.site-page [class*="rounded-2xl"].shadow-sm {
+  box-shadow: 0 8px 24px hsl(157 27% 15% / .065);
+}
+
+.site-page input:not([type="checkbox"]):not([type="radio"]),
+.site-page textarea,
+.site-page [role="combobox"] {
+  border-color: hsl(var(--border));
+}
+
+.site-page input:focus,
+.site-page textarea:focus {
+  outline-color: hsl(var(--ring));
+}
+
+.site-page button,
+.site-page a,
+[role="dialog"] button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.site-page button:not(:disabled):active {
+  transform: scale(.985);
+}
+
+.site-page .text-blue-600,
+.site-page .text-blue-500,
+.site-page .text-blue-700,
+.site-page .text-blue-800 {
+  color: hsl(var(--primary)) !important;
+}
+
+.site-page .bg-blue-500,
+.site-page .bg-blue-600,
+.site-page .bg-blue-400 {
+  background-color: hsl(var(--primary)) !important;
+}
+
+.site-page .border-blue-500 {
+  border-color: hsl(var(--primary)) !important;
+}
+
+.site-page .bg-blue-50,
+.site-page .bg-blue-100 {
+  background-color: hsl(158 30% 90% / .84) !important;
+}
+
+.site-page .text-gray-900,
+.site-page .text-gray-800 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.site-page .text-gray-600,
+.site-page .text-gray-500 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.site-page .border-gray-100,
+.site-page .border-gray-200 {
+  border-color: hsl(var(--border) / .82) !important;
+}
+
+.site-page .bg-gray-100 {
+  background-color: hsl(var(--muted) / .7) !important;
+}
+
+.site-page [data-testid^="button-"],
+.site-page button[class*="rounded-full"][class*="bg-blue"],
+.site-page button[class*="bg-blue-500"],
+.site-page button[class*="bg-blue-600"] {
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.site-page .home-hero {
+  min-height: 150px;
+}
+
+.site-page .home-account-summary {
+  background: linear-gradient(130deg, hsl(37 65% 77% / .96), hsl(31 59% 66% / .93)) !important;
+  border-color: hsl(32 46% 64% / .6) !important;
+}
+
+.site-page .home-action-tile {
+  border-color: hsl(var(--border) / .82) !important;
+  background-color: hsl(43 40% 98% / .9) !important;
+}
+
+.site-page .home-action-icon {
+  box-shadow: 0 8px 20px hsl(157 27% 15% / .14);
+}
+
+.site-page .max-w-md.mx-auto > header h1,
+.site-page h1 {
+  font-family: var(--font-serif);
+}
+
+.site-page .font-mono,
+.site-page code,
+.site-page [data-testid*="code"] {
+  font-family: var(--font-mono);
+}
+
+.site-page table {
+  width: 100%;
+}
+
+.site-page [class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .site-page > :first-child > * {
+    animation: rise-in 360ms ease both;
+  }
+}
+
+@media (max-width: 767px) {
+  .site-page .max-w-4xl.mx-auto {
+    width: 100%;
+  }
+  .site-page [class*="grid-cols-3"] {
+    gap: .5rem;
+  }
+  .site-page input,
+  .site-page select,
+  .site-page textarea {
+    font-size: 16px;
   }
 }

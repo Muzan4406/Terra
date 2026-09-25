@@ -54,7 +54,7 @@ export default function AdminDashboard() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Panneau d'administration</h1>
+          <h1 className="text-xl font-bold">Vue d’ensemble · Administration</h1>
         </header>
 
         <div className="p-4 space-y-6">
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
-                        <p className="text-xs text-muted-foreground">Utilisateurs total</p>
+                  <p className="text-xs text-muted-foreground">Utilisateurs au total</p>
                       </div>
                     </div>
                   </CardContent>
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">{stats?.todayRegistrations || 0}</p>
-                        <p className="text-xs text-muted-foreground">Inscrits aujourd'hui</p>
+                  <p className="text-xs text-muted-foreground">Nouvelles inscriptions aujourd’hui</p>
                       </div>
                     </div>
                   </CardContent>
@@ -172,18 +172,18 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Menu administrateur</CardTitle>
+              <CardTitle className="text-lg">Gestion de la plateforme</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {menuItems.map((item, index) => (
-                <Link key={item.path} href={item.path}>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start gap-3 h-14 rounded-none hover-elevate ${
-                      index !== menuItems.length - 1 ? "border-b border-border" : ""
-                    }`}
-                    data-testid={`admin-menu-${item.label.toLowerCase().replace(/\s/g, '-')}`}
-                  >
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`flex w-full items-center justify-start gap-3 px-4 h-14 rounded-none hover-elevate ${
+                    index !== menuItems.length - 1 ? "border-b border-border" : ""
+                  }`}
+                  data-testid={`admin-menu-${item.label.toLowerCase().replace(/\s/g, '-')}`}
+                >
                     <item.icon className={`h-5 w-5 ${item.color}`} />
                     <span className="flex-1 text-left">{item.label}</span>
                     {item.count !== undefined && item.count > 0 && (
@@ -192,7 +192,6 @@ export default function AdminDashboard() {
                       </span>
                     )}
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Button>
                 </Link>
               ))}
             </CardContent>

@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Gestion des utilisateurs</h1>
+          <h1 className="text-xl font-bold">Comptes utilisateurs</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -202,7 +202,7 @@ export default function AdminUsersPage() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher (téléphone, nom, code)..."
+                placeholder="Nom, téléphone ou code de parrainage"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -219,7 +219,7 @@ export default function AdminUsersPage() {
                 >
                   {f === "all" && "Tous"}
                   {f === "banned" && "Bannis"}
-                  {f === "blocked" && "Retrait bloqué"}
+                  {f === "blocked" && "Retraits bloqués"}
                   {f === "promoter" && "Promoteurs"}
                   {f === "admin" && "Admins"}
                 </Button>
@@ -263,7 +263,7 @@ export default function AdminUsersPage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3 text-green-600" />
-                            Invest: <MoneyDisplay amount={u.totalInvestment} />
+                            Investi : <MoneyDisplay amount={u.totalInvestment} />
                           </span>
                           <span className="flex items-center gap-1">
                             <CreditCard className="h-3 w-3 text-blue-600" />
@@ -286,7 +286,7 @@ export default function AdminUsersPage() {
                           {u.referrerName && (
                             <span className="flex items-center gap-1">
                               <UserCheck className="h-3 w-3 text-purple-600" />
-                              Parrain: {u.referrerName} ({u.referrerPhone})
+                              Parrain : {u.referrerName} ({u.referrerPhone})
                             </span>
                           )}
                         </div>

@@ -79,7 +79,7 @@ export default function AdminDepositsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Gestion des dépôts</h1>
+          <h1 className="text-xl font-bold">Demandes de dépôt</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -87,7 +87,7 @@ export default function AdminDepositsPage() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher par numéro..."
+                placeholder="Rechercher un téléphone ou un numéro de compte"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"

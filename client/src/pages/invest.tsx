@@ -118,7 +118,7 @@ export default function InvestPage() {
       <div className="max-w-md mx-auto">
         <header className="py-6 px-4 bg-white">
           <h1 className="text-base font-bold text-center text-gray-800">
-            Produits Terra oil
+            Produits d’investissement
           </h1>
         </header>
 
@@ -144,19 +144,19 @@ export default function InvestPage() {
                     
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Revenu quotidien:</span>
+                        <span className="text-gray-500">Montant quotidien :</span>
                         <span className="font-medium text-gray-800">{formatNumber(product.dailyReturn)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Revenu total:</span>
+                        <span className="text-gray-500">Montant total indiqué :</span>
                         <span className="font-medium text-gray-800">{formatNumber(product.totalReturn)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Taux de profit quotidien:</span>
+                        <span className="text-gray-500">Taux quotidien affiché :</span>
                         <span className="font-medium text-gray-800">{calculateProfitRate(product.dailyReturn, product.price)}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Période de revenu:</span>
+                        <span className="text-gray-500">Durée du produit :</span>
                         <span className="font-medium text-gray-800">{product.duration} Jour</span>
                       </div>
                     </div>
@@ -169,7 +169,7 @@ export default function InvestPage() {
                     onClick={() => handleShowDetails(product)}
                     data-testid={`button-details-${product.level}`}
                   >
-                    Détail &gt;&gt;
+                    Voir les détails
                   </button>
                   
                   <div className="flex items-center overflow-hidden rounded-full border border-gray-300">

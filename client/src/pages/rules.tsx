@@ -41,10 +41,9 @@ export default function RulesPage() {
       icon: Users,
       title: "Parrainage",
       items: [
-        "Niveau 1: 25% de commission",
-        "Niveau 2: 2% de commission",
-        "Niveau 3: 1% de commission",
-        "Commissions calculées sur les achats de produits VIP",
+        "Le parrainage est organisé sur trois niveaux.",
+        "Les commissions sont calculées sur les achats de produits VIP.",
+        "Consultez les montants applicables dans votre espace avant toute décision.",
       ],
     },
     {

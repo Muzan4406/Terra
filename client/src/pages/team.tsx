@@ -62,7 +62,6 @@ export default function TeamPage() {
     {
       level: 1,
       label: "LV1",
-      commissionRate: "25%",
       teamSize: stats?.level1Count || 0,
       commissionEarned: level1Commission,
       medalColor: "bg-yellow-400",
@@ -71,7 +70,6 @@ export default function TeamPage() {
     {
       level: 2,
       label: "LV2",
-      commissionRate: "2%",
       teamSize: stats?.level2Count || 0,
       commissionEarned: level2Commission,
       medalColor: "bg-gray-300",
@@ -80,7 +78,6 @@ export default function TeamPage() {
     {
       level: 3,
       label: "LV3",
-      commissionRate: "1%",
       teamSize: stats?.level3Count || 0,
       commissionEarned: level3Commission,
       medalColor: "bg-orange-400",
@@ -96,7 +93,7 @@ export default function TeamPage() {
             <img src={referralIcon} alt="" className="h-14 w-14 shrink-0 object-contain" />
             <div className="min-w-0">
               <h1 className="text-lg font-semibold text-gray-800">Votre équipe</h1>
-              <p className="text-sm text-gray-600">Partagez votre code et suivez vos filleuls.</p>
+              <p className="text-sm text-gray-600">Partagez votre code et suivez les membres de votre réseau.</p>
             </div>
           </section>
 
@@ -113,7 +110,7 @@ export default function TeamPage() {
               className="bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
               data-testid="button-copy-link"
             >
-              Copie
+              Copier le lien
             </button>
           </div>
 
@@ -128,7 +125,7 @@ export default function TeamPage() {
                 className="bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
                 data-testid="button-copy-code"
               >
-                Copie
+                Copier le code
               </button>
             </div>
           </div>
@@ -166,7 +163,7 @@ export default function TeamPage() {
                   </div>
                   <Link href={`/team/level/${level.level}`}>
                     <div className="flex items-center gap-1 text-blue-500 cursor-pointer hover:text-blue-600" data-testid={`link-level-${level.level}`}>
-                      <span className="text-sm font-medium">Taux: {level.commissionRate}</span>
+                      <span className="text-sm font-medium">Voir les membres</span>
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </Link>
@@ -192,11 +189,11 @@ export default function TeamPage() {
             <h3 className="text-blue-600 font-bold mb-3">Comment ça fonctionne</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <p>1. Partagez votre lien ou code d'invitation avec vos amis et votre famille.</p>
-              <p>2. Lorsqu'ils s'inscrivent et investissent, vous gagnez des commissions sur leurs achats.</p>
-              <p>3. Niveau 1 (invités directs): 25% de commission sur leurs investissements.</p>
-              <p>4. Niveau 2 (invités de niveau 1): 2% de commission sur leurs investissements.</p>
-              <p>5. Niveau 3 (invités de niveau 2): 1% de commission sur leurs investissements.</p>
-              <p>6. Les commissions sont créditées instantanément sur votre solde.</p>
+              <p>2. Les commissions sont liées aux achats de produits VIP effectués dans votre réseau.</p>
+              <p>3. Consultez les détails de chaque niveau dans votre espace avant de prendre une décision.</p>
+              <p>4. Les membres sont répartis sur trois niveaux de parrainage.</p>
+              <p>5. Le montant des commissions est visible dans le récapitulatif de votre équipe.</p>
+              <p>6. Les commissions créditées apparaissent dans le solde et l'historique du compte.</p>
             </div>
           </div>
         </div>

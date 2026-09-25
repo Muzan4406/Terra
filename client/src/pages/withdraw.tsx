@@ -99,7 +99,7 @@ export default function WithdrawPage() {
           <button onClick={() => navigate("/")} className="text-gray-600">
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-xl font-bold text-blue-600">Retrait</h1>
+          <h1 className="text-xl font-bold text-blue-600">Demander un retrait</h1>
           <div className="w-6"></div>
         </header>
 
@@ -144,7 +144,7 @@ export default function WithdrawPage() {
               <span className="text-blue-600 font-medium">
                 {selectedWallet 
                   ? `${selectedWallet.paymentMethod} - ${selectedWallet.accountNumber}`
-                  : "Sélectionner un compte bancaire"
+                  : "Choisir un portefeuille"
                 }
               </span>
             </div>
@@ -188,7 +188,7 @@ export default function WithdrawPage() {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Veuillez saisir le montant du retrait."
+                placeholder="Saisissez le montant"
                 className="flex-1 text-gray-800 bg-transparent outline-none"
                 min={1200}
                 data-testid="input-amount"
@@ -196,9 +196,9 @@ export default function WithdrawPage() {
             </div>
             <div className="flex justify-between mt-2 text-sm">
               <span className="text-blue-600">
-                Montant reçu: FCFA {netAmount > 0 ? netAmount.toFixed(2) : "0.00"}
+                Montant net estimé : FCFA {netAmount > 0 ? netAmount.toFixed(2) : "0.00"}
               </span>
-              <span className="text-gray-500">Impôt: 15%</span>
+              <span className="text-gray-500">Frais : 15%</span>
             </div>
           </div>
 
@@ -214,12 +214,12 @@ export default function WithdrawPage() {
                 Traitement...
               </>
             ) : (
-              "Retirez-vous maintenant"
+              "Envoyer la demande"
             )}
           </button>
 
           <div>
-            <h3 className="text-blue-600 font-bold mb-3">Instructions de retrait</h3>
+            <h3 className="text-blue-600 font-bold mb-3">À savoir avant votre retrait</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <p>1. Le montant minimum de retrait est de 1 200 FCFA.</p>
               <p>2. Les heures de retrait sont de {withdrawalHours.start}h à {withdrawalHours.end}h, avec une limite de 3 retraits par jour.</p>

@@ -14,10 +14,10 @@ interface ReferralUser {
   createdAt: string;
 }
 
-const levelConfig: Record<number, { label: string; commission: string; medalColor: string }> = {
-  1: { label: "LV1", commission: "27%", medalColor: "bg-yellow-400" },
-  2: { label: "LV2", commission: "2%", medalColor: "bg-gray-300" },
-  3: { label: "LV3", commission: "1%", medalColor: "bg-orange-400" },
+const levelConfig: Record<number, { label: string; medalColor: string }> = {
+  1: { label: "LV1", medalColor: "bg-yellow-400" },
+  2: { label: "LV2", medalColor: "bg-gray-300" },
+  3: { label: "LV3", medalColor: "bg-orange-400" },
 };
 
 export default function TeamLevelPage() {
@@ -59,16 +59,14 @@ export default function TeamLevelPage() {
     <div className="min-h-screen bg-gray-100 pb-20">
       <div className="max-w-md mx-auto">
         <div className="bg-white p-4 flex items-center gap-3 shadow-sm">
-          <Link href="/team">
-            <button className="p-2 hover:bg-gray-100 rounded-full" data-testid="button-back">
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
+          <Link href="/team" className="p-2 hover:bg-gray-100 rounded-full" data-testid="button-back" aria-label="Retour à l’équipe">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full ${config.medalColor} flex items-center justify-center`}>
               <span className="text-sm font-bold text-white">{level}</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-800">{config.label} - Commission {config.commission}</h1>
+            <h1 className="text-xl font-bold text-gray-800">Membres · {config.label}</h1>
           </div>
         </div>
 
@@ -107,7 +105,7 @@ export default function TeamLevelPage() {
             <div className="bg-white rounded-xl p-8 shadow-sm text-center">
               <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">Aucun membre au niveau {level}</p>
-              <p className="text-sm text-gray-400 mt-1">Partagez votre lien pour inviter des membres</p>
+              <p className="text-sm text-gray-400 mt-1">Partagez votre lien d'invitation pour développer votre réseau.</p>
             </div>
           )}
         </div>

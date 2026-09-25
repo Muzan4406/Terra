@@ -143,7 +143,7 @@ export default function AdminProductsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} aria-label="Retour">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Gestion des produits</h1>
+          <h1 className="text-xl font-bold">Catalogue des produits</h1>
         </header>
 
         <div className="p-4 space-y-4">

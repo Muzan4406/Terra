@@ -175,7 +175,7 @@ export default function AdminChannelsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Canaux de paiement</h1>
+          <h1 className="text-xl font-bold">Moyens de paiement</h1>
         </header>
 
         <div className="p-4 space-y-4">
@@ -294,7 +294,7 @@ export default function AdminChannelsPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun canal configuré</p>
+                <p className="text-muted-foreground">Aucun moyen de paiement n’est configuré.</p>
               </CardContent>
             </Card>
           ) : (
@@ -422,7 +422,7 @@ export default function AdminChannelsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <History className="h-5 w-5 text-red-500" />
-                Historique complet des modifications (Enquête fraude)
+                Journal des modifications
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Toutes les modifications effectuées sur les canaux de paiement

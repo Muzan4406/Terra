@@ -61,7 +61,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="h-40 w-full overflow-hidden sm:h-48 md:h-56">
+      <div className="auth-hero-image h-40 w-full overflow-hidden sm:h-48 md:h-56">
         <img
           src={solarImages[1].src}
           alt={solarImages[1].alt}
@@ -72,10 +72,10 @@ export default function RegisterPage() {
         <h1 className="flex justify-center">
           <BrandLogo className="h-10 w-auto" />
         </h1>
-        <p className="mt-2 text-sm text-gray-500">Créez votre compte</p>
+        <p className="mt-2 text-sm text-gray-500">Quelques informations pour ouvrir votre espace</p>
       </div>
 
-      <div className="flex-1 px-6 py-6 max-w-md mx-auto w-full">
+      <div className="auth-form-panel px-6 py-6 max-w-md mx-auto w-full">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -88,6 +88,7 @@ export default function RegisterPage() {
                     <Input
                       {...field}
                       placeholder="Votre nom complet"
+                      autoComplete="name"
                       className="h-12 border-gray-200 rounded-xl bg-white"
                       data-testid="input-fullname"
                     />
@@ -102,7 +103,7 @@ export default function RegisterPage() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <p className="text-sm text-gray-600 mb-2">Numéro de portable</p>
+                  <p className="text-sm text-gray-600 mb-2">Numéro de téléphone</p>
                   <FormControl>
                     <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-white">
                       <FormField
@@ -128,7 +129,8 @@ export default function RegisterPage() {
                       <Input
                         {...field}
                         type="tel"
-                        placeholder="Numéro de portable"
+                        autoComplete="tel"
+                        placeholder="Votre numéro de téléphone"
                         className="flex-1 border-0 h-12 focus-visible:ring-0 bg-transparent"
                         data-testid="input-phone"
                       />
@@ -144,12 +146,13 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <p className="text-sm text-gray-600 mb-2">Mot de passe</p>
+                  <p className="text-sm text-gray-600 mb-2">Choisissez un mot de passe</p>
                   <FormControl>
                     <Input
                       {...field}
                       type="password"
-                      placeholder="Mot de passe"
+                      autoComplete="new-password"
+                      placeholder="6 caractères minimum"
                       className="h-12 border-gray-200 rounded-xl bg-white"
                       data-testid="input-password"
                     />
@@ -180,7 +183,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-medium text-base mt-2"
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base mt-2 shadow-md"
               disabled={isLoading}
               data-testid="button-register"
             >
@@ -202,7 +205,7 @@ export default function RegisterPage() {
               Se connecter
             </span>
           </Link>
-          <span className="text-gray-500">S'inscrire</span>
+          <span className="text-gray-500">Déjà un compte ?</span>
         </div>
       </div>
     </div>

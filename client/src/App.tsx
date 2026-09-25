@@ -257,7 +257,7 @@ function App() {
               className="site-background"
               aria-hidden="true"
               style={{
-                backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.78), rgba(248, 250, 252, 0.78)), url("${solarImages[4].src}")`,
+                backgroundImage: `linear-gradient(rgba(244, 241, 229, 0.69), rgba(244, 241, 229, 0.69)), url("${solarImages[4].src}")`,
               }}
             />
             <Toaster />

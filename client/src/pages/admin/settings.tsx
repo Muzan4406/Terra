@@ -114,13 +114,13 @@ export default function AdminSettingsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Paramètres</h1>
+          <h1 className="text-xl font-bold">Configuration de la plateforme</h1>
         </header>
 
         <div className="p-4 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Liens WhatsApp</CardTitle>
+              <CardTitle className="text-lg">Liens de contact et d’information</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -260,7 +260,7 @@ export default function AdminSettingsPage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun historique disponible
+                  Aucune modification enregistrée pour le moment.
                 </p>
               )}
             </CardContent>

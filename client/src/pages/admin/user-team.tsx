@@ -105,7 +105,6 @@ export default function AdminUserTeamPage() {
 
   const renderTeamLevel = (level: number, members: TeamMember[]) => {
     const colors = levelColors[level as keyof typeof levelColors];
-    const commissionRate = level === 1 ? "25%" : level === 2 ? "2%" : "1%";
     
     return (
       <div key={level} className="bg-white rounded-xl overflow-hidden shadow-sm">
@@ -117,7 +116,7 @@ export default function AdminUserTeamPage() {
               </div>
               <div>
                 <h3 className={`font-bold ${colors.text}`}>Niveau {level}</h3>
-                <p className="text-sm text-gray-500">Taux de commission: {commissionRate}</p>
+                <p className="text-sm text-gray-500">Membres rattachés à ce niveau</p>
               </div>
             </div>
             <div className="text-right">

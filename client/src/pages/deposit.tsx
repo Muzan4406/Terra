@@ -126,7 +126,7 @@ export default function DepositPage() {
             <button onClick={() => navigate("/")} className="text-gray-600">
               <ArrowLeft className="h-6 w-6" />
             </button>
-            <h1 className="text-xl font-bold text-gray-800">Recharge</h1>
+            <h1 className="text-xl font-bold text-gray-800">Dépôt</h1>
           </div>
           <button onClick={() => navigate("/history")} className="text-gray-600">
             <Clock className="h-6 w-6" />
@@ -135,7 +135,7 @@ export default function DepositPage() {
 
         <div className="p-4 space-y-6">
           <div>
-            <p className="text-gray-500 text-sm mb-2">Entrez le montant</p>
+            <p className="text-gray-500 text-sm mb-2">Montant du dépôt</p>
             <div className="flex items-baseline gap-2 border-b border-gray-300 pb-2">
               <span className="text-blue-600 font-bold text-xl">FCFA</span>
               <input
@@ -191,7 +191,7 @@ export default function DepositPage() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-gray-500 text-sm">Sélectionnez un canal de recharge</p>
+            <p className="text-gray-500 text-sm">Choisissez un canal de paiement</p>
             {activeChannels.map((channel) => (
               <button
                 key={channel.id}
@@ -214,7 +214,7 @@ export default function DepositPage() {
                     ? "bg-blue-500 text-white" 
                     : "bg-red-100 text-red-600 border border-red-300"
                 }`}>
-                  {channel.isApi ? "AUTOMATIQUE" : "SEMI-AUTO"}
+                  {channel.isApi ? "AUTOMATIQUE" : "SEMI-AUTOMATIQUE"}
                 </span>
               </button>
             ))}
@@ -241,7 +241,7 @@ export default function DepositPage() {
               onClick={() => navigate("/history")}
               className="text-blue-500 text-sm hover:underline"
             >
-              Si la recharge n'est pas confirmée, cliquez ici
+              Une demande n’apparaît pas dans votre historique ? Consultez vos opérations.
             </button>
           </div>
 

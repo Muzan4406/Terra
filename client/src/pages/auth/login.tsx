@@ -52,7 +52,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="h-48 w-full overflow-hidden sm:h-56 md:h-64">
+      <div className="auth-hero-image h-48 w-full overflow-hidden sm:h-56 md:h-64">
         <img
           src={solarImages[0].src}
           alt={solarImages[0].alt}
@@ -63,10 +63,10 @@ export default function LoginPage() {
         <h1 className="flex justify-center">
           <BrandLogo className="h-10 w-auto" />
         </h1>
-        <p className="mt-2 text-sm text-gray-500">Connexion à votre espace</p>
+        <p className="mt-2 text-sm text-gray-500">Retrouvez votre compte TerraOil</p>
       </div>
 
-      <div className="flex-1 px-6 py-8 max-w-md mx-auto w-full">
+      <div className="auth-form-panel px-6 py-8 max-w-md mx-auto w-full">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
@@ -74,7 +74,7 @@ export default function LoginPage() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <p className="text-sm text-gray-600 mb-2">Numéro de portable</p>
+                  <p className="text-sm text-gray-600 mb-2">Numéro de téléphone</p>
                   <FormControl>
                     <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-white">
                       <FormField
@@ -100,7 +100,8 @@ export default function LoginPage() {
                       <Input
                         {...field}
                         type="tel"
-                        placeholder="Numéro de portable"
+                        autoComplete="tel"
+                        placeholder="Votre numéro de téléphone"
                         className="flex-1 border-0 h-12 focus-visible:ring-0 bg-transparent"
                         data-testid="input-phone"
                       />
@@ -116,12 +117,13 @@ export default function LoginPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <p className="text-sm text-gray-600 mb-2">Mot de passe</p>
+                  <p className="text-sm text-gray-600 mb-2">Mot de passe du compte</p>
                   <FormControl>
                     <Input
                       {...field}
                       type="password"
-                      placeholder="Mot de passe"
+                      autoComplete="current-password"
+                      placeholder="Saisissez votre mot de passe"
                       className="h-12 border-gray-200 rounded-xl bg-white"
                       data-testid="input-password"
                     />
@@ -133,7 +135,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-medium text-base mt-4"
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base mt-4 shadow-md"
               disabled={isLoading}
               data-testid="button-login"
             >
@@ -150,7 +152,7 @@ export default function LoginPage() {
         </Form>
 
         <div className="flex justify-between mt-8 text-sm">
-          <span className="text-gray-500">Se connecter Client</span>
+          <span className="text-gray-500">Nouveau sur TerraOil ?</span>
           <Link href="/register">
             <span className="text-gray-700 font-medium cursor-pointer" data-testid="link-register">
               S'inscrire
