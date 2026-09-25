@@ -73,7 +73,7 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="fixed inset-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-gray-50">
+      <div className="fixed inset-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-[#f2eee3]">
         <Skeleton className="h-screen w-full max-w-md" />
       </div>
     );
@@ -95,14 +95,14 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-gray-50">
-      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-white/70 shadow-sm backdrop-blur-sm">
-        <div className="flex shrink-0 items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f2eee3]">
+      <div className="mx-auto flex h-full max-w-md flex-col overflow-hidden bg-[#fbf8f0]/90 shadow-[0_12px_36px_rgba(40,54,42,0.08)] backdrop-blur-sm">
+        <div className="flex min-h-14 shrink-0 items-center justify-between border-b border-[#e9e2d4] bg-[#fbf8f0]/95 px-4 py-2.5">
           <h1>
             <BrandLogo className="h-8 w-auto" />
           </h1>
-          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-            <Bell className="w-4 h-4 text-amber-600" />
+          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f2e6cd] text-[#9a682d]">
+            <Bell className="h-4 w-4" />
           </div>
         </div>
 
@@ -118,16 +118,16 @@ export default function HomePage() {
               <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
             </div>
           ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15" />
-          <div className="absolute bottom-4 left-4 right-4 text-white">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/80">TerraOil · votre espace</p>
-            <h2 className="mt-1 text-2xl font-bold">Vos repères, réunis au même endroit</h2>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#132b25]/75 via-[#132b25]/10 to-black/10" />
+          <div className="absolute bottom-4 left-4 right-14 text-white sm:left-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-white/85">TerraOil · votre espace</p>
+            <h2 className="mt-1 font-serif text-[clamp(1.25rem,5vw,1.7rem)] font-semibold leading-tight tracking-[-0.025em]">Vos repères, réunis au même endroit</h2>
           </div>
           <button
             type="button"
             onClick={previousSlide}
             aria-label="Image précédente"
-            className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
+            className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/50"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -135,7 +135,7 @@ export default function HomePage() {
             type="button"
             onClick={nextSlide}
             aria-label="Image suivante"
-            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
+            className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/50"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -147,33 +147,33 @@ export default function HomePage() {
                 onClick={() => setCurrentSlide(index)}
                 aria-label={`Afficher l’image ${index + 1}`}
                 aria-current={index === currentSlide}
-                className={`h-2 w-2 rounded-full ${index === currentSlide ? "bg-white" : "bg-white/50"}`}
+                className={`h-2.5 w-2.5 rounded-full border border-white/40 transition-transform ${index === currentSlide ? "scale-110 bg-white" : "bg-white/50"}`}
               />
             ))}
           </div>
         </div>
 
-        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 py-3 pb-[88px]">
+        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-3 pb-[calc(6rem+env(safe-area-inset-bottom))]">
           <section
             aria-label="Résumé du compte"
-            className="home-account-summary shrink-0 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-[#e7c49d] to-[#c99b6d] p-3 shadow-sm"
+            className="home-account-summary shrink-0 rounded-2xl border border-[#ddc399] bg-gradient-to-br from-[#efdbba] to-[#d6ad7c] p-3.5 shadow-sm sm:p-4"
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-               <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Vue d’ensemble</h2>
+               <h2 className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#39453b]/80">Vue d’ensemble</h2>
               </div>
-              <span className="rounded-full bg-white/45 px-2 py-0.5 text-[10px] font-semibold text-slate-800/75">XOF</span>
+              <span className="rounded-full bg-[#fbf8f0]/55 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] text-[#39453b]/80">XOF</span>
             </div>
             <div className="grid grid-cols-2 divide-x divide-white/50">
               <div className="min-w-0 pr-3">
-                 <p className="mb-1 text-[11px] font-medium text-slate-800/75">Solde du compte</p>
-                <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-balance">
+                  <p className="mb-1 text-xs font-medium text-[#39453b]/80">Solde du compte</p>
+                 <p className="home-account-amount truncate text-xl font-bold leading-tight tabular-nums text-[#26372d]" data-testid="text-balance">
                   {formatNumber(user.balance)}
                 </p>
               </div>
               <div className="min-w-0 pl-3">
-                 <p className="mb-1 text-[11px] font-medium text-slate-800/75">Revenus cumulés</p>
-                <p className="home-account-amount truncate text-lg font-bold leading-tight text-slate-950" data-testid="text-earnings">
+                  <p className="mb-1 text-xs font-medium text-[#39453b]/80">Revenus cumulés</p>
+                 <p className="home-account-amount truncate text-xl font-bold leading-tight tabular-nums text-[#26372d]" data-testid="text-earnings">
                   {formatNumber(user.totalEarnings)}
                 </p>
               </div>
@@ -186,14 +186,14 @@ export default function HomePage() {
               {actionButtons.map((btn) => (
                 <button
                   key={btn.testId}
-                  className="home-action-tile group flex min-h-40 min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 text-center shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
+                  className="home-action-tile group flex min-h-36 min-w-0 flex-col items-center justify-center gap-3 rounded-2xl border border-[#e5ddce] bg-[#fbf8f0] p-3.5 text-center shadow-sm transition-all hover:border-[#d6bd91] hover:shadow-md active:scale-[0.98] sm:min-h-40 sm:p-4"
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className="home-action-icon flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                  <span className="home-action-icon flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] sm:h-[4.5rem] sm:w-[4.5rem]">
                     <img src={btn.image} alt="" className="h-full w-full object-cover" />
                   </span>
-                  <span className="min-w-0 text-sm font-bold leading-tight tracking-wide text-slate-700">{btn.label}</span>
+                  <span className="min-w-0 text-sm font-bold leading-tight tracking-[0.09em] text-[#3a4b40]">{btn.label}</span>
                 </button>
               ))}
             </div>
@@ -220,7 +220,7 @@ export default function HomePage() {
           .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
           .home-account-amount { font-size: 1rem; }
           .home-action-tile { min-height: 8rem; gap: 0.75rem; padding: 0.75rem; }
-          .home-action-icon { width: 4rem; height: 4rem; }
+          .home-action-icon { width: 3.5rem; height: 3.5rem; }
         }
         @media (max-height: 540px) {
           .home-hero { height: 5.75rem; }
