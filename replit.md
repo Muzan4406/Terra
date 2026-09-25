@@ -120,3 +120,7 @@ The system runs a background job every 60 seconds that:
 ## Development Commands
 - `npm run dev` - Start development server
 - `npm run db:push` - Push schema changes to database
+
+## Running on Replit
+- For a new or empty development database, run `npm run db:push` once to create the tables from `shared/schema.ts`.
+- Start the app with `npm run dev` (the configured `Start application` workflow). It serves the Express API and Vite frontend on port 5000.
