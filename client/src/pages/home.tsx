@@ -24,6 +24,17 @@ interface PlatformSettings {
   discussionGroup: string;
 }
 
+interface HomeAction {
+  icon?: typeof Headphones;
+  image?: string;
+  label: string;
+  path: string;
+  testId: string;
+  bgColor?: string;
+  iconColor?: string;
+  borderColor?: string;
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
@@ -92,7 +103,7 @@ export default function HomePage() {
     );
   }
 
-  const actionButtons = [
+  const actionButtons: HomeAction[] = [
     { 
       image: depositIcon,
       label: "RECHARGER", 
