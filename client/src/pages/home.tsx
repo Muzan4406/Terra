@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { WhatsAppPopup } from "@/components/whatsapp-popup";
 import {
-  Headphones,
   ChevronLeft,
   ChevronRight,
   Bell
@@ -25,14 +24,10 @@ interface PlatformSettings {
 }
 
 interface HomeAction {
-  icon?: typeof Headphones;
-  image?: string;
+  image: string;
   label: string;
   path: string;
   testId: string;
-  bgColor?: string;
-  iconColor?: string;
-  borderColor?: string;
 }
 
 export default function HomePage() {
@@ -117,15 +112,6 @@ export default function HomePage() {
       testId: "button-withdraw",
     },
     { 
-      icon: Headphones, 
-      label: "SERVICE CLIENT", 
-      path: "/customer-service", 
-      testId: "button-service",
-      bgColor: "bg-blue-100",
-      iconColor: "text-blue-600",
-      borderColor: "border-blue-200"
-    },
-    { 
       image: tasksIcon,
       label: "TÂCHES", 
       path: "/tasks", 
@@ -192,7 +178,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 py-3 pb-[108px]">
+        <main className="home-content flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 py-3 pb-[88px]">
           <section
             aria-label="Résumé du compte"
             className="home-account-summary shrink-0 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-[#e7c49d] to-[#c99b6d] p-3 shadow-sm"
@@ -224,22 +210,18 @@ export default function HomePage() {
 
           <section className="home-actions shrink-0" aria-label="Actions rapides">
             <h2 className="sr-only">Actions rapides</h2>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 gap-2">
               {actionButtons.map((btn) => (
                 <button
                   key={btn.testId}
-                  className="home-action-tile group flex min-h-14 min-w-0 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-left shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
+                  className="home-action-tile group flex min-h-16 min-w-0 items-center gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-left shadow-sm transition-all hover:border-amber-200 hover:shadow-md active:scale-[0.98]"
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className={`home-action-icon flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden ${btn.image ? "rounded-xl bg-white" : `rounded-full ${btn.bgColor} border ${btn.borderColor}`}`}>
-                    {btn.image ? (
-                      <img src={btn.image} alt="" className="h-full w-full object-contain" />
-                    ) : (
-                      btn.icon && <btn.icon className={`h-5 w-5 ${btn.iconColor}`} />
-                    )}
+                  <span className="home-action-icon flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
+                    <img src={btn.image} alt="" className="h-full w-full object-contain" />
                   </span>
-                  <span className="min-w-0 text-xs font-bold leading-tight text-slate-700">{btn.label}</span>
+                  <span className="min-w-0 text-sm font-bold leading-tight text-slate-700">{btn.label}</span>
                 </button>
               ))}
             </div>
@@ -274,9 +256,8 @@ export default function HomePage() {
           .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
           .home-summary-icon { width: 1.5rem; height: 1.5rem; }
           .home-account-amount { font-size: 1rem; }
-          .home-action-tile { min-height: 2.75rem; gap: 0.5rem; padding: 0.375rem 0.5rem; }
-          .home-action-icon { width: 2rem; height: 2rem; }
-          .home-action-icon svg { width: 1rem; height: 1rem; }
+          .home-action-tile { min-height: 3.5rem; gap: 0.75rem; padding: 0.5rem 0.75rem; }
+          .home-action-icon { width: 2.5rem; height: 2.5rem; }
           .home-news { min-height: 2rem; padding-top: 0.375rem; padding-bottom: 0.375rem; }
         }
         @media (max-height: 540px) {
@@ -286,7 +267,8 @@ export default function HomePage() {
           .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
           .home-summary-icon { width: 1.25rem; height: 1.25rem; }
           .home-account-summary p { margin-bottom: 0; }
-          .home-action-tile { min-height: 2.375rem; }
+          .home-action-tile { min-height: 3rem; }
+          .home-action-icon { width: 2rem; height: 2rem; }
           .home-news { min-height: 1.75rem; }
         }
       `}</style>
