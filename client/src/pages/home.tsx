@@ -15,6 +15,7 @@ import {
 import { useLocation } from "wouter";
 import { useEffect, useState, useCallback } from "react";
 import { solarImages } from "@/lib/solar-images";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface PlatformSettings {
   customerService: string;
@@ -123,7 +124,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
-          <h1 className="text-lg font-bold text-gray-800">Terra oil</h1>
+          <h1>
+            <BrandLogo className="h-8 w-auto" />
+          </h1>
           <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
             <Bell className="w-4 h-4 text-amber-600" />
           </div>

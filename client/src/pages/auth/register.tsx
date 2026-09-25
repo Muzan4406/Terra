@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { z } from "zod";
 import { solarImages } from "@/lib/solar-images";
+import { BrandLogo } from "@/components/brand-logo";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -68,7 +69,9 @@ export default function RegisterPage() {
         />
       </div>
       <div className="px-6 pt-8 pb-2 max-w-md mx-auto w-full text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1e3a5f]">Terra oil</h1>
+        <h1 className="flex justify-center">
+          <BrandLogo className="h-10 w-auto" />
+        </h1>
         <p className="mt-2 text-sm text-gray-500">Créez votre compte</p>
       </div>
 

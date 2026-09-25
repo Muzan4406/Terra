@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2, Users, Globe, Award, Heart, Wallet } from "lucide-react";
 import { solarImages } from "@/lib/solar-images";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -19,7 +20,9 @@ export default function AboutPage() {
 
         <div className="p-4 space-y-4">
           <div className="text-center py-6">
-            <h2 className="text-2xl font-bold">Terra oil</h2>
+            <h2 className="flex justify-center">
+              <BrandLogo className="h-10 w-auto" />
+            </h2>
             <p className="text-muted-foreground">Votre espace de suivi</p>
           </div>
 

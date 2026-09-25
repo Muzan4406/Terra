@@ -11,6 +11,7 @@ import {
   ArrowRight, Package
 } from "lucide-react";
 import { solarImages } from "@/lib/solar-images";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface PlatformSettings {
   customerService: string;
@@ -121,7 +122,9 @@ export default function AccountPage() {
           </div>
           
           <div className="relative z-10">
-            <h1 className="text-2xl font-bold text-white mb-1">Terra oil</h1>
+            <h1 className="mb-1 w-fit rounded-md bg-white/95 px-2 py-1">
+              <BrandLogo className="h-8 w-auto" />
+            </h1>
             <p className="text-white text-lg font-medium" data-testid="text-phone">
               {getCountryDialCode(user.country)} {user.phone}
             </p>

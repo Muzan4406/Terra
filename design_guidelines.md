@@ -90,6 +90,10 @@ Sidebar: `bg-slate-900 w-64 fixed h-full` with white nav items. Active: `bg-blue
 
 Use the shared solar image collection for the home carousel, product cards, and supporting page banners. Crop with `object-cover`, keep image corners consistent with nearby cards, and provide descriptive alt text. Keep the Terra oil wordmark as text; navigation remains icon-based.
 
+## Brand Logo
+
+Use the cropped Terra oil logo in primary branded headers and authentication screens. Preserve its aspect ratio with `object-contain`; do not crop the wordmark. The favicon uses the orange mark, and social previews use the prepared Open Graph image.
+
 ## Accessibility
 - WCAG AA contrast ratios (blue-600 on white = 4.5:1)
 - 16px minimum input font sizes (prevent iOS zoom)
