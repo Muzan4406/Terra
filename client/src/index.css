@@ -299,7 +299,8 @@
 
 /* Consistent, low-contrast surfaces across the mobile-first pages. */
 .min-h-screen.bg-gray-50:not([style]),
-.min-h-screen.bg-gray-100:not([style]) {
+.min-h-screen.bg-gray-100:not([style]),
+.min-h-screen.bg-white:not([style]) {
   background-color: hsl(var(--background));
 }
 
