@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { Product, UserProduct } from "@shared/schema";
+import { solarImages } from "@/lib/solar-images";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
@@ -122,12 +123,18 @@ export default function InvestPage() {
         </header>
 
         <div className="px-4 py-2 space-y-4">
-          {products?.map((product) => (
+          {products?.map((product) => {
+            const productImage = solarImages[(product.level - 1) % solarImages.length];
+
+            return (
               <div 
                 key={product.id} 
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
               >
                 <div className="flex gap-4">
+                  <div className="h-28 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                    <img src={productImage.src} alt={productImage.alt} className="h-full w-full object-cover" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-lg text-blue-600">
@@ -183,7 +190,8 @@ export default function InvestPage() {
                   </div>
                 </div>
               </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -200,6 +208,13 @@ export default function InvestPage() {
           
           {selectedProduct && (
             <div className="space-y-3">
+              <div className="h-32 w-full overflow-hidden rounded-lg bg-gray-100">
+                <img
+                  src={solarImages[(selectedProduct.level - 1) % solarImages.length].src}
+                  alt={solarImages[(selectedProduct.level - 1) % solarImages.length].alt}
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <p className="text-gray-600 text-xs">
                 Consultez les montants et la durée indiqués avant de confirmer votre choix.
               </p>
@@ -284,6 +299,13 @@ export default function InvestPage() {
                 {productToPurchase && (
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-3">
+                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                        <img
+                          src={solarImages[(productToPurchase.level - 1) % solarImages.length].src}
+                          alt={solarImages[(productToPurchase.level - 1) % solarImages.length].alt}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                       <div>
                         <p className="font-bold text-gray-800">{productToPurchase.name}</p>
                         <p className="text-blue-600 font-bold">{formatNumber(productToPurchase.price)} F CFA</p>

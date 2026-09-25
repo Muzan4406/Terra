@@ -8,10 +8,13 @@ import {
   Banknote, 
   Headphones, 
   ClipboardList,
+  ChevronLeft,
+  ChevronRight,
   Bell
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState, useCallback } from "react";
+import { solarImages } from "@/lib/solar-images";
 
 interface PlatformSettings {
   customerService: string;
@@ -22,6 +25,7 @@ interface PlatformSettings {
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [tickerOffset, setTickerOffset] = useState(0);
   const [showTelegramPopup, setShowTelegramPopup] = useState(true);
 
@@ -48,10 +52,25 @@ export default function HomePage() {
 
   useEffect(() => {
     const interval = setInterval(() => {
+      setCurrentSlide((previous) => (previous + 1) % solarImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
       setTickerOffset((prev) => (prev + 1) % notifications.length);
     }, 3000);
     return () => clearInterval(interval);
   }, [notifications.length]);
+
+  const nextSlide = () => {
+    setCurrentSlide((previous) => (previous + 1) % solarImages.length);
+  };
+
+  const previousSlide = () => {
+    setCurrentSlide((previous) => (previous - 1 + solarImages.length) % solarImages.length);
+  };
 
   if (!user) {
     return (
@@ -110,12 +129,51 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="px-5 py-10 bg-gradient-to-br from-emerald-800 via-emerald-700 to-amber-600 text-white">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/75">Terra oil</p>
-          <h2 className="mt-2 text-2xl font-bold">Bienvenue dans votre espace</h2>
-          <p className="mt-2 text-sm text-white/85">
-            Consultez vos produits et suivez vos opérations depuis un seul endroit.
-          </p>
+        <div className="relative h-52 w-full overflow-hidden bg-gray-900">
+          {solarImages.map((image, index) => (
+            <div
+              key={image.src}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden={index !== currentSlide}
+            >
+              <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
+            </div>
+          ))}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15" />
+          <div className="absolute bottom-4 left-4 right-4 text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/80">Terra oil</p>
+            <h2 className="mt-1 text-2xl font-bold">Bienvenue dans votre espace</h2>
+          </div>
+          <button
+            type="button"
+            onClick={previousSlide}
+            aria-label="Image précédente"
+            className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={nextSlide}
+            aria-label="Image suivante"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="absolute bottom-2 right-4 flex gap-1.5">
+            {solarImages.map((image, index) => (
+              <button
+                key={image.src}
+                type="button"
+                onClick={() => setCurrentSlide(index)}
+                aria-label={`Afficher l’image ${index + 1}`}
+                aria-current={index === currentSlide}
+                className={`h-2 w-2 rounded-full ${index === currentSlide ? "bg-white" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="px-4 py-5">

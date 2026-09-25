@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { z } from "zod";
+import { solarImages } from "@/lib/solar-images";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -50,6 +51,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-48 w-full overflow-hidden sm:h-56 md:h-64">
+        <img
+          src={solarImages[0].src}
+          alt={solarImages[0].alt}
+          className="h-full w-full object-cover"
+        />
+      </div>
       <div className="px-6 pt-10 pb-2 max-w-md mx-auto w-full text-center">
         <h1 className="text-3xl font-bold tracking-tight text-[#1e3a5f]">Terra oil</h1>
         <p className="mt-2 text-sm text-gray-500">Connexion à votre espace</p>

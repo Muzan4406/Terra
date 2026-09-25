@@ -17,6 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BottomNav } from "@/components/bottom-nav";
+import { solarImages } from "@/lib/solar-images";
 
 const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Veuillez saisir le code cadeau"),
@@ -92,6 +93,10 @@ export default function ExchangeCodePage() {
             <ChevronLeft className="w-7 h-7 text-gray-800" />
           </button>
           <h1 className="text-xl font-bold text-gray-900">Échanger cadeau</h1>
+        </div>
+
+        <div className="h-48 w-full overflow-hidden">
+          <img src={solarImages[3].src} alt={solarImages[3].alt} className="h-full w-full object-cover" />
         </div>
 
         {/* Form Container */}
