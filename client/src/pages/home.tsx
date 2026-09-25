@@ -3,11 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { WhatsAppPopup } from "@/components/whatsapp-popup";
-import { 
-  CreditCard, 
-  Banknote, 
-  Headphones, 
-  ClipboardList,
+import {
+  Headphones,
   ChevronLeft,
   ChevronRight,
   Bell
@@ -16,6 +13,10 @@ import { useLocation } from "wouter";
 import { useEffect, useState, useCallback } from "react";
 import { solarImages } from "@/lib/solar-images";
 import { BrandLogo } from "@/components/brand-logo";
+import walletIcon from "@assets/images_(27)_1790362738657.jpeg";
+import depositIcon from "@assets/depot-3d-icon-png-download-13937730_1790362738683.png";
+import bankIcon from "@assets/images_(25)_1790362738741.jpeg";
+import tasksIcon from "@assets/images_(24)_1790362738807.jpeg";
 
 interface PlatformSettings {
   customerService: string;
@@ -93,22 +94,16 @@ export default function HomePage() {
 
   const actionButtons = [
     { 
-      icon: CreditCard, 
+      image: depositIcon,
       label: "RECHARGER", 
       path: "/deposit", 
       testId: "button-recharge",
-      bgColor: "bg-amber-100",
-      iconColor: "text-amber-600",
-      borderColor: "border-amber-200"
     },
     { 
-      icon: Banknote, 
+      image: walletIcon,
       label: "RETRAIT", 
       path: "/withdraw", 
       testId: "button-withdraw",
-      bgColor: "bg-green-100",
-      iconColor: "text-green-600",
-      borderColor: "border-green-200"
     },
     { 
       icon: Headphones, 
@@ -120,13 +115,10 @@ export default function HomePage() {
       borderColor: "border-blue-200"
     },
     { 
-      icon: ClipboardList, 
+      image: tasksIcon,
       label: "TÂCHES", 
       path: "/tasks", 
       testId: "button-tasks",
-      bgColor: "bg-orange-100",
-      iconColor: "text-orange-600",
-      borderColor: "border-orange-200"
     },
   ];
 
@@ -195,7 +187,12 @@ export default function HomePage() {
             className="home-account-summary shrink-0 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-[#e7c49d] to-[#c99b6d] p-3 shadow-sm"
           >
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
+              <div className="flex items-center gap-2">
+                <span className="home-summary-icon flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
+                  <img src={bankIcon} alt="" className="h-full w-full object-contain" />
+                </span>
+                <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-800/75">Mon compte</h2>
+              </div>
               <span className="rounded-full bg-white/45 px-2 py-0.5 text-[10px] font-semibold text-slate-800/75">XOF</span>
             </div>
             <div className="grid grid-cols-2 divide-x divide-white/50">
@@ -224,8 +221,12 @@ export default function HomePage() {
                   onClick={() => navigate(btn.path)}
                   data-testid={btn.testId}
                 >
-                  <span className={`home-action-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${btn.bgColor} border ${btn.borderColor}`}>
-                    <btn.icon className={`h-5 w-5 ${btn.iconColor}`} />
+                  <span className={`home-action-icon flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden ${btn.image ? "rounded-xl bg-white" : `rounded-full ${btn.bgColor} border ${btn.borderColor}`}`}>
+                    {btn.image ? (
+                      <img src={btn.image} alt="" className="h-full w-full object-contain" />
+                    ) : (
+                      btn.icon && <btn.icon className={`h-5 w-5 ${btn.iconColor}`} />
+                    )}
                   </span>
                   <span className="min-w-0 text-xs font-bold leading-tight text-slate-700">{btn.label}</span>
                 </button>
@@ -260,6 +261,7 @@ export default function HomePage() {
           .home-content { gap: 0.5rem; padding-top: 0.5rem; }
           .home-account-summary { padding: 0.625rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.375rem; }
+          .home-summary-icon { width: 1.5rem; height: 1.5rem; }
           .home-account-amount { font-size: 1rem; }
           .home-action-tile { min-height: 2.75rem; gap: 0.5rem; padding: 0.375rem 0.5rem; }
           .home-action-icon { width: 2rem; height: 2rem; }
@@ -271,6 +273,7 @@ export default function HomePage() {
           .home-content { gap: 0.375rem; padding-top: 0.375rem; }
           .home-account-summary { padding: 0.5rem; }
           .home-account-summary > div:first-child { margin-bottom: 0.25rem; }
+          .home-summary-icon { width: 1.25rem; height: 1.25rem; }
           .home-account-summary p { margin-bottom: 0; }
           .home-action-tile { min-height: 2.375rem; }
           .home-news { min-height: 1.75rem; }

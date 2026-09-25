@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
+import referralIcon from "@assets/prime-de-parrainage-3d-icon-png-download-4862975_1790362738847.png";
 
 interface TeamStats {
   level1Count: number;
@@ -91,6 +92,14 @@ export default function TeamPage() {
     <div className="min-h-screen bg-gray-100 pb-20">
       <div className="max-w-md mx-auto">
         <div className="p-4 space-y-4">
+          <section className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm" aria-label="Parrainage">
+            <img src={referralIcon} alt="" className="h-14 w-14 shrink-0 object-contain" />
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold text-gray-800">Votre équipe</h1>
+              <p className="text-sm text-gray-600">Partagez votre code et suivez vos filleuls.</p>
+            </div>
+          </section>
+
           <div className="flex items-center gap-2 bg-white rounded-full px-4 py-3 shadow-sm">
             <input
               type="text"
