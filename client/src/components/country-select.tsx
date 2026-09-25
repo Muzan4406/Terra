@@ -13,7 +13,7 @@ export function CountrySelect({ value, onValueChange, disabled }: CountrySelectP
       <SelectTrigger data-testid="select-country" className="w-full">
         <SelectValue placeholder="Sélectionner un pays" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="country-select-content">
         {ELIGIBLE_COUNTRIES.map((country) => (
           <SelectItem key={country.code} value={country.code} data-testid={`country-${country.code}`}>
             <span className="flex items-center gap-2">

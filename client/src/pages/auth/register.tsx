@@ -116,7 +116,7 @@ export default function RegisterPage() {
                                 {selectedCountry ? `+${selectedCountry.dialCode}` : "+225"}
                               </SelectValue>
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="country-select-content">
                               {ELIGIBLE_COUNTRIES.map((country) => (
                                 <SelectItem key={country.code} value={country.code}>
                                   +{country.dialCode}

@@ -606,3 +606,12 @@ h1, h2, h3, h4 {
     font-size: 16px;
   }
 }
+
+.country-select-content {
+  background-color: #fbf8f0 !important;
+  color: #26372d;
+  opacity: 1;
+  backdrop-filter: none;
+  border-color: #ded7c7;
+  box-shadow: 0 14px 35px hsl(157 27% 15% / .18);
+}
