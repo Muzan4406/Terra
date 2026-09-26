@@ -176,6 +176,7 @@ export class DatabaseStorage implements IStorage {
       amount: 500,
       type: "bonus",
       description: "Bonus d'inscription",
+      sourceId: null,
     });
     
     return user;
@@ -887,7 +888,10 @@ export class DatabaseStorage implements IStorage {
     .leftJoin(paymentChannels, eq(paymentChannelAudit.channelId, paymentChannels.id))
     .orderBy(desc(paymentChannelAudit.changedAt));
     
-    return result;
+    return result.map(({ channel, ...audit }) => ({
+      ...audit,
+      ...(channel ? { channel } : {}),
+    }));
   }
 
   async getSupportMessages(userId: string): Promise<SupportMessageWithAttachments[]> {

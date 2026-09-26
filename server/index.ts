@@ -79,39 +79,69 @@ const healthHandler = async (_req: Request, res: Response) => {
     // Do not expose connection details or credentials in health responses.
   }
 
-  if (startupStatus === "ready" && databaseConnected) {
-    const defaultDataStatus = app.locals.defaultDataStatus ?? "not_started";
-    const defaultDataStartedAt =
-      app.locals.defaultDataStartedAt ?? startupStartedAt;
+  const defaultDataStatus = app.locals.defaultDataStatus ?? "not_started";
+  const defaultDataStartedAt =
+    app.locals.defaultDataStartedAt ?? startupStartedAt;
+  const sessionStoreStatus = app.locals.sessionStoreStatus ?? "unknown";
+  const dependenciesReady =
+    databaseConnected &&
+    sessionStoreStatus === "ready" &&
+    defaultDataStatus === "ready";
+
+  if (startupStatus === "ready" && dependenciesReady) {
     return res.json({
       status: "ok",
       database: "connected",
-      sessionStore: app.locals.sessionStoreStatus ?? "unknown",
+      sessionStore: sessionStoreStatus,
+      ...(app.locals.sessionStoreCleanup
+        ? { sessionStoreCleanup: app.locals.sessionStoreCleanup }
+        : {}),
+      ...(app.locals.sessionStoreCleanupError
+        ? { sessionStoreCleanupError: app.locals.sessionStoreCleanupError }
+        : {}),
       ...(app.locals.sessionStoreError
         ? { sessionStoreError: app.locals.sessionStoreError }
         : {}),
       defaults: defaultDataStatus,
-      ...(defaultDataStatus === "ready"
-        ? {}
-        : {
-            step: app.locals.startupStep,
-            defaultsSeconds: Math.floor(
-              (Date.now() - defaultDataStartedAt) / 1000,
-            ),
-          }),
     });
   }
 
+  const dependencyFailed =
+    startupStatus === "failed" ||
+    sessionStoreStatus === "write_failed" ||
+    defaultDataStatus === "failed";
   return res.status(503).json({
-    status: startupStatus,
+    status: dependencyFailed ? "failed" : "starting",
     database: databaseConnected ? "connected" : "unavailable",
-    sessionStore: app.locals.sessionStoreStatus ?? "unknown",
+    sessionStore: sessionStoreStatus,
+    ...(app.locals.sessionStoreCleanup
+      ? { sessionStoreCleanup: app.locals.sessionStoreCleanup }
+      : {}),
+    ...(app.locals.sessionStoreCleanupError
+      ? { sessionStoreCleanupError: app.locals.sessionStoreCleanupError }
+      : {}),
     ...(app.locals.sessionStoreError
       ? { sessionStoreError: app.locals.sessionStoreError }
       : {}),
+    defaults: defaultDataStatus,
+    ...(app.locals.defaultDataError
+      ? { defaultsError: app.locals.defaultDataError }
+      : {}),
     stage: startupFailureStage,
-    step: app.locals.startupStep,
+    step:
+      defaultDataStatus !== "ready"
+        ? app.locals.startupStep
+        : sessionStoreStatus !== "ready"
+          ? "session_store.probe"
+          : app.locals.startupStep,
     startupSeconds: Math.floor((Date.now() - startupStartedAt) / 1000),
+    ...(defaultDataStatus === "ready"
+      ? {}
+      : {
+          defaultsSeconds: Math.floor(
+            (Date.now() - defaultDataStartedAt) / 1000,
+          ),
+        }),
   });
 };
 
@@ -122,10 +152,16 @@ app.use((req, res, next) => {
     req.path.startsWith("/api") &&
     req.path !== "/api/health" &&
     req.path !== "/api/healthz" &&
-    startupStatus !== "ready"
+    (startupStatus !== "ready" ||
+      app.locals.sessionStoreStatus !== "ready" ||
+      app.locals.defaultDataStatus !== "ready")
   ) {
+    const dependencyFailed =
+      startupStatus === "failed" ||
+      app.locals.sessionStoreStatus === "write_failed" ||
+      app.locals.defaultDataStatus === "failed";
     return res.status(503).json({
-      status: startupStatus,
+      status: dependencyFailed ? "failed" : "starting",
       message: "Le serveur Terra n’a pas terminé son initialisation.",
     });
   }
@@ -152,13 +188,19 @@ if (isProduction) {
       app.locals.startupStep = step;
     });
 
-    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+    app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       if (res.headersSent) {
         return next(err);
       }
 
       const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
+      const message =
+        status >= 500
+          ? "Erreur serveur"
+          : err.message || "Erreur de requête";
+      if (status >= 500) {
+        console.error(`Request failed: ${req.method} ${req.path} (${status}).`);
+      }
       res.status(status).json({ message });
     });
 

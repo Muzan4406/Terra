@@ -9,6 +9,12 @@ On Terra's Plesk deployment, the web server can serve the landing page and curre
 
 **How to apply:** Check an API endpoint or `/api/health` independently after any Plesk deployment or incident. A healthy frontend with an API timeout points to the Node process or its database connection, not the browser's loading animation.
 
+The Replit workspace build and the Plesk Node bundle can be out of sync. A Plesk health response that lacks the latest diagnostic fields or still reports `status: ok` while a required dependency is failed is evidence to verify the Plesk pull/build/restart before treating local code as deployed.
+
+**Why:** During the Terra incident, the live Plesk health JSON retained the old readiness semantics after the workspace had gained more specific session-store diagnostics.
+
+**How to apply:** After syncing a backend fix, restart Plesk and compare `/api/healthz` fields with the new code before diagnosing the production database from the local build.
+
 The shared `package-lock.json` must use public canonical npm tarball URLs for Plesk and other external installs; Replit's internal package-firewall hostname and `/npm/` prefix are only valid inside Replit.
 
 **Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.

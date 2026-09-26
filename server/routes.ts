@@ -38,6 +38,47 @@ function getSessionStoreErrorCategory(error: unknown): string {
   }
 }
 
+function getDefaultDataErrorCategory(error: unknown): string {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "";
+
+  switch (code) {
+    case "42501":
+      return "permission_denied";
+    case "42P01":
+      return "missing_table";
+    case "42703":
+      return "schema_mismatch";
+    case "42P10":
+      return "missing_unique_key";
+    case "57014":
+      return "query_timed_out";
+    case "28P01":
+      return "database_auth_failed";
+    case "3D000":
+      return "database_not_found";
+    default:
+      return "database_operation_failed";
+  }
+}
+
+function asyncRoute(
+  handler: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => Promise<unknown>,
+) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    void handler(req, res, next).catch(next);
+  };
+}
+
 const supportMessageSchema = z.object({
   message: z.string().trim().max(2000, "Le message ne peut pas dépasser 2 000 caractères").default(""),
 });
@@ -172,28 +213,44 @@ export async function registerRoutes(
   const sessionProbe = {
     cookie: { expires: new Date(Date.now() + 60_000) },
   } as Parameters<typeof sessionStore.set>[1];
+  app.locals.sessionStoreCleanup = "checking";
   try {
-    sessionStore.set(sessionProbeId, sessionProbe, (writeError) => {
-      if (writeError) {
-        app.locals.sessionStoreStatus = "write_failed";
-        app.locals.sessionStoreError =
-          getSessionStoreErrorCategory(writeError);
-        return;
-      }
-
-      app.locals.sessionStoreStatus = "ready";
-      app.locals.sessionStoreError = undefined;
-      sessionStore.destroy(sessionProbeId, (deleteError) => {
-        if (deleteError) {
-          app.locals.sessionStoreCleanup = "failed";
+    await new Promise<void>((resolve, reject) => {
+      sessionStore.set(sessionProbeId, sessionProbe, (writeError) => {
+        if (writeError) {
+          reject(writeError);
         } else {
-          app.locals.sessionStoreCleanup = "ready";
+          resolve();
         }
       });
     });
-  } catch {
+    app.locals.sessionStoreStatus = "ready";
+    app.locals.sessionStoreError = undefined;
+  } catch (writeError) {
     app.locals.sessionStoreStatus = "write_failed";
-    app.locals.sessionStoreError = "database_write_failed";
+    app.locals.sessionStoreError =
+      getSessionStoreErrorCategory(writeError);
+    app.locals.sessionStoreCleanup = "not_attempted";
+  }
+
+  if (app.locals.sessionStoreStatus === "ready") {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        sessionStore.destroy(sessionProbeId, (deleteError) => {
+          if (deleteError) {
+            reject(deleteError);
+          } else {
+            resolve();
+          }
+        });
+      });
+      app.locals.sessionStoreCleanup = "ready";
+      app.locals.sessionStoreCleanupError = undefined;
+    } catch (cleanupError) {
+      app.locals.sessionStoreCleanup = "failed";
+      app.locals.sessionStoreCleanupError =
+        getSessionStoreErrorCategory(cleanupError);
+    }
   }
 
   app.locals.defaultDataStatus = "initializing";
@@ -203,10 +260,11 @@ export async function registerRoutes(
     .then(() => {
       app.locals.defaultDataStatus = "ready";
     })
-    .catch(() => {
+    .catch((error) => {
       app.locals.defaultDataStatus = "failed";
+      app.locals.defaultDataError = getDefaultDataErrorCategory(error);
       console.error(
-        `Terra default data initialization failed at ${app.locals.startupStep}.`,
+        `Terra default data initialization failed at ${app.locals.startupStep} (${app.locals.defaultDataError}).`,
       );
     });
 
@@ -302,7 +360,7 @@ export async function registerRoutes(
     res.json({ user: { ...user, password: undefined } });
   });
 
-  app.get("/api/products", requireAuth, async (req, res) => {
+  app.get("/api/products", requireAuth, asyncRoute(async (req, res) => {
     const products = await storage.getProducts();
     const userProducts = await storage.getUserProducts(req.session.userId!);
     
@@ -320,17 +378,17 @@ export async function registerRoutes(
     }));
     
     res.json(productsWithOwnership);
-  });
+  }));
 
-  app.get("/api/products/all", requireAuth, async (req, res) => {
-    const products = await storage.getProducts();
+  app.get("/api/products/all", asyncRoute(requireAdmin), asyncRoute(async (_req, res) => {
+    const products = await storage.getAllProducts();
     res.json(products);
-  });
+  }));
 
-  app.get("/api/user/products", requireAuth, async (req, res) => {
+  app.get("/api/user/products", requireAuth, asyncRoute(async (req, res) => {
     const userProducts = await storage.getUserProducts(req.session.userId!);
     res.json(userProducts);
-  });
+  }));
 
   app.post("/api/products/purchase", requireAuth, async (req, res) => {
     try {
