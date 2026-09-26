@@ -408,7 +408,7 @@ export async function registerRoutes(
     });
   });
 
-  app.get("/api/auth/me", async (req, res) => {
+  app.get("/api/auth/me", asyncRoute(async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Non authentifié" });
     }
@@ -417,7 +417,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Utilisateur non trouvé" });
     }
     res.json({ user: { ...user, password: undefined } });
-  });
+  }));
 
   app.get("/api/products", requireAuth, asyncRoute(async (req, res) => {
     const products = await storage.getProducts();

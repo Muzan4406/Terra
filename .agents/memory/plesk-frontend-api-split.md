@@ -21,6 +21,12 @@ The bundled `connect-pg-simple` session-table creation SQL uses the removed `WIT
 
 **How to apply:** If session-store writes fail only on a fresh Plesk database, inspect the session-table creation compatibility before changing database credentials or privileges. Keep the replacement DDL non-destructive and expose only a safe SQLSTATE in health output.
 
+Plesk Passenger health responses can vary between requests while separate Node workers are still starting; a single `200` does not prove every worker is ready.
+
+**Why:** Repeated production probes alternated between `startupSeconds: 0` / `503 starting` and `200 ok`, while a browser showed the session-unavailable screen.
+
+**How to apply:** Check repeated health responses during cold start. Do not accept traffic before route registration; return an explicit `503 starting` with `Retry-After`, and let the client retry that state rather than treating it as an authentication failure.
+
 The shared `package-lock.json` must use public canonical npm tarball URLs for Plesk and other external installs; Replit's internal package-firewall hostname and `/npm/` prefix are only valid inside Replit.
 
 **Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.

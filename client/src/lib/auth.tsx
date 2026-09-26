@@ -13,6 +13,39 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const STARTUP_RETRY_DELAYS_MS = [500, 1000, 1500, 2000, 2000, 2000] as const;
+
+async function fetchSessionStatus() {
+  let response = await fetchWithTimeout("/api/auth/me", {
+    credentials: "include",
+  });
+
+  for (const fallbackDelay of STARTUP_RETRY_DELAYS_MS) {
+    if (response.status !== 503) {
+      break;
+    }
+
+    const body = await response
+      .clone()
+      .json()
+      .catch(() => null) as { status?: string } | null;
+    if (body?.status !== "starting") {
+      break;
+    }
+
+    const retryAfterSeconds = Number(response.headers.get("Retry-After"));
+    const delay =
+      Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? Math.min(retryAfterSeconds * 1000, 3000)
+        : fallbackDelay;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    response = await fetchWithTimeout("/api/auth/me", {
+      credentials: "include",
+    });
+  }
+
+  return response;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -22,9 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     setAuthError(null);
     try {
-      const res = await fetchWithTimeout("/api/auth/me", {
-        credentials: "include",
-      });
+      const res = await fetchSessionStatus();
 
       if (res.status === 401) {
         setUser(null);

@@ -173,6 +173,9 @@ app.use((req, res, next) => {
       startupStatus === "failed" ||
       app.locals.sessionStoreStatus === "write_failed" ||
       app.locals.defaultDataStatus === "failed";
+    if (!dependencyFailed) {
+      res.set("Retry-After", "1");
+    }
     return res.status(503).json({
       status: dependencyFailed ? "failed" : "starting",
       message: "Le serveur Terra n’a pas terminé son initialisation.",
@@ -181,19 +184,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-if (isProduction) {
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
-}
 
 (async () => {
   try {
@@ -251,5 +241,18 @@ if (isProduction) {
     if (!isProduction) {
       throw new Error("Terra server initialization failed.");
     }
+  }
+
+  if (isProduction) {
+    httpServer.listen(
+      {
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      },
+      () => {
+        log(`serving on port ${port}`);
+      },
+    );
   }
 })();
