@@ -57,7 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (phone: string, country: string, password: string) => {
     const res = await apiRequest("POST", "/api/auth/login", { phone, country, password });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Erreur de connexion");
+    if (!res.ok) {
+      const diagnostic = data.diagnosticCode ? ` (${data.diagnosticCode})` : "";
+      throw new Error(`${data.message || "Erreur de connexion"}${diagnostic}`);
+    }
     setUser(data.user);
     setAuthError(null);
   };

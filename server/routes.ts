@@ -196,14 +196,17 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/login", async (req, res) => {
+    let loginStage = "VALIDATE";
     try {
       const data = loginSchema.parse(req.body);
-      
+
+      loginStage = "LOOKUP_USER";
       const user = await storage.getUserByPhone(data.phone, data.country);
       if (!user) {
         return res.status(401).json({ message: "Identifiants incorrects" });
       }
 
+      loginStage = "VERIFY_PASSWORD";
       const isValid = await bcrypt.compare(data.password, user.password);
       if (!isValid) {
         return res.status(401).json({ message: "Identifiants incorrects" });
@@ -213,6 +216,7 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Compte suspendu" });
       }
 
+      loginStage = "SAVE_SESSION";
       req.session.userId = user.id;
       await saveSession(req);
       res.json({ user: { ...user, password: undefined } });
@@ -220,8 +224,11 @@ export async function registerRoutes(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Erreur serveur" });
+      console.error(`Login error at ${loginStage}:`, error);
+      res.status(500).json({
+        message: "Erreur serveur",
+        diagnosticCode: `LOGIN_${loginStage}_FAILED`,
+      });
     }
   });
 
