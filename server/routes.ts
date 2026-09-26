@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, type SupportAttachmentUpload } from "./storage";
+import { pool } from "./db";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import { 
@@ -9,10 +10,10 @@ import {
   ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK, REFERRAL_LEVELS
 } from "@shared/schema";
 import { z } from "zod";
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
 
-const SessionStore = MemoryStore(session);
+const SessionStore = connectPgSimple(session);
 const supportMessageSchema = z.object({
   message: z.string().trim().max(2000, "Le message ne peut pas dépasser 2 000 caractères").default(""),
 });
@@ -101,7 +102,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Trust proxy for secure cookies behind Replit's reverse proxy
+  // Trust the Plesk/Replit reverse proxy so HTTPS session cookies are recognized.
   app.set("trust proxy", 1);
 
   const sessionSecret = process.env.SESSION_SECRET;
@@ -114,7 +115,11 @@ export async function registerRoutes(
       secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
-      store: new SessionStore({ checkPeriod: 86400000 }),
+      store: new SessionStore({
+        pool,
+        tableName: "session",
+        createTableIfMissing: true,
+      }),
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
