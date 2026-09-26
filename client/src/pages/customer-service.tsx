@@ -1,48 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ArrowLeft, ChevronRight, Headphones } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { solarImages } from "@/lib/solar-images";
-
-interface PlatformSettings {
-  customerService: string;
-  officialChannel: string;
-  discussionGroup: string;
-}
 
 export default function CustomerServicePage() {
   const [, navigate] = useLocation();
-
-  const { data: settings, isLoading } = useQuery<PlatformSettings>({
-    queryKey: ["/api/settings/public"],
-  });
-
-  const serviceLinks = [
-    {
-      id: "customerService",
-      title: "Écrire au service client",
-      subtitle: "Pour toute question concernant votre compte",
-      description: "Service en ligne 24h/24 et 7j/7",
-      url: settings?.customerService || "",
-      testId: "link-customer-service",
-    },
-    {
-      id: "officialChannel",
-      title: "Chaîne officielle",
-      subtitle: "Actualités et annonces",
-      description: "Restez informé des dernières nouvelles",
-      url: settings?.officialChannel || "",
-      testId: "link-official-channel",
-    },
-    {
-      id: "discussionGroup",
-      title: "Groupe de discussion",
-      subtitle: "Communauté d'investisseurs",
-      description: "Échangez avec d'autres membres",
-      url: settings?.discussionGroup || "",
-      testId: "link-discussion-group",
-    },
-  ];
 
   return (
     <div className="min-h-screen">
@@ -85,8 +46,8 @@ export default function CustomerServicePage() {
 
             <h2 className="text-2xl font-semibold text-primary mb-3">Comment pouvons-nous vous aider ?</h2>
             <p className="text-center text-gray-600 text-sm leading-relaxed px-4 mb-8">
-              Choisissez le canal adapté à votre demande.<br />
-              Les liens disponibles sont configurés par l’équipe Terra.
+              Écrivez directement à notre équipe.<br />
+              Nous vous répondrons dans cette conversation.
             </p>
           </div>
         </div>
@@ -109,30 +70,6 @@ export default function CustomerServicePage() {
           </button>
         </div>
 
-        <div className="px-4 pb-8 space-y-3">
-          {isLoading ? (
-            [1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
-          ) : (
-            serviceLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => link.url && window.open(link.url, "_blank", "noopener,noreferrer")}
-                disabled={!link.url}
-                className="w-full text-left rounded-xl border border-border/80 bg-card/85 p-4 shadow-sm transition-transform active:scale-98 disabled:cursor-not-allowed disabled:opacity-60"
-                data-testid={link.testId}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-foreground font-semibold text-lg">{link.title}</h3>
-                    <p className="text-muted-foreground text-sm">{link.subtitle}</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">{link.url ? link.description : "Ce lien n’est pas encore configuré."}</p>
-                  </div>
-                  <ChevronRight className="h-6 w-6 text-primary flex-shrink-0" />
-                </div>
-              </button>
-            ))
-          )}
-        </div>
       </div>
     </div>
   );
