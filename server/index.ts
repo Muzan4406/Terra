@@ -2,9 +2,16 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { pool } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
+const isProduction = process.env.NODE_ENV === "production";
+const port = parseInt(process.env.PORT || "5000", 10);
+
+type StartupStatus = "starting" | "ready" | "failed";
+let startupStatus: StartupStatus = "starting";
+let startupFailureStage: "routes" | "static" = "routes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -59,32 +66,43 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  await registerRoutes(httpServer, app);
+app.get("/api/health", async (_req, res) => {
+  let databaseConnected = false;
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+  try {
+    await pool.query("SELECT 1");
+    databaseConnected = true;
+  } catch {
+    // Do not expose connection details or credentials in health responses.
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  if (startupStatus === "ready" && databaseConnected) {
+    return res.json({ status: "ok", database: "connected" });
+  }
+
+  return res.status(503).json({
+    status: startupStatus,
+    database: databaseConnected ? "connected" : "unavailable",
+    ...(startupStatus === "failed" ? { stage: startupFailureStage } : {}),
+  });
+});
+
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith("/api") &&
+    req.path !== "/api/health" &&
+    startupStatus !== "ready"
+  ) {
+    return res.status(503).json({
+      status: startupStatus,
+      message: "Le serveur Terra n’a pas terminé son initialisation.",
+    });
+  }
+
+  next();
+});
+
+if (isProduction) {
   httpServer.listen(
     {
       port,
@@ -95,4 +113,53 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
     },
   );
+}
+
+(async () => {
+  try {
+    await registerRoutes(httpServer, app);
+
+    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+      if (res.headersSent) {
+        return next(err);
+      }
+
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+    });
+
+    // Setup Vite only in development and after registering API routes.
+    startupFailureStage = "static";
+    if (isProduction) {
+      serveStatic(app);
+    } else {
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+    }
+
+    startupStatus = "ready";
+
+    if (!isProduction) {
+      httpServer.listen(
+        {
+          port,
+          host: "0.0.0.0",
+          reusePort: true,
+        },
+        () => {
+          log(`serving on port ${port}`);
+        },
+      );
+    }
+  } catch {
+    startupStatus = "failed";
+    console.error(
+      `Terra server startup failed during ${startupFailureStage} initialization.`,
+    );
+
+    if (!isProduction) {
+      throw new Error("Terra server initialization failed.");
+    }
+  }
 })();

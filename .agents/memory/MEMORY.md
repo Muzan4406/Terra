@@ -1,2 +1,3 @@
 - [Terra logo lockup](terra-logo-lockup.md) — use one transparent horizontal brand asset in compact headers; derive favicon and social preview from the same artwork.
 - [Support message ordering](support-message-ordering.md) — use per-call timestamps so same-transaction acknowledgements sort after user messages.
+- [Plesk frontend/API split](plesk-frontend-api-split.md) — a current static bundle does not prove the Node API is listening; probe `/api/health` separately.
