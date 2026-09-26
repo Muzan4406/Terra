@@ -46,13 +46,17 @@ Les sessions sont stockées dans PostgreSQL, dans la table `session`, créée au
 
 ### Créer le schéma
 
-Une fois `DATABASE_URL` configurée dans Plesk, exécutez une fois depuis le dossier du projet :
+Pour une nouvelle migration de la base de développement Replit vers Supabase, configurez le secret Replit `SUPABASE_DATABASE_URL`, puis exécutez depuis le dépôt :
 
 ```bash
-npm run db:push
+npm run db:migrate:supabase
 ```
 
-Vérifiez que `DATABASE_URL` pointe vers le nouveau projet Supabase voulu avant cette commande. Elle doit être exécutée dans l’environnement Plesk, pas avec une URL de base différente par erreur. Faites une sauvegarde préalable si la base contient déjà des données.
+Cette commande crée le schéma depuis `shared/schema.ts`, puis copie les lignes de la base Replit dans l’ordre des clés étrangères. Elle vérifie que les tables et colonnes correspondent, que les tables de destination sont vides et que les nombres de lignes concordent. La copie des lignes est transactionnelle et la base source n’est pas supprimée. C’est une migration initiale : elle refuse de recopier les lignes si les tables Supabase ne sont plus vides.
+
+La migration initiale de ce projet a été effectuée et vérifiée : **18 tables et 18 lignes** copiées. Pour l’application sur Plesk, configurez ensuite `DATABASE_URL` dans la page Node.js avec la même URI PostgreSQL Supabase. Ne relancez pas la migration initiale.
+
+La variable Replit `SUPABASE_DATABASE_URL` sert uniquement à lancer la migration depuis Replit. En production, Plesk utilise `DATABASE_URL`. Si le schéma évolue plus tard, exécutez `npm run db:push` dans l’environnement qui pointe vers la base à mettre à jour.
 
 ## Routage
 
