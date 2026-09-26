@@ -9,8 +9,8 @@ On Terra's Plesk deployment, the web server can serve the landing page and curre
 
 **How to apply:** Check an API endpoint or `/api/health` independently after any Plesk deployment or incident. A healthy frontend with an API timeout points to the Node process or its database connection, not the browser's loading animation.
 
-Plesk cannot resolve package tarball URLs in a lockfile that point to Replit's internal `package-firewall.replit.internal` host. Replacing only the registry host is insufficient because NPM preserves the proxy's `/npm/` path prefix; normalize the Plesk copy of the lockfile by removing that prefix and using `registry.npmjs.org`.
+The shared `package-lock.json` must use public canonical npm tarball URLs for Plesk and other external installs; Replit's internal package-firewall hostname and `/npm/` prefix are only valid inside Replit.
 
-**Why:** NPM installation on Plesk first failed with `ENOTFOUND` for the Replit-only host, then returned 404 after host replacement because the `/npm/` prefix remained in the public URL. Replit's lockfile should retain its internal URLs so its configured package firewall continues to work.
+**Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.
 
-**How to apply:** Run the Plesk-specific lockfile normalizer in the application root before NPM Install. Keep normalization limited to the Plesk copy; do not rewrite the shared Replit lockfile to public URLs.
+**How to apply:** Keep lockfile tarball URLs on `https://registry.npmjs.org/` with package versions and integrity hashes unchanged, so normal installs work both inside and outside Replit.
