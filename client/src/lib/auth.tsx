@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { User } from "@shared/schema";
-import { apiRequest } from "./queryClient";
+import { apiRequest, fetchWithTimeout } from "./queryClient";
 
 interface AuthContextType {
   user: User | null;
@@ -19,7 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const res = await fetchWithTimeout("/api/auth/me", {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);

@@ -33,6 +33,8 @@ Configurez ces variables dans Plesk, sans les inscrire dans le dépôt :
 - `SESSION_SECRET` : valeur aléatoire longue, réservée à cette installation.
 - `PORT` : seulement si Plesk demande de la définir manuellement; utilisez alors le port attribué par Plesk et non un port choisi au hasard.
 
+Pour compatibilité, `app.js` reprend `SUPABASE_DATABASE_URL` si `DATABASE_URL` est absent. Configurez néanmoins `DATABASE_URL` directement dans Plesk de préférence.
+
 Le site doit être servi en **HTTPS** : les cookies de session sont configurés `Secure` en production. Le serveur fait confiance au proxy HTTPS de Plesk pour détecter les requêtes sécurisées.
 
 Les sessions sont stockées dans PostgreSQL, dans la table `session`, créée automatiquement lors de sa première utilisation si elle n’existe pas. L’utilisateur PostgreSQL doit pouvoir créer des tables. Cela évite de perdre les connexions utilisateur à chaque redémarrage de l’application.

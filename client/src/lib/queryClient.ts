@@ -1,15 +1,45 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+const API_REQUEST_TIMEOUT_MS = 10_000;
+
+export async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error("Le serveur Terra met trop de temps à répondre. Réessaie dans quelques instants.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = await res.text();
     let message = res.statusText;
-    try {
-      const json = JSON.parse(text);
-      message = json.message || json.error || res.statusText;
-    } catch {
-      message = text || res.statusText;
+
+    if (
+      res.headers.get("content-type")?.includes("text/html") ||
+      /^\s*<!doctype html|^\s*<html\b/i.test(text)
+    ) {
+      message = "Le serveur Terra a renvoyé une page d’erreur. Réessaie dans quelques instants.";
+    } else {
+      try {
+        const json = JSON.parse(text);
+        message = json.message || json.error || res.statusText;
+      } catch {
+        message = text || res.statusText;
+      }
     }
+
     throw new Error(message);
   }
 }
@@ -19,7 +49,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -36,7 +66,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await fetchWithTimeout(queryKey.join("/") as string, {
       credentials: "include",
     });
 
