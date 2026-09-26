@@ -87,6 +87,9 @@ const healthHandler = async (_req: Request, res: Response) => {
       status: "ok",
       database: "connected",
       sessionStore: app.locals.sessionStoreStatus ?? "unknown",
+      ...(app.locals.sessionStoreError
+        ? { sessionStoreError: app.locals.sessionStoreError }
+        : {}),
       defaults: defaultDataStatus,
       ...(defaultDataStatus === "ready"
         ? {}
@@ -103,6 +106,9 @@ const healthHandler = async (_req: Request, res: Response) => {
     status: startupStatus,
     database: databaseConnected ? "connected" : "unavailable",
     sessionStore: app.locals.sessionStoreStatus ?? "unknown",
+    ...(app.locals.sessionStoreError
+      ? { sessionStoreError: app.locals.sessionStoreError }
+      : {}),
     stage: startupFailureStage,
     step: app.locals.startupStep,
     startupSeconds: Math.floor((Date.now() - startupStartedAt) / 1000),

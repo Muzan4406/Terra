@@ -15,6 +15,29 @@ import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
 
 const SessionStore = connectPgSimple(session);
+function getSessionStoreErrorCategory(error: unknown): string {
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "";
+
+  switch (code) {
+    case "42501":
+      return "permission_denied";
+    case "42P01":
+      return "missing_table";
+    case "42703":
+      return "schema_mismatch";
+    case "42P10":
+      return "missing_unique_key";
+    default:
+      return "database_write_failed";
+  }
+}
+
 const supportMessageSchema = z.object({
   message: z.string().trim().max(2000, "Le message ne peut pas dépasser 2 000 caractères").default(""),
 });
@@ -147,26 +170,30 @@ export async function registerRoutes(
 
   const sessionProbeId = `terra-health-${randomUUID()}`;
   const sessionProbe = {
-    cookie: { expires: null },
+    cookie: { expires: new Date(Date.now() + 60_000) },
   } as Parameters<typeof sessionStore.set>[1];
   try {
     sessionStore.set(sessionProbeId, sessionProbe, (writeError) => {
       if (writeError) {
-        app.locals.sessionStoreStatus = "failed";
-        console.error("Session store health probe failed.");
+        app.locals.sessionStoreStatus = "write_failed";
+        app.locals.sessionStoreError =
+          getSessionStoreErrorCategory(writeError);
         return;
       }
 
+      app.locals.sessionStoreStatus = "ready";
+      app.locals.sessionStoreError = undefined;
       sessionStore.destroy(sessionProbeId, (deleteError) => {
-        app.locals.sessionStoreStatus = deleteError ? "failed" : "ready";
         if (deleteError) {
-          console.error("Session store health probe cleanup failed.");
+          app.locals.sessionStoreCleanup = "failed";
+        } else {
+          app.locals.sessionStoreCleanup = "ready";
         }
       });
     });
   } catch {
-    app.locals.sessionStoreStatus = "failed";
-    console.error("Session store health probe failed.");
+    app.locals.sessionStoreStatus = "write_failed";
+    app.locals.sessionStoreError = "database_write_failed";
   }
 
   app.locals.defaultDataStatus = "initializing";
