@@ -10,6 +10,7 @@ import {
   type SupportMessage, type SupportAttachment, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
+import { resolvePlatformBusinessSettings } from "./platform-settings";
 import { eq, and, asc, desc, inArray, sql, gte, lte, or, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -79,6 +80,7 @@ export interface IStorage {
   
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string, changedById?: string): Promise<void>;
+  setSettings(settings: Record<string, string>, changedById?: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
   getSettingsAuditHistory(settingKey: string): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]>;
   getAllSettingsAuditHistory(): Promise<(PlatformSettingsAudit & { changedBy: { fullName: string; phone: string } })[]>;
@@ -163,17 +165,18 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: Omit<InsertUser, "referralCode"> & { referralCode?: string }): Promise<User> {
     const referralCode = userData.referralCode || generateReferralCode();
     const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const signupBonus = resolvePlatformBusinessSettings(await this.getAllSettings()).signupBonus;
     
     const [user] = await db.insert(users).values({
       ...userData,
       password: hashedPassword,
       referralCode,
-      balance: 500,
+      balance: signupBonus,
     }).returning();
     
     await this.createEarning({
       userId: user.id,
-      amount: 500,
+      amount: signupBonus,
       type: "bonus",
       description: "Bonus d'inscription",
       sourceId: null,
@@ -526,30 +529,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setSetting(key: string, value: string, changedById?: string): Promise<void> {
-    const existing = await this.getSetting(key);
-    
-    if (changedById && existing !== undefined && existing !== value) {
-      await db.insert(platformSettingsAudit).values({
-        settingKey: key,
-        previousValue: existing,
-        newValue: value,
-        changedById,
-      });
+    await this.setSettings({ [key]: value }, changedById);
+  }
+
+  async setSettings(settings: Record<string, string>, changedById?: string): Promise<void> {
+    const entries = Object.entries(settings);
+    if (entries.length === 0) {
+      return;
     }
-    
-    if (existing !== undefined) {
-      await db.update(platformSettings).set({ value, updatedAt: new Date() }).where(eq(platformSettings.key, key));
-    } else {
-      await db.insert(platformSettings).values({ key, value });
-      if (changedById) {
-        await db.insert(platformSettingsAudit).values({
-          settingKey: key,
-          previousValue: null,
-          newValue: value,
-          changedById,
-        });
+
+    await db.transaction(async (tx) => {
+      for (const [key, value] of entries) {
+        const [existing] = await tx
+          .select({ value: platformSettings.value })
+          .from(platformSettings)
+          .where(eq(platformSettings.key, key));
+
+        if (existing?.value === value) {
+          continue;
+        }
+
+        if (changedById) {
+          await tx.insert(platformSettingsAudit).values({
+            settingKey: key,
+            previousValue: existing?.value ?? null,
+            newValue: value,
+            changedById,
+          });
+        }
+
+        if (existing) {
+          await tx
+            .update(platformSettings)
+            .set({ value, updatedAt: new Date() })
+            .where(eq(platformSettings.key, key));
+        } else {
+          await tx.insert(platformSettings).values({ key, value });
+        }
       }
-    }
+    });
   }
 
   async getAllSettings(): Promise<Record<string, string>> {

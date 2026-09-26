@@ -12,19 +12,61 @@ import { ArrowLeft, Save, MessageCircle, Radio, Users, Loader2, History, Clock, 
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 
 const settingsSchema = z.object({
   customerService: z.string().url("URL invalide").or(z.literal("")),
   officialChannel: z.string().url("URL invalide").or(z.literal("")),
   discussionGroup: z.string().url("URL invalide").or(z.literal("")),
-});
+  referralLevel1Percentage: z.number().int().min(0).max(100),
+  referralLevel2Percentage: z.number().int().min(0).max(100),
+  referralLevel3Percentage: z.number().int().min(0).max(100),
+  signupBonus: z.number().int().min(0).max(100_000_000),
+  withdrawalMinimum: z.number().int().min(1).max(100_000_000),
+  withdrawalFeePercentage: z.number().int().min(0).max(100),
+}).refine(
+  (settings) =>
+    settings.referralLevel1Percentage +
+      settings.referralLevel2Percentage +
+      settings.referralLevel3Percentage <=
+    100,
+  { message: "La somme des commissions de parrainage ne peut pas dépasser 100%." },
+);
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
+type BusinessSettingName =
+  | "referralLevel1Percentage"
+  | "referralLevel2Percentage"
+  | "referralLevel3Percentage"
+  | "signupBonus"
+  | "withdrawalMinimum"
+  | "withdrawalFeePercentage";
+
+const businessSettingFields: {
+  name: BusinessSettingName;
+  label: string;
+  unit: "%" | "FCFA";
+  min: number;
+  max: number;
+}[] = [
+  { name: "referralLevel1Percentage", label: "Commission de niveau 1", unit: "%", min: 0, max: 100 },
+  { name: "referralLevel2Percentage", label: "Commission de niveau 2", unit: "%", min: 0, max: 100 },
+  { name: "referralLevel3Percentage", label: "Commission de niveau 3", unit: "%", min: 0, max: 100 },
+  { name: "signupBonus", label: "Bonus d’inscription", unit: "FCFA", min: 0, max: 100_000_000 },
+  { name: "withdrawalMinimum", label: "Retrait minimum", unit: "FCFA", min: 1, max: 100_000_000 },
+  { name: "withdrawalFeePercentage", label: "Frais de retrait", unit: "%", min: 0, max: 100 },
+];
 
 interface PlatformSettings {
   customerService: string;
   officialChannel: string;
   discussionGroup: string;
+  referralLevel1Percentage: number;
+  referralLevel2Percentage: number;
+  referralLevel3Percentage: number;
+  signupBonus: number;
+  withdrawalMinimum: number;
+  withdrawalFeePercentage: number;
 }
 
 interface SettingsAuditEntry {
@@ -41,6 +83,12 @@ const settingLabels: Record<string, string> = {
   customerService: "Service client",
   officialChannel: "Chaîne officielle",
   discussionGroup: "Groupe de discussion",
+  referralLevel1Percentage: "Commission de niveau 1",
+  referralLevel2Percentage: "Commission de niveau 2",
+  referralLevel3Percentage: "Commission de niveau 3",
+  signupBonus: "Bonus d’inscription",
+  withdrawalMinimum: "Retrait minimum",
+  withdrawalFeePercentage: "Frais de retrait",
 };
 
 export default function AdminSettingsPage() {
@@ -74,6 +122,7 @@ export default function AdminSettingsPage() {
       customerService: settings?.customerService || "",
       officialChannel: settings?.officialChannel || "",
       discussionGroup: settings?.discussionGroup || "",
+      ...DEFAULT_BUSINESS_SETTINGS,
     },
     values: settings,
   });
@@ -194,6 +243,51 @@ export default function AdminSettingsPage() {
                         </FormItem>
                       )}
                     />
+
+                    <div className="border-t border-border pt-6">
+                      <h3 className="text-lg font-semibold">Règles financières et parrainage</h3>
+                      <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                        Ces valeurs s’appliquent aux nouvelles inscriptions, commissions et demandes de retrait après enregistrement.
+                        Les opérations déjà enregistrées ne sont pas recalculées.
+                      </p>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {businessSettingFields.map((setting) => (
+                          <FormField
+                            key={setting.name}
+                            control={form.control}
+                            name={setting.name}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{setting.label}</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      type="number"
+                                      min={setting.min}
+                                      max={setting.max}
+                                      step={1}
+                                      value={field.value}
+                                      onChange={(event) =>
+                                        field.onChange(event.target.valueAsNumber)
+                                      }
+                                      data-testid={`input-setting-${setting.name}`}
+                                    />
+                                  </FormControl>
+                                  <span className="w-12 shrink-0 text-sm text-muted-foreground">
+                                    {setting.unit}
+                                  </span>
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        La somme des trois commissions ne peut pas dépasser 100%.
+                      </p>
+                    </div>
 
                     <Button
                       type="submit"

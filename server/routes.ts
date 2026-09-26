@@ -8,13 +8,22 @@ import bcrypt from "bcryptjs";
 import { 
   registerSchema, loginSchema, depositSchema, withdrawalSchema, walletSchema,
   changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
-  ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK, REFERRAL_LEVELS
+  ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK,
+  businessSettingsFieldsSchema, platformBusinessSettingsSchema,
 } from "@shared/schema";
+import { resolvePlatformBusinessSettings } from "./platform-settings";
 import { z } from "zod";
 import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
 
 const SessionStore = connectPgSimple(session);
+const adminSettingsPatchSchema = z.object({
+  customerService: z.string().url("URL invalide").or(z.literal("")).optional(),
+  officialChannel: z.string().url("URL invalide").or(z.literal("")).optional(),
+  discussionGroup: z.string().url("URL invalide").or(z.literal("")).optional(),
+  ...businessSettingsFieldsSchema.partial().shape,
+});
+
 function getSafeDatabaseErrorCode(error: unknown): string | undefined {
   const code =
     typeof error === "object" &&
@@ -463,6 +472,10 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Solde insuffisant" });
       }
 
+      const businessSettings = resolvePlatformBusinessSettings(
+        await storage.getAllSettings(),
+      );
+
       const nextPayoutAt = new Date();
       nextPayoutAt.setHours(nextPayoutAt.getHours() + 24);
 
@@ -486,7 +499,9 @@ export async function registerRoutes(
       if (user.referrerId && isFirstInvestment) {
         const referrer = await storage.getUser(user.referrerId);
         if (referrer) {
-          const commission1 = Math.floor(product.price * REFERRAL_LEVELS[0].percentage / 100);
+          const commission1 = Math.floor(
+            product.price * businessSettings.referralLevel1Percentage / 100,
+          );
           await storage.updateUser(referrer.id, {
             balance: referrer.balance + commission1,
             referralEarnings: referrer.referralEarnings + commission1,
@@ -504,7 +519,9 @@ export async function registerRoutes(
           if (referrer.referrerId) {
             const referrer2 = await storage.getUser(referrer.referrerId);
             if (referrer2) {
-              const commission2 = Math.floor(product.price * REFERRAL_LEVELS[1].percentage / 100);
+              const commission2 = Math.floor(
+                product.price * businessSettings.referralLevel2Percentage / 100,
+              );
               await storage.updateUser(referrer2.id, {
                 balance: referrer2.balance + commission2,
                 referralEarnings: referrer2.referralEarnings + commission2,
@@ -522,7 +539,9 @@ export async function registerRoutes(
               if (referrer2.referrerId) {
                 const referrer3 = await storage.getUser(referrer2.referrerId);
                 if (referrer3) {
-                  const commission3 = Math.floor(product.price * REFERRAL_LEVELS[2].percentage / 100);
+                  const commission3 = Math.floor(
+                    product.price * businessSettings.referralLevel3Percentage / 100,
+                  );
                   await storage.updateUser(referrer3.id, {
                     balance: referrer3.balance + commission3,
                     referralEarnings: referrer3.referralEarnings + commission3,
@@ -618,6 +637,15 @@ export async function registerRoutes(
   app.post("/api/withdrawals", requireAuth, async (req, res) => {
     try {
       const data = withdrawalSchema.parse(req.body);
+      const businessSettings = resolvePlatformBusinessSettings(
+        await storage.getAllSettings(),
+      );
+      if (data.amount < businessSettings.withdrawalMinimum) {
+        return res.status(400).json({
+          message: `Retrait minimum: ${businessSettings.withdrawalMinimum} FCFA`,
+        });
+      }
+
       const user = await storage.getUser(req.session.userId!);
       const wallet = await storage.getWallet(data.walletId);
 
@@ -658,7 +686,9 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Solde insuffisant" });
       }
 
-      const feeAmount = Math.round(data.amount * 0.15);
+      const feeAmount = Math.round(
+        data.amount * businessSettings.withdrawalFeePercentage / 100,
+      );
       const netAmount = data.amount - feeAmount;
 
       const withdrawal = await storage.createWithdrawal({
@@ -832,6 +862,15 @@ export async function registerRoutes(
     const level1Investment = level1Investments.reduce((sum, inv) => sum + inv, 0);
     const level2Investment = level2Investments.reduce((sum, inv) => sum + inv, 0);
     const level3Investment = level3Investments.reduce((sum, inv) => sum + inv, 0);
+    const referralEarnings = user
+      ? (await storage.getEarnings(user.id)).filter((earning) => earning.type === "referral")
+      : [];
+    const commissionForLevel = (level: number) =>
+      referralEarnings
+        .filter((earning) =>
+          earning.description.includes(`Commission niveau ${level}`),
+        )
+        .reduce((sum, earning) => sum + earning.amount, 0);
 
     res.json({
       level1Count: level1.length,
@@ -843,6 +882,9 @@ export async function registerRoutes(
       level1Investment,
       level2Investment,
       level3Investment,
+      level1Commissions: commissionForLevel(1),
+      level2Commissions: commissionForLevel(2),
+      level3Commissions: commissionForLevel(3),
       totalCommissions: user?.referralEarnings || 0,
     });
   });
@@ -919,14 +961,16 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/settings/public", async (_req, res) => {
+  app.get("/api/settings/public", asyncRoute(async (_req, res) => {
     const settings = await storage.getAllSettings();
+    const businessSettings = resolvePlatformBusinessSettings(settings);
     res.json({
       customerService: settings.customerService || "",
       officialChannel: settings.officialChannel || "",
       discussionGroup: settings.discussionGroup || "",
+      ...businessSettings,
     });
-  });
+  }));
 
   app.get("/api/admin/dashboard", requireAdmin, async (req, res) => {
     const stats = await storage.getDashboardStats();
@@ -1315,23 +1359,75 @@ export async function registerRoutes(
     res.json(history);
   });
 
-  app.get("/api/admin/settings", requireSuperAdmin, async (req, res) => {
+  app.get("/api/admin/settings", requireSuperAdmin, asyncRoute(async (req, res) => {
     const settings = await storage.getAllSettings();
+    const businessSettings = resolvePlatformBusinessSettings(settings);
     res.json({
       customerService: settings.customerService || "",
       officialChannel: settings.officialChannel || "",
       discussionGroup: settings.discussionGroup || "",
+      ...businessSettings,
     });
-  });
+  }));
 
-  app.patch("/api/admin/settings", requireSuperAdmin, async (req, res) => {
-    const { customerService, officialChannel, discussionGroup } = req.body;
+  app.patch("/api/admin/settings", requireSuperAdmin, asyncRoute(async (req, res) => {
+    const parsed = adminSettingsPatchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.issues[0]?.message || "Paramètres invalides",
+      });
+    }
+
+    const payload = parsed.data;
+    const currentBusinessSettings = resolvePlatformBusinessSettings(
+      await storage.getAllSettings(),
+    );
+    const businessSettings = platformBusinessSettingsSchema.safeParse({
+      referralLevel1Percentage:
+        payload.referralLevel1Percentage ?? currentBusinessSettings.referralLevel1Percentage,
+      referralLevel2Percentage:
+        payload.referralLevel2Percentage ?? currentBusinessSettings.referralLevel2Percentage,
+      referralLevel3Percentage:
+        payload.referralLevel3Percentage ?? currentBusinessSettings.referralLevel3Percentage,
+      signupBonus: payload.signupBonus ?? currentBusinessSettings.signupBonus,
+      withdrawalMinimum:
+        payload.withdrawalMinimum ?? currentBusinessSettings.withdrawalMinimum,
+      withdrawalFeePercentage:
+        payload.withdrawalFeePercentage ?? currentBusinessSettings.withdrawalFeePercentage,
+    });
+    if (!businessSettings.success) {
+      return res.status(400).json({
+        message: businessSettings.error.issues[0]?.message || "Paramètres financiers invalides",
+      });
+    }
+
     const userId = req.session.userId!;
-    if (customerService !== undefined) await storage.setSetting("customerService", customerService, userId);
-    if (officialChannel !== undefined) await storage.setSetting("officialChannel", officialChannel, userId);
-    if (discussionGroup !== undefined) await storage.setSetting("discussionGroup", discussionGroup, userId);
+    const settingsToSave: Record<string, string> = {};
+    for (const key of [
+      "customerService",
+      "officialChannel",
+      "discussionGroup",
+    ] as const) {
+      if (payload[key] !== undefined) {
+        settingsToSave[key] = payload[key];
+      }
+    }
+    for (const key of [
+      "referralLevel1Percentage",
+      "referralLevel2Percentage",
+      "referralLevel3Percentage",
+      "signupBonus",
+      "withdrawalMinimum",
+      "withdrawalFeePercentage",
+    ] as const) {
+      if (payload[key] !== undefined) {
+        settingsToSave[key] = String(payload[key]);
+      }
+    }
+
+    await storage.setSettings(settingsToSave, userId);
     res.json({ success: true });
-  });
+  }));
 
   app.get("/api/admin/settings/history", requireSuperAdmin, async (req, res) => {
     const history = await storage.getAllSettingsAuditHistory();

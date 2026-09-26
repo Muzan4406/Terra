@@ -1,12 +1,46 @@
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle, Clock, Wallet, Users, ShoppingBag, Shield } from "lucide-react";
+import { ArrowLeft, AlertCircle, Clock, Wallet, Users, ShoppingBag, Shield, Gift } from "lucide-react";
+import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
+
+interface PublicBusinessSettings {
+  signupBonus: number;
+  withdrawalMinimum: number;
+  withdrawalFeePercentage: number;
+  referralLevel1Percentage: number;
+  referralLevel2Percentage: number;
+  referralLevel3Percentage: number;
+}
 
 export default function RulesPage() {
   const [, navigate] = useLocation();
+  const { data: businessSettings } = useQuery<PublicBusinessSettings>({
+    queryKey: ["/api/settings/public"],
+  });
+  const signupBonus =
+    businessSettings?.signupBonus ?? DEFAULT_BUSINESS_SETTINGS.signupBonus;
+  const withdrawalMinimum =
+    businessSettings?.withdrawalMinimum ?? DEFAULT_BUSINESS_SETTINGS.withdrawalMinimum;
+  const withdrawalFeePercentage =
+    businessSettings?.withdrawalFeePercentage ??
+    DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
+  const referralRates = [
+    businessSettings?.referralLevel1Percentage ??
+      DEFAULT_BUSINESS_SETTINGS.referralLevel1Percentage,
+    businessSettings?.referralLevel2Percentage ??
+      DEFAULT_BUSINESS_SETTINGS.referralLevel2Percentage,
+    businessSettings?.referralLevel3Percentage ??
+      DEFAULT_BUSINESS_SETTINGS.referralLevel3Percentage,
+  ];
 
   const rules = [
+    {
+      icon: Gift,
+      title: "Inscription",
+      items: [`Bonus d'inscription: ${signupBonus.toLocaleString("fr-FR")} FCFA`],
+    },
     {
       icon: Wallet,
       title: "Dépôts",
@@ -30,8 +64,8 @@ export default function RulesPage() {
       icon: Clock,
       title: "Retraits",
       items: [
-        "Retrait minimum: 1 200 FCFA",
-        "Frais de retrait: 15%",
+        `Retrait minimum: ${withdrawalMinimum.toLocaleString("fr-FR")} FCFA`,
+        `Frais de retrait: ${withdrawalFeePercentage}%`,
         "Maximum 3 retraits par jour",
         "Heures: 10h-17h",
         "Produit VIP requis pour débloquer les retraits",
@@ -42,6 +76,7 @@ export default function RulesPage() {
       title: "Parrainage",
       items: [
         "Le parrainage est organisé sur trois niveaux.",
+        `Commissions actuelles: ${referralRates[0]}% / ${referralRates[1]}% / ${referralRates[2]}% (niveaux 1 / 2 / 3).`,
         "Les commissions sont calculées sur les achats de produits VIP.",
         "Consultez les montants applicables dans votre espace avant toute décision.",
       ],

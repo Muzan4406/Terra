@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import referralIcon from "@assets/prime-de-parrainage-3d-icon-png-download-4862975_1790362738847.png";
+import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 
 interface TeamStats {
   level1Count: number;
@@ -17,9 +18,18 @@ interface TeamStats {
   level1Investment: number;
   level2Investment: number;
   level3Investment: number;
+  level1Commissions: number;
+  level2Commissions: number;
+  level3Commissions: number;
   totalCommissions: number;
   totalTeamSize: number;
   totalTeamInvestment: number;
+}
+
+interface PublicBusinessSettings {
+  referralLevel1Percentage: number;
+  referralLevel2Percentage: number;
+  referralLevel3Percentage: number;
 }
 
 export default function TeamPage() {
@@ -28,6 +38,9 @@ export default function TeamPage() {
 
   const { data: stats, isLoading } = useQuery<TeamStats>({
     queryKey: ["/api/team/stats"],
+  });
+  const { data: businessSettings } = useQuery<PublicBusinessSettings>({
+    queryKey: ["/api/settings/public"],
   });
 
   const referralLink = user ? `${window.location.origin}/register?reg=${user.referralCode}` : "";
@@ -54,16 +67,23 @@ export default function TeamPage() {
   const totalInvestment = (stats?.level1Investment || 0) + (stats?.level2Investment || 0) + (stats?.level3Investment || 0);
   const totalCommissions = stats?.totalCommissions || 0;
 
-  const level1Commission = Math.floor((stats?.level1Investment || 0) * 0.25);
-  const level2Commission = Math.floor((stats?.level2Investment || 0) * 0.02);
-  const level3Commission = Math.floor((stats?.level3Investment || 0) * 0.01);
+  const level1Rate =
+    businessSettings?.referralLevel1Percentage ??
+    DEFAULT_BUSINESS_SETTINGS.referralLevel1Percentage;
+  const level2Rate =
+    businessSettings?.referralLevel2Percentage ??
+    DEFAULT_BUSINESS_SETTINGS.referralLevel2Percentage;
+  const level3Rate =
+    businessSettings?.referralLevel3Percentage ??
+    DEFAULT_BUSINESS_SETTINGS.referralLevel3Percentage;
 
   const levels = [
     {
       level: 1,
       label: "LV1",
       teamSize: stats?.level1Count || 0,
-      commissionEarned: level1Commission,
+      commissionEarned: stats?.level1Commissions || 0,
+      commissionRate: level1Rate,
       medalColor: "bg-yellow-400",
       medalBorder: "border-yellow-500",
     },
@@ -71,7 +91,8 @@ export default function TeamPage() {
       level: 2,
       label: "LV2",
       teamSize: stats?.level2Count || 0,
-      commissionEarned: level2Commission,
+      commissionEarned: stats?.level2Commissions || 0,
+      commissionRate: level2Rate,
       medalColor: "bg-gray-300",
       medalBorder: "border-gray-400",
     },
@@ -79,7 +100,8 @@ export default function TeamPage() {
       level: 3,
       label: "LV3",
       teamSize: stats?.level3Count || 0,
-      commissionEarned: level3Commission,
+      commissionEarned: stats?.level3Commissions || 0,
+      commissionRate: level3Rate,
       medalColor: "bg-orange-400",
       medalBorder: "border-orange-500",
     },
@@ -178,7 +200,9 @@ export default function TeamPage() {
                     <p className="text-lg font-semibold text-green-600">
                       {level.commissionEarned.toLocaleString("fr-FR")} FCFA
                     </p>
-                    <p className="text-xs text-gray-500">Commission</p>
+                    <p className="text-xs text-gray-500">
+                      Total crédité · taux actuel {level.commissionRate}%
+                    </p>
                   </div>
                 </div>
               </div>

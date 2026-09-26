@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ELIGIBLE_COUNTRIES } from "@shared/schema";
+import { DEFAULT_BUSINESS_SETTINGS, ELIGIBLE_COUNTRIES } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Loader2, CreditCard, ChevronRight } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import type { Wallet as WalletType } from "@shared/schema";
+
+interface PublicFinancialSettings {
+  withdrawalMinimum: number;
+  withdrawalFeePercentage: number;
+}
 
 export default function WithdrawPage() {
   const { user, refetchUser } = useAuth();
@@ -19,9 +24,17 @@ export default function WithdrawPage() {
   const { data: wallets } = useQuery<WalletType[]>({
     queryKey: ["/api/wallets"],
   });
+  const { data: platformSettings } = useQuery<PublicFinancialSettings>({
+    queryKey: ["/api/settings/public"],
+  });
 
   const amountNum = parseInt(amount) || 0;
-  const feeRate = 0.15;
+  const withdrawalMinimum =
+    platformSettings?.withdrawalMinimum ?? DEFAULT_BUSINESS_SETTINGS.withdrawalMinimum;
+  const withdrawalFeePercentage =
+    platformSettings?.withdrawalFeePercentage ??
+    DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
+  const feeRate = withdrawalFeePercentage / 100;
   const feeAmount = Math.round(amountNum * feeRate);
   const netAmount = amountNum - feeAmount;
 
@@ -55,10 +68,10 @@ export default function WithdrawPage() {
   });
 
   const handleSubmit = () => {
-    if (amountNum < 1200) {
+    if (amountNum < withdrawalMinimum) {
       toast({ 
         title: "Erreur", 
-        description: "Le montant minimum est de 1 200 FCFA",
+        description: `Le montant minimum est de ${withdrawalMinimum.toLocaleString("fr-FR")} FCFA`,
         variant: "destructive" 
       });
       return;
@@ -190,7 +203,7 @@ export default function WithdrawPage() {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Saisissez le montant"
                 className="flex-1 text-gray-800 bg-transparent outline-none"
-                min={1200}
+                min={withdrawalMinimum}
                 data-testid="input-amount"
               />
             </div>
@@ -198,13 +211,13 @@ export default function WithdrawPage() {
               <span className="text-blue-600">
                 Montant net estimé : FCFA {netAmount > 0 ? netAmount.toFixed(2) : "0.00"}
               </span>
-              <span className="text-gray-500">Frais : 15%</span>
+              <span className="text-gray-500">Frais : {withdrawalFeePercentage}%</span>
             </div>
           </div>
 
           <button
             onClick={handleSubmit}
-            disabled={!canWithdraw || !wallets?.length || withdrawMutation.isPending}
+            disabled={!canWithdraw || !wallets?.length || !platformSettings || withdrawMutation.isPending}
             className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             data-testid="button-submit"
           >
@@ -221,9 +234,9 @@ export default function WithdrawPage() {
           <div>
             <h3 className="text-blue-600 font-bold mb-3">À savoir avant votre retrait</h3>
             <div className="space-y-3 text-sm text-gray-600">
-              <p>1. Le montant minimum de retrait est de 1 200 FCFA.</p>
+              <p>1. Le montant minimum de retrait est de {withdrawalMinimum.toLocaleString("fr-FR")} FCFA.</p>
               <p>2. Les heures de retrait sont de {withdrawalHours.start}h à {withdrawalHours.end}h, avec une limite de 3 retraits par jour.</p>
-              <p>3. 15% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
+              <p>3. {withdrawalFeePercentage}% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
               <p>4. Les retraits seront disponibles sous 2 heures, et exceptionnellement sous 24 heures.</p>
             </div>
           </div>

@@ -13,19 +13,20 @@ Terra is an investment platform for 5 French-speaking African countries: Camerou
 ## Key Features
 - Custom phone-based authentication (no Replit Auth)
 - 6 VIP investment products with tiered daily returns
-- 3-level referral system (25%/2%/1% commissions)
+- 3-level referral system (default commissions: 25%/3%/2%, configurable by a super admin)
 - Task rewards for purchases and referrals
 - Deposit/Withdrawal management with admin approval
 - Full admin dashboard for platform management
 
 ## Business Rules
-- **Signup Bonus**: 500 FCFA for new users
+- **Signup Bonus**: 700 FCFA by default; configurable by a super admin
 - **Minimum Deposit**: 3,000 FCFA
-- **Minimum Withdrawal**: 1,200 FCFA
-- **Withdrawal Fee**: 15%
+- **Minimum Withdrawal**: 1,500 FCFA by default; configurable by a super admin
+- **Withdrawal Fee**: 10% by default; configurable by a super admin
 - **Withdrawal Limit**: 3 per day
 - **Withdrawal Hours**: 10h-17h
 - **Withdrawal Requirements**: User must have made a deposit AND purchased a VIP product
+- **Effective date**: Updated bonus, commission, minimum-withdrawal, and fee settings apply to future operations; existing balances, commissions, and withdrawal requests are not recalculated.
 
 ## VIP Products
 | Level | Price | Daily Return | Total (100 days) |

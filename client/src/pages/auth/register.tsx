@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useSearch } from "wouter";
-import { registerSchema, ELIGIBLE_COUNTRIES } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import {
+  registerSchema,
+  ELIGIBLE_COUNTRIES,
+  DEFAULT_BUSINESS_SETTINGS,
+} from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +23,15 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { data: businessSettings } = useQuery<{ signupBonus: number }>({
+    queryKey: ["/api/settings/public"],
+  });
   const [, navigate] = useLocation();
   const search = useSearch();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const signupBonus =
+    businessSettings?.signupBonus ?? DEFAULT_BUSINESS_SETTINGS.signupBonus;
 
   const params = new URLSearchParams(search);
   const inviteCode = params.get("reg") || "";
@@ -45,7 +55,7 @@ export default function RegisterPage() {
       await register(data);
       toast({ 
         title: "Inscription réussie!", 
-        description: "Bonus de 500 FCFA crédité sur votre compte!" 
+        description: `Bonus de ${signupBonus.toLocaleString("fr-FR")} FCFA crédité sur votre compte!`
       });
       navigate("/");
     } catch (error) {

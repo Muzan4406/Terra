@@ -32,10 +32,39 @@ export const VIP_PRODUCTS = [
   { level: 6, name: "VIP 6", price: 100000, dailyReturn: 15000, duration: 100, totalReturn: 1500000 },
 ] as const;
 
+export const DEFAULT_BUSINESS_SETTINGS = {
+  referralLevel1Percentage: 25,
+  referralLevel2Percentage: 3,
+  referralLevel3Percentage: 2,
+  signupBonus: 700,
+  withdrawalMinimum: 1500,
+  withdrawalFeePercentage: 10,
+} as const;
+
+export const businessSettingsFieldsSchema = z.object({
+  referralLevel1Percentage: z.number().int().min(0).max(100),
+  referralLevel2Percentage: z.number().int().min(0).max(100),
+  referralLevel3Percentage: z.number().int().min(0).max(100),
+  signupBonus: z.number().int().min(0).max(100_000_000),
+  withdrawalMinimum: z.number().int().min(1).max(100_000_000),
+  withdrawalFeePercentage: z.number().int().min(0).max(100),
+});
+
+export const platformBusinessSettingsSchema = businessSettingsFieldsSchema.refine(
+  (settings) =>
+    settings.referralLevel1Percentage +
+      settings.referralLevel2Percentage +
+      settings.referralLevel3Percentage <=
+    100,
+  { message: "La somme des commissions de parrainage ne peut pas dépasser 100%." },
+);
+
+export type PlatformBusinessSettings = z.infer<typeof platformBusinessSettingsSchema>;
+
 export const REFERRAL_LEVELS = [
-  { level: 1, percentage: 27 },
-  { level: 2, percentage: 2 },
-  { level: 3, percentage: 1 },
+  { level: 1, percentage: DEFAULT_BUSINESS_SETTINGS.referralLevel1Percentage },
+  { level: 2, percentage: DEFAULT_BUSINESS_SETTINGS.referralLevel2Percentage },
+  { level: 3, percentage: DEFAULT_BUSINESS_SETTINGS.referralLevel3Percentage },
 ] as const;
 
 export const REFERRAL_TASKS = [
@@ -59,7 +88,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   referralCode: text("referral_code").notNull().unique(),
   referrerId: varchar("referrer_id", { length: 36 }),
-  balance: integer("balance").notNull().default(500),
+  balance: integer("balance").notNull().default(0),
   todayEarnings: integer("today_earnings").notNull().default(0),
   totalEarnings: integer("total_earnings").notNull().default(0),
   totalDeposits: integer("total_deposits").notNull().default(0),
@@ -310,7 +339,7 @@ export const depositSchema = z.object({
 });
 
 export const withdrawalSchema = z.object({
-  amount: z.number().min(1200, "Retrait minimum: 1200 FCFA"),
+  amount: z.number().int().positive("Le montant doit être supérieur à 0"),
   walletId: z.string(),
 });
 
