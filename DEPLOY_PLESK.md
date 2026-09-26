@@ -11,16 +11,17 @@
 
 Ne configurez pas le domaine pour servir uniquement `dist/public` comme un site statique : les appels `/api/...` et les routes de navigation React doivent aussi être transmis au serveur Node.js.
 
-## Préparer les fichiers
+## Déploiement depuis GitHub avec Plesk
 
-Depuis le dossier du projet, installez les dépendances et générez le build :
+Dans les actions de déploiement du dépôt Git Plesk, ajoutez la commande :
 
 ```bash
-npm install --include=dev
-npm run build
+npm run deploy:plesk
 ```
 
-Le build produit `dist/index.cjs` et les fichiers du site dans `dist/public`. Redémarrez ensuite l’application depuis la page Node.js de Plesk. Le script `npm start` lance le même fichier en mode production.
+Après **Pull + Deploy Now**, Plesk exécute cette action : elle installe exactement les dépendances du `package-lock.json`, construit `dist/index.cjs` et `dist/public`, puis retire les dépendances de développement. Elle ne modifie pas la base de données et ne relance pas la migration des données. Cliquez ensuite sur **Restart** dans la page Node.js de Plesk.
+
+Pour une première installation sans action Git configurée, exécutez `npm run deploy:plesk` depuis la racine de l’application Plesk. Le script exige Node.js 20 ou plus récent et s’arrête en cas d’erreur de dépendances ou de build. `npm start` lance le fichier de démarrage construit.
 
 ## Variables d’environnement Node.js
 
@@ -56,7 +57,7 @@ Cette commande crée le schéma depuis `shared/schema.ts`, puis copie les lignes
 
 La migration initiale de ce projet a été effectuée et vérifiée : **18 tables et 18 lignes** copiées. Pour l’application sur Plesk, configurez ensuite `DATABASE_URL` dans la page Node.js avec la même URI PostgreSQL Supabase. Ne relancez pas la migration initiale.
 
-La variable Replit `SUPABASE_DATABASE_URL` sert uniquement à lancer la migration depuis Replit. En production, Plesk utilise `DATABASE_URL`. Si le schéma évolue plus tard, exécutez `npm run db:push` dans l’environnement qui pointe vers la base à mettre à jour.
+La variable Replit `SUPABASE_DATABASE_URL` sert à appliquer les changements de schéma depuis Replit avec `npm run db:push:supabase`. En production, Plesk utilise `DATABASE_URL`. Ne mettez ni `db:push` ni la migration initiale dans l’action de déploiement Git : un pull ne doit pas modifier le schéma ou recopier les données.
 
 ## Routage
 
