@@ -37,13 +37,22 @@ Les sessions sont stockées dans PostgreSQL, dans la table `session`, créée au
 
 ## Base de données
 
-Créez ou choisissez la base PostgreSQL qui servira à Plesk, configurez son URL dans `DATABASE_URL`, puis exécutez une fois :
+### Utiliser Supabase
+
+1. Créez un projet Supabase et récupérez l’URI de connexion **PostgreSQL** depuis les paramètres de connexion de la base.
+2. Choisissez une connexion directe si le serveur Plesk peut l’atteindre. Si la connexion directe n’est pas accessible depuis l’hébergement (par exemple à cause de la compatibilité réseau), utilisez l’URI de pooler fournie par Supabase et suivez son réglage recommandé pour un serveur Node.js persistant.
+3. Dans les variables d’environnement Node.js de Plesk, définissez `DATABASE_URL` avec cette URI. Conservez les paramètres SSL fournis par Supabase.
+4. L’application se connecte directement à PostgreSQL avec `pg` : elle n’a pas besoin de `SUPABASE_URL`, de clé `anon` ou de clé `service_role`. Ne placez jamais l’URI de base dans le code du navigateur ni dans le dépôt.
+
+### Créer le schéma
+
+Une fois `DATABASE_URL` configurée dans Plesk, exécutez une fois depuis le dossier du projet :
 
 ```bash
 npm run db:push
 ```
 
-Vérifiez que `DATABASE_URL` pointe vers la base Plesk voulue avant cette commande. Faites une sauvegarde préalable si la base contient déjà des données.
+Vérifiez que `DATABASE_URL` pointe vers le nouveau projet Supabase voulu avant cette commande. Elle doit être exécutée dans l’environnement Plesk, pas avec une URL de base différente par erreur. Faites une sauvegarde préalable si la base contient déjà des données.
 
 ## Routage
 
