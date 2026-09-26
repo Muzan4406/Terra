@@ -16,7 +16,7 @@ Ne configurez pas le domaine pour servir uniquement `dist/public` comme un site 
 Depuis le dossier du projet, installez les dépendances et générez le build :
 
 ```bash
-npm install
+npm install --include=dev
 npm run build
 ```
 
@@ -33,7 +33,7 @@ Configurez ces variables dans Plesk, sans les inscrire dans le dépôt :
 
 Le site doit être servi en **HTTPS** : les cookies de session sont configurés `Secure` en production. Le serveur fait confiance au proxy HTTPS de Plesk pour détecter les requêtes sécurisées.
 
-Les sessions sont stockées dans PostgreSQL, dans la table `session`, créée automatiquement si elle n’existe pas. Cela évite de perdre les connexions utilisateur à chaque redémarrage de l’application.
+Les sessions sont stockées dans PostgreSQL, dans la table `session`, créée automatiquement lors de sa première utilisation si elle n’existe pas. L’utilisateur PostgreSQL doit pouvoir créer des tables. Cela évite de perdre les connexions utilisateur à chaque redémarrage de l’application.
 
 ## Base de données
 
@@ -50,3 +50,5 @@ Vérifiez que `DATABASE_URL` pointe vers la base Plesk voulue avant cette comman
 Les routes `/api/...` sont enregistrées avant les fichiers statiques. En production, Express sert `dist/public` et renvoie `index.html` pour les autres chemins : les URL React comme `/customer-service/chat` ou `/admin/support` fonctionnent donc après actualisation sans règle `.htaccess` dédiée, tant que l’URL de l’application Plesk est `/`.
 
 Les pièces jointes de support peuvent atteindre environ 20 Mo au total (4 images de 5 Mo). Si Plesk ou son proxy renvoie `413 Request Entity Too Large`, augmentez la limite de taille de requête côté proxy Plesk à environ `25M`.
+
+Avant d’ouvrir le domaine au public, sécurisez également le compte administrateur intégré et vérifiez que son mot de passe n’est pas celui fourni par défaut.
