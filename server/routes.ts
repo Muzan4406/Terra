@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { randomUUID } from "node:crypto";
 import { storage, type SupportAttachmentUpload } from "./storage";
 import { pool } from "./db";
 import session from "express-session";
@@ -122,26 +123,51 @@ export async function registerRoutes(
   if (!sessionSecret) {
     throw new Error("SESSION_SECRET doit être configuré.");
   }
-  
-  app.use(
-    session({
+
+  const sessionStore = new SessionStore({
+    pool,
+    tableName: "session",
+    createTableIfMissing: true,
+  });
+  app.locals.sessionStoreStatus = "checking";
+
+  app.use(session({
       secret: sessionSecret,
       proxy: true,
       resave: false,
       saveUninitialized: false,
-      store: new SessionStore({
-        pool,
-        tableName: "session",
-        createTableIfMissing: true,
-      }),
+      store: sessionStore,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       },
-    })
-  );
+    }));
+
+  const sessionProbeId = `terra-health-${randomUUID()}`;
+  const sessionProbe = {
+    cookie: { expires: null },
+  } as Parameters<typeof sessionStore.set>[1];
+  try {
+    sessionStore.set(sessionProbeId, sessionProbe, (writeError) => {
+      if (writeError) {
+        app.locals.sessionStoreStatus = "failed";
+        console.error("Session store health probe failed.");
+        return;
+      }
+
+      sessionStore.destroy(sessionProbeId, (deleteError) => {
+        app.locals.sessionStoreStatus = deleteError ? "failed" : "ready";
+        if (deleteError) {
+          console.error("Session store health probe cleanup failed.");
+        }
+      });
+    });
+  } catch {
+    app.locals.sessionStoreStatus = "failed";
+    console.error("Session store health probe failed.");
+  }
 
   app.locals.defaultDataStatus = "initializing";
   app.locals.defaultDataStartedAt = Date.now();
