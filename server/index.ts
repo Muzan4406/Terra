@@ -14,6 +14,7 @@ let startupStatus: StartupStatus = "starting";
 let startupFailureStage: "routes" | "static" = "routes";
 const startupStartedAt = Date.now();
 app.locals.startupStep = "registering_routes";
+app.locals.defaultDataStep = "defaults.not_started";
 
 declare module "http" {
   interface IncomingMessage {
@@ -102,6 +103,9 @@ const healthHandler = async (_req: Request, res: Response) => {
       ...(app.locals.sessionStoreError
         ? { sessionStoreError: app.locals.sessionStoreError }
         : {}),
+      ...(app.locals.sessionStoreErrorCode
+        ? { sessionStoreErrorCode: app.locals.sessionStoreErrorCode }
+        : {}),
       defaults: defaultDataStatus,
     });
   }
@@ -123,16 +127,25 @@ const healthHandler = async (_req: Request, res: Response) => {
     ...(app.locals.sessionStoreError
       ? { sessionStoreError: app.locals.sessionStoreError }
       : {}),
+    ...(app.locals.sessionStoreErrorCode
+      ? { sessionStoreErrorCode: app.locals.sessionStoreErrorCode }
+      : {}),
+    ...(sessionStoreStatus !== "ready" && app.locals.sessionStorePhase
+      ? { sessionStorePhase: app.locals.sessionStorePhase }
+      : {}),
     defaults: defaultDataStatus,
     ...(app.locals.defaultDataError
       ? { defaultsError: app.locals.defaultDataError }
       : {}),
+    ...(app.locals.defaultDataErrorCode
+      ? { defaultsErrorCode: app.locals.defaultDataErrorCode }
+      : {}),
     stage: startupFailureStage,
     step:
       defaultDataStatus !== "ready"
-        ? app.locals.startupStep
+        ? app.locals.defaultDataStep ?? app.locals.startupStep
         : sessionStoreStatus !== "ready"
-          ? "session_store.probe"
+          ? `session_store.${app.locals.sessionStorePhase ?? "probe"}`
           : app.locals.startupStep,
     startupSeconds: Math.floor((Date.now() - startupStartedAt) / 1000),
     ...(defaultDataStatus === "ready"
@@ -185,7 +198,7 @@ if (isProduction) {
 (async () => {
   try {
     await registerRoutes(httpServer, app, (step) => {
-      app.locals.startupStep = step;
+      app.locals.defaultDataStep = step;
     });
 
     app.use((err: any, req: Request, res: Response, next: NextFunction) => {

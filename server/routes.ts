@@ -15,14 +15,20 @@ import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
 
 const SessionStore = connectPgSimple(session);
-function getSessionStoreErrorCategory(error: unknown): string {
+function getSafeDatabaseErrorCode(error: unknown): string | undefined {
   const code =
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     typeof error.code === "string"
-      ? error.code
+      ? error.code.toUpperCase()
       : "";
+
+  return /^[A-Z0-9_]{2,32}$/.test(code) ? code : undefined;
+}
+
+function getSessionStoreErrorCategory(error: unknown): string {
+  const code = getSafeDatabaseErrorCode(error) ?? "";
 
   switch (code) {
     case "42501":
@@ -33,19 +39,39 @@ function getSessionStoreErrorCategory(error: unknown): string {
       return "schema_mismatch";
     case "42P10":
       return "missing_unique_key";
+    case "42P07":
+      return "session_table_creation_conflict";
+    case "22023":
+      return "database_parameter_invalid";
+    case "57014":
+    case "QUERY_TIMEOUT":
+      return "query_timed_out";
+    case "28P01":
+    case "28000":
+      return "database_auth_failed";
+    case "08000":
+    case "08001":
+    case "08003":
+    case "08004":
+    case "08006":
+    case "08007":
+    case "ECONNREFUSED":
+    case "ECONNRESET":
+    case "EHOSTUNREACH":
+    case "ENETUNREACH":
+      return "database_connection_failed";
+    case "ETIMEDOUT":
+    case "EAI_AGAIN":
+      return "database_connection_timed_out";
+    case "ENOTFOUND":
+      return "database_host_not_found";
     default:
       return "database_write_failed";
   }
 }
 
 function getDefaultDataErrorCategory(error: unknown): string {
-  const code =
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-      ? error.code
-      : "";
+  const code = getSafeDatabaseErrorCode(error) ?? "";
 
   switch (code) {
     case "42501":
@@ -58,10 +84,13 @@ function getDefaultDataErrorCategory(error: unknown): string {
       return "missing_unique_key";
     case "57014":
       return "query_timed_out";
-    case "28P01":
-      return "database_auth_failed";
     case "3D000":
       return "database_not_found";
+    case "22023":
+      return "database_parameter_invalid";
+    case "28P01":
+    case "28000":
+      return "database_auth_failed";
     default:
       return "database_operation_failed";
   }
@@ -178,7 +207,7 @@ function saveSession(req: Request): Promise<void> {
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
-  onStartupProgress?: (step: string) => void
+  onDefaultDataProgress?: (step: string) => void
 ): Promise<Server> {
   // Trust the Plesk/Replit reverse proxy so HTTPS session cookies are recognized.
   app.set("trust proxy", 1);
@@ -191,7 +220,7 @@ export async function registerRoutes(
   const sessionStore = new SessionStore({
     pool,
     tableName: "session",
-    createTableIfMissing: true,
+    createTableIfMissing: false,
   });
   app.locals.sessionStoreStatus = "checking";
 
@@ -214,7 +243,23 @@ export async function registerRoutes(
     cookie: { expires: new Date(Date.now() + 60_000) },
   } as Parameters<typeof sessionStore.set>[1];
   app.locals.sessionStoreCleanup = "checking";
+  app.locals.sessionStorePhase = "table_setup";
   try {
+    // connect-pg-simple's bundled table.sql uses WITH (OIDS=FALSE), which
+    // PostgreSQL 12+ no longer supports. Create the compatible equivalent here.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL,
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+      )
+    `);
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")',
+    );
+
+    app.locals.sessionStorePhase = "write_probe";
     await new Promise<void>((resolve, reject) => {
       sessionStore.set(sessionProbeId, sessionProbe, (writeError) => {
         if (writeError) {
@@ -226,11 +271,17 @@ export async function registerRoutes(
     });
     app.locals.sessionStoreStatus = "ready";
     app.locals.sessionStoreError = undefined;
-  } catch (writeError) {
+    app.locals.sessionStoreErrorCode = undefined;
+  } catch (sessionError) {
     app.locals.sessionStoreStatus = "write_failed";
     app.locals.sessionStoreError =
-      getSessionStoreErrorCategory(writeError);
+      getSessionStoreErrorCategory(sessionError);
+    app.locals.sessionStoreErrorCode =
+      getSafeDatabaseErrorCode(sessionError);
     app.locals.sessionStoreCleanup = "not_attempted";
+    console.error(
+      `Terra session store failed at ${app.locals.sessionStorePhase} (${app.locals.sessionStoreError}${app.locals.sessionStoreErrorCode ? `, ${app.locals.sessionStoreErrorCode}` : ""}).`,
+    );
   }
 
   if (app.locals.sessionStoreStatus === "ready") {
@@ -246,25 +297,33 @@ export async function registerRoutes(
       });
       app.locals.sessionStoreCleanup = "ready";
       app.locals.sessionStoreCleanupError = undefined;
+      app.locals.sessionStoreCleanupErrorCode = undefined;
     } catch (cleanupError) {
       app.locals.sessionStoreCleanup = "failed";
       app.locals.sessionStoreCleanupError =
         getSessionStoreErrorCategory(cleanupError);
+      app.locals.sessionStoreCleanupErrorCode =
+        getSafeDatabaseErrorCode(cleanupError);
     }
   }
 
   app.locals.defaultDataStatus = "initializing";
+  app.locals.defaultDataStep = "defaults.starting";
   app.locals.defaultDataStartedAt = Date.now();
   void storage
-    .initializeDefaults(onStartupProgress)
+    .initializeDefaults((step) => {
+      app.locals.defaultDataStep = step;
+      onDefaultDataProgress?.(step);
+    })
     .then(() => {
       app.locals.defaultDataStatus = "ready";
     })
     .catch((error) => {
       app.locals.defaultDataStatus = "failed";
       app.locals.defaultDataError = getDefaultDataErrorCategory(error);
+      app.locals.defaultDataErrorCode = getSafeDatabaseErrorCode(error);
       console.error(
-        `Terra default data initialization failed at ${app.locals.startupStep} (${app.locals.defaultDataError}).`,
+        `Terra default data initialization failed at ${app.locals.defaultDataStep} (${app.locals.defaultDataError}${app.locals.defaultDataErrorCode ? `, ${app.locals.defaultDataErrorCode}` : ""}).`,
       );
     });
 
