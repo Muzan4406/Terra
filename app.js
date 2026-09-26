@@ -58,7 +58,7 @@ import("./dist/index.cjs").catch(async (error) => {
   const server = createServer((req, res) => {
     const path = (req.url || "/").split("?")[0];
 
-    if (path === "/api/health") {
+    if (path === "/api/health" || path === "/api/healthz") {
       res.writeHead(503, { "Content-Type": "application/json; charset=utf-8" });
       res.end(
         JSON.stringify({

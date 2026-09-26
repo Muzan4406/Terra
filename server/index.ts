@@ -12,6 +12,8 @@ const port = parseInt(process.env.PORT || "5000", 10);
 type StartupStatus = "starting" | "ready" | "failed";
 let startupStatus: StartupStatus = "starting";
 let startupFailureStage: "routes" | "static" = "routes";
+const startupStartedAt = Date.now();
+app.locals.startupStep = "registering_routes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -66,7 +68,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/api/health", async (_req, res) => {
+const healthHandler = async (_req: Request, res: Response) => {
   let databaseConnected = false;
 
   try {
@@ -83,14 +85,19 @@ app.get("/api/health", async (_req, res) => {
   return res.status(503).json({
     status: startupStatus,
     database: databaseConnected ? "connected" : "unavailable",
-    ...(startupStatus === "failed" ? { stage: startupFailureStage } : {}),
+    stage: startupFailureStage,
+    step: app.locals.startupStep,
+    startupSeconds: Math.floor((Date.now() - startupStartedAt) / 1000),
   });
-});
+};
+
+app.get(["/api/health", "/api/healthz"], healthHandler);
 
 app.use((req, res, next) => {
   if (
     req.path.startsWith("/api") &&
     req.path !== "/api/health" &&
+    req.path !== "/api/healthz" &&
     startupStatus !== "ready"
   ) {
     return res.status(503).json({
@@ -117,7 +124,9 @@ if (isProduction) {
 
 (async () => {
   try {
-    await registerRoutes(httpServer, app);
+    await registerRoutes(httpServer, app, (step) => {
+      app.locals.startupStep = step;
+    });
 
     app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
       if (res.headersSent) {
@@ -131,6 +140,7 @@ if (isProduction) {
 
     // Setup Vite only in development and after registering API routes.
     startupFailureStage = "static";
+    app.locals.startupStep = "serving_static";
     if (isProduction) {
       serveStatic(app);
     } else {
@@ -139,6 +149,7 @@ if (isProduction) {
     }
 
     startupStatus = "ready";
+    app.locals.startupStep = "ready";
 
     if (!isProduction) {
       httpServer.listen(

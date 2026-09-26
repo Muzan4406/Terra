@@ -100,7 +100,8 @@ async function requireSuperAdmin(req: Request, res: Response, next: NextFunction
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Express,
+  onStartupProgress?: (step: string) => void
 ): Promise<Server> {
   // Trust the Plesk/Replit reverse proxy so HTTPS session cookies are recognized.
   app.set("trust proxy", 1);
@@ -129,7 +130,7 @@ export async function registerRoutes(
     })
   );
 
-  await storage.initializeDefaults();
+  await storage.initializeDefaults(onStartupProgress);
 
   app.post("/api/auth/register", async (req, res) => {
     try {

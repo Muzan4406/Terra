@@ -125,7 +125,7 @@ export interface IStorage {
   createAdminSupportMessage(userId: string, adminId: string, body: string, files: SupportAttachmentUpload[]): Promise<void>;
   getSupportAttachment(id: string): Promise<SupportAttachment | undefined>;
   
-  initializeDefaults(): Promise<void>;
+  initializeDefaults(onProgress?: (step: string) => void): Promise<void>;
 }
 
 export type SupportAttachmentUpload = Pick<SupportAttachment, "fileName" | "mimeType" | "size" | "data">;
@@ -672,10 +672,12 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async initializeDefaults(): Promise<void> {
+  async initializeDefaults(onProgress?: (step: string) => void): Promise<void> {
+    onProgress?.("defaults.products.read");
     const existingProducts = await db.select().from(products);
     if (existingProducts.length === 0) {
       for (const vip of VIP_PRODUCTS) {
+        onProgress?.("defaults.products.write");
         await this.createProduct({
           level: vip.level,
           name: vip.name,
@@ -689,8 +691,10 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    onProgress?.("defaults.payment_channels.read");
     const existingChannels = await db.select().from(paymentChannels);
     if (existingChannels.length === 0) {
+      onProgress?.("defaults.payment_channels.write");
       await this.createPaymentChannel({
         name: "LeekPay",
         redirectUrl: "https://leekpay.fr/api/v1/checkout",
@@ -706,6 +710,7 @@ export class DatabaseStorage implements IStorage {
     };
 
     for (const [key, value] of Object.entries(defaultSettings)) {
+      onProgress?.(`defaults.settings.${key}`);
       const existing = await this.getSetting(key);
       if (existing === undefined || /t\.me\//i.test(existing)) {
         await this.setSetting(key, value);
@@ -714,9 +719,11 @@ export class DatabaseStorage implements IStorage {
 
     const adminPhone = "99935673";
     const adminCountry = "TG";
+    onProgress?.("defaults.admin.read");
     const existingAdmin = await this.getUserByPhone(adminPhone, adminCountry);
     
     if (!existingAdmin) {
+      onProgress?.("defaults.admin.write");
       const hashedPassword = await bcrypt.hash("AAbb11##", 10);
       await db.insert(users).values({
         fullName: "Admin",
@@ -729,8 +736,10 @@ export class DatabaseStorage implements IStorage {
         balance: 0,
       });
     } else if (existingAdmin.isAdmin && !existingAdmin.isSuperAdmin) {
+      onProgress?.("defaults.admin.update");
       await this.updateUser(existingAdmin.id, { isSuperAdmin: true });
     }
+    onProgress?.("defaults.complete");
   }
 
   async getBonusCodes(): Promise<BonusCode[]> {
