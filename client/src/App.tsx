@@ -36,8 +36,33 @@ import AdminUserTeamPage from "@/pages/admin/user-team";
 import AdminSupportPage from "@/pages/admin/support";
 import { Loader2 } from "lucide-react";
 
+function AuthUnavailable({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="max-w-sm space-y-4 text-center">
+        <p role="alert" className="text-sm text-muted-foreground">
+          {message}
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Réessayer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, authError, refetchUser } = useAuth();
   const [, navigate] = useLocation();
 
   if (isLoading) {
@@ -45,6 +70,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (authError && !user) {
+    return (
+      <AuthUnavailable
+        message={authError}
+        onRetry={() => void refetchUser()}
+      />
     );
   }
 
@@ -85,13 +119,22 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, authError, refetchUser } = useAuth();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (authError && !user) {
+    return (
+      <AuthUnavailable
+        message={authError}
+        onRetry={() => void refetchUser()}
+      />
     );
   }
 

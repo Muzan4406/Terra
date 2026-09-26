@@ -5,6 +5,7 @@ import { apiRequest, fetchWithTimeout } from "./queryClient";
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  authError: string | null;
   login: (phone: string, country: string, password: string) => Promise<void>;
   register: (data: { fullName: string; phone: string; country: string; password: string; invitationCode?: string }) => Promise<void>;
   logout: () => Promise<void>;
@@ -16,20 +17,34 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchUser = async () => {
+    setAuthError(null);
     try {
       const res = await fetchWithTimeout("/api/auth/me", {
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      } else {
+
+      if (res.status === 401) {
         setUser(null);
+        return;
       }
-    } catch {
-      setUser(null);
+
+      if (!res.ok) {
+        throw new Error(
+          "Le serveur ne peut pas vérifier votre session pour le moment.",
+        );
+      }
+
+      const data = await res.json();
+      setUser(data.user);
+    } catch (error) {
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : "Le serveur ne peut pas vérifier votre session pour le moment.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -44,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Erreur de connexion");
     setUser(data.user);
+    setAuthError(null);
   };
 
   const register = async (data: { fullName: string; phone: string; country: string; password: string; invitationCode?: string }) => {
@@ -51,19 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const resData = await res.json();
     if (!res.ok) throw new Error(resData.message || "Erreur d'inscription");
     setUser(resData.user);
+    setAuthError(null);
   };
 
   const logout = async () => {
     await apiRequest("POST", "/api/auth/logout", {});
     setUser(null);
+    setAuthError(null);
   };
 
   const refetchUser = async () => {
+    setIsLoading(true);
     await fetchUser();
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refetchUser }}>
+    <AuthContext.Provider value={{ user, isLoading, authError, login, register, logout, refetchUser }}>
       {children}
     </AuthContext.Provider>
   );

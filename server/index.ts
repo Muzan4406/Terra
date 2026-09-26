@@ -80,7 +80,22 @@ const healthHandler = async (_req: Request, res: Response) => {
   }
 
   if (startupStatus === "ready" && databaseConnected) {
-    return res.json({ status: "ok", database: "connected" });
+    const defaultDataStatus = app.locals.defaultDataStatus ?? "not_started";
+    const defaultDataStartedAt =
+      app.locals.defaultDataStartedAt ?? startupStartedAt;
+    return res.json({
+      status: "ok",
+      database: "connected",
+      defaults: defaultDataStatus,
+      ...(defaultDataStatus === "ready"
+        ? {}
+        : {
+            step: app.locals.startupStep,
+            defaultsSeconds: Math.floor(
+              (Date.now() - defaultDataStartedAt) / 1000,
+            ),
+          }),
+    });
   }
 
   return res.status(503).json({

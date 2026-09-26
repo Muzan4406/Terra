@@ -42,8 +42,15 @@ export default function InvestPage() {
   const [showConfirmPurchase, setShowConfirmPurchase] = useState(false);
   const [productToPurchase, setProductToPurchase] = useState<ProductWithOwnership | null>(null);
 
-  const { data: products, isLoading } = useQuery<ProductWithOwnership[]>({
+  const {
+    data: products,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<ProductWithOwnership[]>({
     queryKey: ["/api/products"],
+    retry: 1,
   });
 
   const purchaseMutation = useMutation({
@@ -123,7 +130,30 @@ export default function InvestPage() {
         </header>
 
         <div className="px-4 py-2 space-y-4">
-          {products?.map((product) => {
+          {isError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 p-4 text-center"
+            >
+              <p className="text-sm text-red-800">
+                {error instanceof Error
+                  ? error.message
+                  : "Impossible de charger les produits d’investissement."}
+              </p>
+              <Button
+                variant="outline"
+                className="mt-3"
+                onClick={() => void refetch()}
+              >
+                Réessayer
+              </Button>
+            </div>
+          ) : products?.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-600">
+              Aucun produit d’investissement n’est disponible pour le moment.
+            </div>
+          ) : (
+          products?.map((product) => {
             const productImage = solarImages[(product.level - 1) % solarImages.length];
 
             return (
@@ -188,7 +218,8 @@ export default function InvestPage() {
                 </div>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 

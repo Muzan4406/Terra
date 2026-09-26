@@ -98,6 +98,18 @@ async function requireSuperAdmin(req: Request, res: Response, next: NextFunction
   next();
 }
 
+function saveSession(req: Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
@@ -114,6 +126,7 @@ export async function registerRoutes(
   app.use(
     session({
       secret: sessionSecret,
+      proxy: true,
       resave: false,
       saveUninitialized: false,
       store: new SessionStore({
@@ -130,7 +143,19 @@ export async function registerRoutes(
     })
   );
 
-  await storage.initializeDefaults(onStartupProgress);
+  app.locals.defaultDataStatus = "initializing";
+  app.locals.defaultDataStartedAt = Date.now();
+  void storage
+    .initializeDefaults(onStartupProgress)
+    .then(() => {
+      app.locals.defaultDataStatus = "ready";
+    })
+    .catch(() => {
+      app.locals.defaultDataStatus = "failed";
+      console.error(
+        `Terra default data initialization failed at ${app.locals.startupStep}.`,
+      );
+    });
 
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -159,6 +184,7 @@ export async function registerRoutes(
       });
 
       req.session.userId = user.id;
+      await saveSession(req);
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -188,6 +214,7 @@ export async function registerRoutes(
       }
 
       req.session.userId = user.id;
+      await saveSession(req);
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
       if (error instanceof z.ZodError) {
