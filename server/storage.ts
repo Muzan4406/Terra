@@ -692,8 +692,11 @@ export class DatabaseStorage implements IStorage {
     }
 
     onProgress?.("defaults.payment_channels.read");
-    const existingChannels = await db.select().from(paymentChannels);
-    if (existingChannels.length === 0) {
+    const [existingChannel] = await db
+      .select({ id: paymentChannels.id })
+      .from(paymentChannels)
+      .limit(1);
+    if (!existingChannel) {
       onProgress?.("defaults.payment_channels.write");
       await this.createPaymentChannel({
         name: "LeekPay",

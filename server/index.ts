@@ -69,6 +69,7 @@ app.use((req, res, next) => {
 });
 
 const healthHandler = async (_req: Request, res: Response) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   let databaseConnected = false;
 
   try {
