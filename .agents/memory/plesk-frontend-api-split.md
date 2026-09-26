@@ -15,6 +15,12 @@ The Replit workspace build and the Plesk Node bundle can be out of sync. A Plesk
 
 **How to apply:** After syncing a backend fix, restart Plesk and compare `/api/healthz` fields with the new code before diagnosing the production database from the local build.
 
+The bundled `connect-pg-simple` session-table creation SQL uses the removed `WITH (OIDS=FALSE)` option. On modern PostgreSQL, creating a missing session table with that SQL can fail even while `SELECT 1` succeeds; replacing it with equivalent idempotent DDL was followed by Plesk reporting the session store and defaults ready.
+
+**Why:** The deployment uses external PostgreSQL, while the session table is not part of the app schema migration; it must be created separately on first startup.
+
+**How to apply:** If session-store writes fail only on a fresh Plesk database, inspect the session-table creation compatibility before changing database credentials or privileges. Keep the replacement DDL non-destructive and expose only a safe SQLSTATE in health output.
+
 The shared `package-lock.json` must use public canonical npm tarball URLs for Plesk and other external installs; Replit's internal package-firewall hostname and `/npm/` prefix are only valid inside Replit.
 
 **Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.
