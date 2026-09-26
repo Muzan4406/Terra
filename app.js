@@ -49,8 +49,7 @@ import("./dist/index.cjs").catch(async (error) => {
     bundle_import_failed:
       "Vérifie le build serveur dist/index.cjs et les dépendances Node.js.",
   };
-  const nextStep =
-    nextStepByReason[reason as keyof typeof nextStepByReason];
+  const nextStep = nextStepByReason[reason];
 
   console.error(`Production server bundle load failed: ${reason}`);
 
