@@ -12,7 +12,7 @@ import { BrandLogo } from "@/components/brand-logo";
 interface PlatformSettings {
   customerService: string;
   officialChannel: string;
-  discussionGroup: string;
+  telegramGroup: string;
 }
 
 interface HomeService {
@@ -178,9 +178,10 @@ export default function HomePage() {
       <BottomNav />
 
       <WhatsAppPopup
-        isOpen={showWhatsAppPopup && !!settings?.officialChannel}
+        isOpen={showWhatsAppPopup && (!!settings?.officialChannel || !!settings?.telegramGroup)}
         onClose={handleCloseWhatsAppPopup}
         whatsappLink={settings?.officialChannel || ""}
+        telegramGroupLink={settings?.telegramGroup || ""}
       />
     </div>
   );

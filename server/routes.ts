@@ -21,6 +21,7 @@ const adminSettingsPatchSchema = z.object({
   customerService: z.string().url("URL invalide").or(z.literal("")).optional(),
   officialChannel: z.string().url("URL invalide").or(z.literal("")).optional(),
   discussionGroup: z.string().url("URL invalide").or(z.literal("")).optional(),
+  telegramGroup: z.string().url("URL invalide").or(z.literal("")).optional(),
   ...businessSettingsFieldsSchema.partial().shape,
 });
 
@@ -968,6 +969,7 @@ export async function registerRoutes(
       customerService: settings.customerService || "",
       officialChannel: settings.officialChannel || "",
       discussionGroup: settings.discussionGroup || "",
+      telegramGroup: settings.telegramGroup || "",
       ...businessSettings,
     });
   }));
@@ -1366,6 +1368,7 @@ export async function registerRoutes(
       customerService: settings.customerService || "",
       officialChannel: settings.officialChannel || "",
       discussionGroup: settings.discussionGroup || "",
+      telegramGroup: settings.telegramGroup || "",
       ...businessSettings,
     });
   }));
@@ -1407,6 +1410,7 @@ export async function registerRoutes(
       "customerService",
       "officialChannel",
       "discussionGroup",
+      "telegramGroup",
     ] as const) {
       if (payload[key] !== undefined) {
         settingsToSave[key] = payload[key];

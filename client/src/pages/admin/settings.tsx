@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, MessageCircle, Radio, Users, Loader2, History, Clock, User } from "lucide-react";
+import { ArrowLeft, Save, MessageCircle, Radio, Send, Loader2, History, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ const settingsSchema = z.object({
   customerService: z.string().url("URL invalide").or(z.literal("")),
   officialChannel: z.string().url("URL invalide").or(z.literal("")),
   discussionGroup: z.string().url("URL invalide").or(z.literal("")),
+  telegramGroup: z.string().url("URL invalide").or(z.literal("")),
   referralLevel1Percentage: z.number().int().min(0).max(100),
   referralLevel2Percentage: z.number().int().min(0).max(100),
   referralLevel3Percentage: z.number().int().min(0).max(100),
@@ -61,6 +62,7 @@ interface PlatformSettings {
   customerService: string;
   officialChannel: string;
   discussionGroup: string;
+  telegramGroup: string;
   referralLevel1Percentage: number;
   referralLevel2Percentage: number;
   referralLevel3Percentage: number;
@@ -81,8 +83,9 @@ interface SettingsAuditEntry {
 
 const settingLabels: Record<string, string> = {
   customerService: "Service client",
-  officialChannel: "Chaîne officielle",
-  discussionGroup: "Groupe de discussion",
+  officialChannel: "Chaîne WhatsApp officielle",
+  discussionGroup: "Ancien groupe de discussion",
+  telegramGroup: "Groupe de discussion Telegram",
   referralLevel1Percentage: "Commission de niveau 1",
   referralLevel2Percentage: "Commission de niveau 2",
   referralLevel3Percentage: "Commission de niveau 3",
@@ -122,6 +125,7 @@ export default function AdminSettingsPage() {
       customerService: settings?.customerService || "",
       officialChannel: settings?.officialChannel || "",
       discussionGroup: settings?.discussionGroup || "",
+      telegramGroup: settings?.telegramGroup || "",
       ...DEFAULT_BUSINESS_SETTINGS,
     },
     values: settings,
@@ -209,7 +213,7 @@ export default function AdminSettingsPage() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Radio className="h-4 w-4 text-primary" />
-                            Chaîne officielle
+                            Chaîne WhatsApp officielle
                           </FormLabel>
                           <FormControl>
                             <Input 
@@ -225,21 +229,24 @@ export default function AdminSettingsPage() {
 
                     <FormField
                       control={form.control}
-                      name="discussionGroup"
+                      name="telegramGroup"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-primary" />
-                            Groupe de discussion
+                            <Send className="h-4 w-4 text-[#229ED9]" />
+                            Groupe de discussion Telegram
                           </FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://chat.whatsapp.com/..."
-                              data-testid="input-discussion-group"
+                              placeholder="https://t.me/..."
+                              data-testid="input-telegram-group"
                             />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-muted-foreground">
+                            Ce lien s’affiche dans la fenêtre d’accueil avec la chaîne WhatsApp.
+                          </p>
                         </FormItem>
                       )}
                     />
