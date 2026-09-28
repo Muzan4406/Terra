@@ -48,3 +48,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_database:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+APP_PUBLIC_URL = "terraa.site"

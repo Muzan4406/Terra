@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2, CreditCard, Clock, CheckCircle2, AlertCircle } from
 import { BottomNav } from "@/components/bottom-nav";
 import { CountrySelect } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
+import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 
 interface DepositOptions {
   mode: "manual" | "ashtech";
@@ -51,6 +52,15 @@ export default function DepositPage() {
   const [automaticDeposit, setAutomaticDeposit] = useState<AutomaticDepositState | null>(null);
   const [otp, setOtp] = useState("");
   const notifiedStatus = useRef<string | null>(null);
+
+  const { data: businessSettings } = useQuery<{ depositMinimum: number }>({
+    queryKey: ["/api/settings/public"],
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+  });
+  const depositMinimum =
+    businessSettings?.depositMinimum ?? DEFAULT_BUSINESS_SETTINGS.depositMinimum;
 
   const {
     data: depositOptions,
@@ -203,10 +213,10 @@ export default function DepositPage() {
 
   const handleSubmit = () => {
     const amountNum = parseInt(amount) || 0;
-    if (amountNum < 3000) {
+    if (amountNum < depositMinimum) {
       toast({ 
         title: "Erreur", 
-        description: "Le montant minimum est de 3 000 FCFA",
+        description: `Le montant minimum est de ${depositMinimum.toLocaleString("fr-FR")} FCFA`,
         variant: "destructive" 
       });
       return;
@@ -403,9 +413,9 @@ export default function DepositPage() {
                     type="number"
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
-                    placeholder="3000"
+                    placeholder={String(depositMinimum)}
                     className="w-full border-none bg-transparent text-3xl font-bold text-gray-800 outline-none"
-                    min={3000}
+                    min={depositMinimum}
                     step={1}
                     data-testid="input-amount"
                   />
@@ -547,7 +557,7 @@ export default function DepositPage() {
               </div>
 
               <div className="space-y-3 text-sm text-gray-600">
-                <p>Le montant minimum du dépôt est de 3 000 FCFA.</p>
+                <p>Le montant minimum du dépôt est de {depositMinimum.toLocaleString("fr-FR")} FCFA.</p>
                 {isAshtechMode ? (
                   <p>Ne relancez pas un dépôt automatique lorsqu'une confirmation est en attente.</p>
                 ) : (
