@@ -190,13 +190,23 @@ export default function AdminUsersPage() {
   }
 
   const filteredUsers = users?.filter((u) => {
-    if (searchTerm) {
-      return u.phone.includes(searchTerm) || 
-             u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             u.referralCode.toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    if (normalizedSearchTerm) {
+      return u.phone.includes(searchTerm.trim()) ||
+             u.fullName.toLowerCase().includes(normalizedSearchTerm) ||
+             u.referralCode.toLowerCase().includes(normalizedSearchTerm) ||
+             u.activeProducts.some((product) =>
+               product.name.toLowerCase().includes(normalizedSearchTerm),
+             );
     }
     return true;
   });
+  const activeUsersInResults =
+    filteredUsers?.filter((candidate) => candidate.activeProducts.length > 0) ?? [];
+  const activeAccountsTotalBalance = activeUsersInResults.reduce(
+    (total, candidate) => total + candidate.balance,
+    0,
+  );
 
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString("fr-FR", {
@@ -256,6 +266,22 @@ export default function AdminUsersPage() {
               ))}
             </div>
           </div>
+
+          {!isLoading && !isError && (
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <p className="text-sm font-medium">Solde total des comptes avec produits actifs</p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeUsersInResults.length} compte{activeUsersInResults.length === 1 ? "" : "s"} avec au moins un produit actif
+                  </p>
+                </div>
+                <p className="text-xl font-bold text-primary">
+                  <MoneyDisplay amount={activeAccountsTotalBalance} />
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {isLoading ? (
             <div className="space-y-3">
