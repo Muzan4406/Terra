@@ -23,6 +23,7 @@ const settingsSchema = z.object({
   referralLevel2Percentage: z.number().int().min(0).max(100),
   referralLevel3Percentage: z.number().int().min(0).max(100),
   signupBonus: z.number().int().min(0).max(100_000_000),
+  depositMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalFeePercentage: z.number().int().min(0).max(100),
   withdrawalStartHourGmt: z.number().int().min(0).max(23),
@@ -48,6 +49,7 @@ type BusinessSettingName =
   | "referralLevel2Percentage"
   | "referralLevel3Percentage"
   | "signupBonus"
+  | "depositMinimum"
   | "withdrawalMinimum"
   | "withdrawalFeePercentage"
   | "withdrawalStartHourGmt"
@@ -64,6 +66,7 @@ const businessSettingFields: {
   { name: "referralLevel2Percentage", label: "Commission de niveau 2", unit: "%", min: 0, max: 100 },
   { name: "referralLevel3Percentage", label: "Commission de niveau 3", unit: "%", min: 0, max: 100 },
   { name: "signupBonus", label: "Bonus d’inscription", unit: "FCFA", min: 0, max: 100_000_000 },
+  { name: "depositMinimum", label: "Dépôt minimum", unit: "FCFA", min: 1, max: 100_000_000 },
   { name: "withdrawalMinimum", label: "Retrait minimum", unit: "FCFA", min: 1, max: 100_000_000 },
   { name: "withdrawalFeePercentage", label: "Frais de retrait", unit: "%", min: 0, max: 100 },
   { name: "withdrawalStartHourGmt", label: "Ouverture des retraits", unit: "h GMT", min: 0, max: 23 },
@@ -79,6 +82,7 @@ interface PlatformSettings {
   referralLevel2Percentage: number;
   referralLevel3Percentage: number;
   signupBonus: number;
+  depositMinimum: number;
   withdrawalMinimum: number;
   withdrawalFeePercentage: number;
   withdrawalStartHourGmt: number;
@@ -104,6 +108,7 @@ const settingLabels: Record<string, string> = {
   referralLevel2Percentage: "Commission de niveau 2",
   referralLevel3Percentage: "Commission de niveau 3",
   signupBonus: "Bonus d’inscription",
+  depositMinimum: "Dépôt minimum",
   withdrawalMinimum: "Retrait minimum",
   withdrawalFeePercentage: "Frais de retrait",
   withdrawalStartHourGmt: "Ouverture des retraits (GMT)",
@@ -270,7 +275,7 @@ export default function AdminSettingsPage() {
                     <div className="border-t border-border pt-6">
                       <h3 className="text-lg font-semibold">Règles financières et parrainage</h3>
                       <p className="mt-1 mb-4 text-sm text-muted-foreground">
-                         Après enregistrement, le minimum et les heures GMT s’appliquent aux nouvelles demandes de retrait. Les changements sont vérifiés par le serveur; les opérations déjà enregistrées ne sont pas recalculées.
+                         Après enregistrement, le minimum de dépôt s’applique dès la prochaine demande; le minimum et les heures GMT de retrait s’appliquent aux nouvelles demandes de retrait. Les changements sont vérifiés par le serveur et n’altèrent pas les opérations déjà enregistrées.
                       </p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         {businessSettingFields.map((setting) => (

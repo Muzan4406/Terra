@@ -6,10 +6,17 @@ interface PaymentMethodSelectProps {
   value: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
+  options?: string[];
 }
 
-export function PaymentMethodSelect({ country, value, onValueChange, disabled }: PaymentMethodSelectProps) {
-  const methods = PAYMENT_METHODS_BY_COUNTRY[country] || [];
+export function PaymentMethodSelect({
+  country,
+  value,
+  onValueChange,
+  disabled,
+  options,
+}: PaymentMethodSelectProps) {
+  const methods = options ?? PAYMENT_METHODS_BY_COUNTRY[country] ?? [];
 
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled || methods.length === 0}>

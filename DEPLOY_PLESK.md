@@ -66,6 +66,24 @@ La variable Replit `SUPABASE_DATABASE_URL` cible la base Supabase; en production
 
 Pour cette version, la seule modification de schéma nécessaire au chat a été appliquée de façon additive : `support_messages.read_at` est nullable avec `DEFAULT now()`, donc les messages déjà présents sont considérés comme lus. La colonne et la présence de la table `session` ont été vérifiées. Il n’est pas nécessaire de relancer `db:push:supabase` pour cette version; construisez le projet, poussez-le sur GitHub, puis faites **Pull + Deploy Now** et **Restart** dans Plesk.
 
+## AshTech Pay — Direct API Mobile Money
+
+Avant d’activer un pays dans **Administration → Moyens de paiement**, appliquez une fois ces colonnes additives à la base PostgreSQL utilisée par Plesk :
+
+```sql
+ALTER TABLE public.deposits
+  ADD COLUMN IF NOT EXISTS ashtech_transaction_id text,
+  ADD COLUMN IF NOT EXISTS ashtech_reference text;
+```
+
+Ne lancez pas `db:push:supabase` pour cette modification. Configurez ensuite dans les variables d’environnement Node.js de Plesk :
+
+- `ASHTECH_API_KEY` : clé Direct API AshTech Pay;
+- `ASHTECH_WEBHOOK_SECRET` : secret webhook fourni par AshTech Pay;
+- `APP_PUBLIC_URL` : origine HTTPS publique, par exemple `https://votre-domaine.tld` (sans chemin).
+
+L’URL webhook à enregistrer chez AshTech Pay est `https://votre-domaine.tld/api/webhooks/ashtechpay`. Les deux identifiants restent côté serveur et ne doivent pas être commités. Le panneau des moyens de paiement n’autorise l’activation que pour les pays et opérateurs présents dans le catalogue AshTech actif.
+
 ## Routage
 
 Les routes `/api/...` sont enregistrées avant les fichiers statiques. En production, Express sert `dist/public` et renvoie `index.html` pour les autres chemins : les URL React comme `/customer-service/chat` ou `/admin/support` fonctionnent donc après actualisation sans règle `.htaccess` dédiée, tant que l’URL de l’application Plesk est `/`.

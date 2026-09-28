@@ -10,9 +10,27 @@ import {
   changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
   REFERRAL_TASKS, PRODUCT_TASK,
   businessSettingsFieldsSchema, platformBusinessSettingsSchema,
+  ELIGIBLE_COUNTRIES, type Deposit,
 } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
-import { resolvePlatformBusinessSettings } from "./platform-settings";
+import {
+  getDepositMinimumError,
+  resolvePlatformBusinessSettings,
+} from "./platform-settings";
+import {
+  ashtechErrorCode,
+  ashtechUserFacingError,
+  createAshtechCollection,
+  findEligibleCountry,
+  getAshtechCountries,
+  getAshtechReadiness,
+  getAshtechTransaction,
+  getAshtechWebhookSecret,
+  getAshtechWebhookUrl,
+  isValidAshtechWebhookSignature,
+  normalizeAshtechPhone,
+  parseEnabledAshtechCountries,
+} from "./ashtechpay";
 import { z } from "zod";
 import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
@@ -25,6 +43,93 @@ const adminSettingsPatchSchema = z.object({
   telegramGroup: z.string().url("URL invalide").or(z.literal("")).optional(),
   ...businessSettingsFieldsSchema.partial().shape,
 });
+const ASHTECH_COUNTRIES_SETTING = "ashtechEnabledCountries";
+
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function asAshtechRecord(
+  body: Record<string, unknown> | unknown[],
+): Record<string, unknown> {
+  return Array.isArray(body) ? {} : body;
+}
+
+function safeHttpsUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function reconcileAshtechDeposit(
+  deposit: Deposit,
+  transactionId: string,
+): Promise<Deposit> {
+  const response = await getAshtechTransaction(transactionId);
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error("AshTech Pay n'a pas pu vérifier cette transaction.");
+  }
+
+  const transaction = asAshtechRecord(response.body);
+  const transactionStatus = asNonEmptyString(transaction.status)?.toLowerCase();
+  const transactionReference = asNonEmptyString(transaction.reference);
+  const returnedTransactionId = asNonEmptyString(transaction.transaction_id);
+
+  if (returnedTransactionId && returnedTransactionId !== transactionId) {
+    throw new Error("La transaction renvoyée par AshTech Pay ne correspond pas.");
+  }
+  if (
+    transactionReference &&
+    transactionReference !== deposit.ashtechReference &&
+    transactionReference !== deposit.id
+  ) {
+    throw new Error("La référence AshTech Pay ne correspond pas au dépôt.");
+  }
+  if (
+    deposit.ashtechTransactionId &&
+    deposit.ashtechTransactionId !== transactionId
+  ) {
+    throw new Error("Une autre transaction AshTech Pay est associée à ce dépôt.");
+  }
+  if (transaction.amount !== undefined && Number(transaction.amount) !== deposit.amount) {
+    throw new Error("Le montant confirmé par AshTech Pay ne correspond pas.");
+  }
+  if (
+    typeof transaction.country_code === "string" &&
+    transaction.country_code !== deposit.country
+  ) {
+    throw new Error("Le pays de la transaction AshTech Pay ne correspond pas.");
+  }
+  if (
+    typeof transaction.operator === "string" &&
+    transaction.operator !== deposit.paymentMethod
+  ) {
+    throw new Error("L'opérateur de la transaction AshTech Pay ne correspond pas.");
+  }
+
+  if (!transactionStatus || !["pending", "completed", "failed"].includes(transactionStatus)) {
+    throw new Error("AshTech Pay a renvoyé un statut de transaction inconnu.");
+  }
+
+  await storage.updateDeposit(deposit.id, {
+    ashtechTransactionId: transactionId,
+    ...(transactionReference ? { ashtechReference: transactionReference } : {}),
+  });
+
+  if (transactionStatus === "completed") {
+    await storage.completeDepositOnce(deposit.id);
+  } else if (transactionStatus === "failed") {
+    await storage.rejectDepositOnce(deposit.id);
+  }
+
+  const updated = await storage.getDeposit(deposit.id);
+  if (!updated) throw new Error("Dépôt introuvable après vérification.");
+  return updated;
+}
 
 function getSafeDatabaseErrorCode(error: unknown): string | undefined {
   const code =
@@ -607,34 +712,559 @@ export async function registerRoutes(
     res.json(channels);
   });
 
-  app.post("/api/deposits", requireAuth, async (req, res) => {
-    try {
-      const data = depositSchema.parse(req.body);
-      const channel = await storage.getPaymentChannel(data.channelId);
-      
+  app.get("/api/admin/ashtech/config", requireAdmin, asyncRoute(async (_req, res) => {
+    const readiness = getAshtechReadiness();
+    let countries: Awaited<ReturnType<typeof getAshtechCountries>> = [];
+    let catalogueError: string | undefined;
+
+    if (readiness.apiKeyConfigured) {
+      try {
+        const catalog = await getAshtechCountries();
+        countries = catalog.filter((country) => findEligibleCountry(country.code));
+      } catch {
+        catalogueError = "Le catalogue AshTech Pay est indisponible. Vérifiez la clé API et l'accès Direct API.";
+      }
+    }
+
+    res.json({
+      readiness,
+      countries,
+      enabledCountryCodes: parseEnabledAshtechCountries(
+        await storage.getSetting(ASHTECH_COUNTRIES_SETTING),
+      ),
+      catalogueError,
+    });
+  }));
+
+  app.patch("/api/admin/ashtech/config", requireAdmin, asyncRoute(async (req, res) => {
+    const parsed = z.object({
+      enabledCountryCodes: z.array(z.string().length(2)).max(ELIGIBLE_COUNTRIES.length),
+    }).safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.issues[0]?.message || "Pays sélectionnés invalides.",
+      });
+    }
+
+    const enabledCountryCodes = Array.from(new Set(parsed.data.enabledCountryCodes));
+    if (enabledCountryCodes.length !== parsed.data.enabledCountryCodes.length) {
+      return res.status(400).json({ message: "Un même pays ne peut pas être sélectionné plusieurs fois." });
+    }
+    if (enabledCountryCodes.some((code) => !findEligibleCountry(code))) {
+      return res.status(400).json({ message: "Un des pays sélectionnés n'est pas pris en charge par la plateforme." });
+    }
+
+    if (enabledCountryCodes.length) {
+      const readiness = getAshtechReadiness();
+      if (
+        !readiness.apiKeyConfigured ||
+        !readiness.webhookSecretConfigured ||
+        !readiness.publicUrlConfigured
+      ) {
+        return res.status(400).json({
+          message: "Configurez ASHTECH_API_KEY, ASHTECH_WEBHOOK_SECRET et APP_PUBLIC_URL (HTTPS) avant d'activer un pays.",
+        });
+      }
+
+      let catalog;
+      try {
+        catalog = await getAshtechCountries(true);
+        getAshtechWebhookUrl();
+      } catch {
+        return res.status(503).json({
+          message: "AshTech Pay n'est pas prêt. Vérifiez les identifiants, le catalogue et l'URL HTTPS publique.",
+        });
+      }
+      const availableCodes = new Set(
+        catalog
+          .filter((country) => findEligibleCountry(country.code))
+          .map((country) => country.code),
+      );
+      if (enabledCountryCodes.some((code) => !availableCodes.has(code))) {
+        return res.status(400).json({
+          message: "Le catalogue AshTech Pay ne propose plus un des pays sélectionnés.",
+        });
+      }
+    }
+
+    await storage.setSetting(
+      ASHTECH_COUNTRIES_SETTING,
+      JSON.stringify(enabledCountryCodes),
+      req.session.userId!,
+    );
+    res.json({ success: true, enabledCountryCodes });
+  }));
+
+  app.get("/api/deposit-options", requireAuth, asyncRoute(async (req, res) => {
+    const countryCode = typeof req.query.country === "string"
+      ? req.query.country.toUpperCase()
+      : "";
+    if (!findEligibleCountry(countryCode)) {
+      return res.status(400).json({ message: "Pays non pris en charge." });
+    }
+
+    const enabledCountryCodes = parseEnabledAshtechCountries(
+      await storage.getSetting(ASHTECH_COUNTRIES_SETTING),
+    );
+    if (!enabledCountryCodes.includes(countryCode)) {
+      return res.json({
+        mode: "manual",
+        channels: await storage.getPaymentChannels(true),
+      });
+    }
+
+    const readiness = getAshtechReadiness();
+    if (
+      !readiness.apiKeyConfigured ||
+      !readiness.webhookSecretConfigured ||
+      !readiness.publicUrlConfigured
+    ) {
+      return res.status(503).json({
+        message: "Le paiement automatique est momentanément indisponible pour ce pays.",
+      });
+    }
+
+    const country = (await getAshtechCountries()).find((entry) => entry.code === countryCode);
+    if (!country) {
+      return res.status(503).json({
+        message: "AshTech Pay ne propose plus de moyen de paiement actif pour ce pays.",
+      });
+    }
+
+    res.json({
+      mode: "ashtech",
+      countryCode: country.code,
+      countryName: country.name,
+      currency: country.currency,
+      operators: country.operators,
+    });
+  }));
+
+  app.post("/api/deposits", requireAuth, asyncRoute(async (req, res) => {
+    const data = depositSchema.parse(req.body);
+    const { depositMinimum } = resolvePlatformBusinessSettings(
+      await storage.getAllSettings(),
+    );
+    const minimumError = getDepositMinimumError(data.amount, depositMinimum);
+    if (minimumError) {
+      return res.status(400).json({ message: minimumError });
+    }
+    const userId = req.session.userId!;
+    const countryCode = data.country.trim().toUpperCase();
+    const enabledCountryCodes = parseEnabledAshtechCountries(
+      await storage.getSetting(ASHTECH_COUNTRIES_SETTING),
+    );
+    const automatic = enabledCountryCodes.includes(countryCode);
+
+    if (!automatic) {
+      const channelId = data.channelId?.trim();
+      const channel = channelId ? await storage.getPaymentChannel(channelId) : undefined;
+      if (!channel || !channel.isActive || !channel.redirectUrl) {
+        return res.status(400).json({
+          message: "Choisissez un canal de paiement actif.",
+        });
+      }
+
       const deposit = await storage.createDeposit({
-        userId: req.session.userId!,
+        userId,
         amount: data.amount,
-        channelId: data.channelId,
+        channelId: channel.id,
         accountName: data.accountName,
         accountNumber: data.accountNumber,
-        country: data.country,
+        country: countryCode,
         paymentMethod: data.paymentMethod,
         adminNotes: null,
         processedBy: null,
       });
 
-      res.json({ 
-        deposit,
-        redirectUrl: channel?.redirectUrl || null,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0].message });
-      }
-      res.status(500).json({ message: "Erreur serveur" });
+      return res.json({ deposit, redirectUrl: channel.redirectUrl });
     }
-  });
+
+    const readiness = getAshtechReadiness();
+    if (
+      !readiness.apiKeyConfigured ||
+      !readiness.webhookSecretConfigured ||
+      !readiness.publicUrlConfigured
+    ) {
+      return res.status(503).json({
+        message: "Le paiement automatique est momentanément indisponible pour ce pays.",
+      });
+    }
+
+    const webhookUrl = getAshtechWebhookUrl();
+    const country = (await getAshtechCountries()).find((entry) => entry.code === countryCode);
+    if (!country || !country.operators.includes(data.paymentMethod)) {
+      return res.status(400).json({
+        message: "Ce moyen de paiement n'est plus actif dans le catalogue AshTech Pay.",
+      });
+    }
+
+    let phone: string;
+    try {
+      phone = normalizeAshtechPhone(data.accountNumber, countryCode);
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "Numéro de téléphone invalide.",
+      });
+    }
+
+    const pendingDeposits = await storage.getUserDeposits(userId);
+    const openAutomaticDeposit = pendingDeposits.find(
+      (deposit) => deposit.status === "pending" && deposit.ashtechReference,
+    );
+    if (openAutomaticDeposit) {
+      return res.status(409).json({
+        message: "Un dépôt automatique est déjà en attente. Vérifiez son statut avant d'en lancer un autre.",
+        depositId: openAutomaticDeposit.id,
+      });
+    }
+
+    const reference = randomUUID();
+    const deposit = await storage.createDeposit({
+      id: reference,
+      userId,
+      amount: data.amount,
+      channelId: null,
+      ashtechTransactionId: null,
+      ashtechReference: reference,
+      accountName: data.accountName,
+      accountNumber: phone,
+      country: countryCode,
+      paymentMethod: data.paymentMethod,
+      adminNotes: null,
+      processedBy: null,
+    });
+
+    let providerResponse;
+    try {
+      providerResponse = await createAshtechCollection({
+        amount: data.amount,
+        currency: country.currency,
+        country_code: country.code,
+        operator: data.paymentMethod,
+        phone,
+        reference,
+        notify_url: webhookUrl,
+      });
+    } catch {
+      return res.status(202).json({
+        depositId: deposit.id,
+        status: "pending",
+        verificationPending: true,
+        message: "Le résultat de la demande n'a pas pu être confirmé. Ne relancez pas le paiement; contactez le support pour vérifier ce dépôt.",
+      });
+    }
+
+    const body = asAshtechRecord(providerResponse.body);
+    const providerReference = asNonEmptyString(body.reference);
+    const transactionId = asNonEmptyString(body.transaction_id);
+    const otpRequired = providerResponse.status === 400 &&
+      ashtechErrorCode(body) === "otp_required";
+
+    if (providerReference) {
+      await storage.updateDeposit(deposit.id, {
+        ashtechReference: providerReference,
+      });
+    }
+
+    if (otpRequired) {
+      const message = asNonEmptyString(body.message);
+      const ussdCode = asNonEmptyString(body.ussd_code);
+      return res.json({
+        depositId: deposit.id,
+        status: "pending",
+        otpRequired: true,
+        message: message?.slice(0, 320) || "Suivez les instructions de l'opérateur, puis saisissez votre code OTP.",
+        ussdCode: ussdCode || null,
+      });
+    }
+
+    if (providerResponse.status < 200 || providerResponse.status >= 300) {
+      if (providerResponse.status >= 500 || providerResponse.status === 408 || providerResponse.status === 429) {
+        return res.status(202).json({
+          depositId: deposit.id,
+          status: "pending",
+          verificationPending: true,
+          message: "Le résultat de la demande n'est pas encore confirmé. Ne relancez pas le paiement; contactez le support pour vérifier ce dépôt.",
+        });
+      }
+
+      await storage.rejectDepositOnce(deposit.id);
+      const status = ashtechErrorCode(body) === "api_not_enabled" ? 503 : 400;
+      return res.status(status).json({ message: ashtechUserFacingError(body) });
+    }
+
+    if (!transactionId) {
+      return res.status(202).json({
+        depositId: deposit.id,
+        status: "pending",
+        verificationPending: true,
+        message: "La demande est en attente de vérification. Ne relancez pas le paiement; contactez le support si cet état persiste.",
+      });
+    }
+
+    await storage.updateDeposit(deposit.id, {
+      ashtechTransactionId: transactionId,
+      ...(providerReference ? { ashtechReference: providerReference } : {}),
+    });
+
+    let status = "pending";
+    if (asNonEmptyString(body.status)?.toLowerCase() === "completed") {
+      try {
+        const latestDeposit = await storage.getDeposit(deposit.id);
+        const verified = await reconcileAshtechDeposit(latestDeposit || deposit, transactionId);
+        status = verified.status;
+      } catch {
+        // Keep the deposit pending until a later webhook or status check verifies it.
+      }
+    } else if (asNonEmptyString(body.status)?.toLowerCase() === "failed") {
+      try {
+        const latestDeposit = await storage.getDeposit(deposit.id);
+        const verified = await reconcileAshtechDeposit(latestDeposit || deposit, transactionId);
+        status = verified.status;
+      } catch {
+        // Do not reject a deposit based only on the initial collect response.
+      }
+    }
+
+    res.json({
+      depositId: deposit.id,
+      status,
+      waveUrl: safeHttpsUrl(body.wave_url) || null,
+      verificationPending: !["approved", "rejected"].includes(status),
+      message: "Validez la demande sur votre téléphone. Le solde sera crédité après confirmation par AshTech Pay.",
+    });
+  }));
+
+  app.post("/api/deposits/:id/ashtech-otp", requireAuth, asyncRoute(async (req, res) => {
+    const parsed = z.object({
+      otp: z.string().trim().min(1).max(12),
+    }).safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Code OTP invalide." });
+    }
+
+    const deposit = await storage.getDeposit(req.params.id);
+    if (!deposit || deposit.userId !== req.session.userId) {
+      return res.status(404).json({ message: "Dépôt non trouvé." });
+    }
+    if (deposit.status !== "pending" || !deposit.ashtechReference) {
+      return res.status(409).json({ message: "Ce dépôt ne peut plus recevoir de code OTP." });
+    }
+    if (deposit.ashtechTransactionId) {
+      return res.status(409).json({ message: "La transaction est déjà en cours de vérification." });
+    }
+
+    const readiness = getAshtechReadiness();
+    if (
+      !readiness.apiKeyConfigured ||
+      !readiness.webhookSecretConfigured ||
+      !readiness.publicUrlConfigured
+    ) {
+      return res.status(503).json({
+        message: "Le paiement automatique est momentanément indisponible.",
+      });
+    }
+
+    const country = (await getAshtechCountries()).find((entry) => entry.code === deposit.country);
+    if (!country || !country.operators.includes(deposit.paymentMethod)) {
+      return res.status(400).json({
+        message: "Ce moyen de paiement n'est plus actif dans le catalogue AshTech Pay.",
+      });
+    }
+
+    let providerResponse;
+    try {
+      providerResponse = await createAshtechCollection({
+        amount: deposit.amount,
+        currency: country.currency,
+        country_code: country.code,
+        operator: deposit.paymentMethod,
+        phone: deposit.accountNumber,
+        reference: deposit.ashtechReference,
+        otp: parsed.data.otp,
+        notify_url: getAshtechWebhookUrl(),
+      });
+    } catch {
+      return res.status(202).json({
+        depositId: deposit.id,
+        status: "pending",
+        verificationPending: true,
+        message: "Le résultat du code OTP n'a pas pu être confirmé. Ne renvoyez pas le paiement; vérifiez le statut du dépôt ou contactez le support.",
+      });
+    }
+
+    const body = asAshtechRecord(providerResponse.body);
+    const providerReference = asNonEmptyString(body.reference);
+    const transactionId = asNonEmptyString(body.transaction_id);
+    const otpRequired = providerResponse.status === 400 &&
+      ashtechErrorCode(body) === "otp_required";
+
+    if (otpRequired) {
+      if (providerReference) {
+        await storage.updateDeposit(deposit.id, { ashtechReference: providerReference });
+      }
+      return res.json({
+        depositId: deposit.id,
+        status: "pending",
+        otpRequired: true,
+        message: asNonEmptyString(body.message)?.slice(0, 320) ||
+          "Le code n'a pas été confirmé. Suivez les instructions de l'opérateur et réessayez.",
+        ussdCode: asNonEmptyString(body.ussd_code) || null,
+      });
+    }
+
+    if (providerResponse.status < 200 || providerResponse.status >= 300) {
+      if (
+        providerResponse.status >= 500 ||
+        providerResponse.status === 408 ||
+        providerResponse.status === 429
+      ) {
+        return res.status(202).json({
+          depositId: deposit.id,
+          status: "pending",
+          verificationPending: true,
+          message: "Le résultat du code OTP n'a pas pu être confirmé. Ne réutilisez pas ce code; contactez le support pour vérifier le dépôt.",
+        });
+      }
+
+      await storage.rejectDepositOnce(deposit.id);
+      return res.json({
+        depositId: deposit.id,
+        status: "rejected",
+        otpRequired: false,
+        message: ashtechUserFacingError(body),
+      });
+    }
+
+    if (!transactionId) {
+      return res.status(202).json({
+        depositId: deposit.id,
+        status: "pending",
+        verificationPending: true,
+        message: "Le résultat du code OTP est en attente de vérification. Ne relancez pas le paiement.",
+      });
+    }
+
+    await storage.updateDeposit(deposit.id, {
+      ashtechTransactionId: transactionId,
+      ...(providerReference ? { ashtechReference: providerReference } : {}),
+    });
+
+    res.json({
+      depositId: deposit.id,
+      status: "pending",
+      waveUrl: safeHttpsUrl(body.wave_url) || null,
+      verificationPending: true,
+      message: "Validez la demande sur votre téléphone. Le solde sera crédité après confirmation par AshTech Pay.",
+    });
+  }));
+
+  app.get("/api/deposits/:id/status", requireAuth, asyncRoute(async (req, res) => {
+    const deposit = await storage.getDeposit(req.params.id);
+    if (!deposit || deposit.userId !== req.session.userId) {
+      return res.status(404).json({ message: "Dépôt non trouvé." });
+    }
+
+    let current = deposit;
+    if (deposit.status === "pending" && deposit.ashtechTransactionId) {
+      try {
+        current = await reconcileAshtechDeposit(deposit, deposit.ashtechTransactionId);
+      } catch {
+        return res.status(503).json({
+          message: "Le statut AshTech Pay n'a pas pu être vérifié pour le moment.",
+        });
+      }
+    }
+
+    res.json({
+      depositId: current.id,
+      status: current.status,
+      verificationPending: current.status === "pending" && !current.ashtechTransactionId,
+    });
+  }));
+
+  app.post("/api/webhooks/ashtechpay", asyncRoute(async (req, res) => {
+    const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody : undefined;
+    const timestamp = req.get("X-Ashtech-Timestamp") || "";
+    const signature = req.get("X-Ashtech-Signature") || "";
+    const eventId = req.get("X-Ashtech-Event-Id") || "";
+
+    let webhookSecret: string;
+    try {
+      webhookSecret = getAshtechWebhookSecret();
+    } catch {
+      return res.status(503).json({ message: "Webhook AshTech Pay non configuré." });
+    }
+    if (
+      !rawBody ||
+      !eventId ||
+      !isValidAshtechWebhookSignature(rawBody, timestamp, signature, webhookSecret)
+    ) {
+      return res.status(401).json({ message: "Signature webhook invalide." });
+    }
+
+    let event: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(rawBody.toString("utf8"));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid webhook payload");
+      }
+      event = parsed as Record<string, unknown>;
+    } catch {
+      return res.status(400).json({ message: "Payload webhook invalide." });
+    }
+
+    const reference = asNonEmptyString(event.reference);
+    const transactionId = asNonEmptyString(event.transaction_id);
+    const eventStatus = asNonEmptyString(event.status)?.toLowerCase();
+    if (
+      !reference ||
+      !transactionId ||
+      !eventStatus ||
+      !["pending", "completed", "failed"].includes(eventStatus)
+    ) {
+      return res.status(400).json({ message: "Événement AshTech Pay incomplet." });
+    }
+
+    const deposit = await storage.getDepositByAshtechReference(reference);
+    if (!deposit || !deposit.ashtechReference) {
+      return res.status(404).json({ message: "Dépôt AshTech Pay introuvable." });
+    }
+    if (
+      deposit.ashtechTransactionId &&
+      deposit.ashtechTransactionId !== transactionId
+    ) {
+      return res.status(409).json({ message: "Transaction AshTech Pay déjà associée à un autre dépôt." });
+    }
+    if (deposit.status === "approved" && eventStatus === "completed") {
+      return res.sendStatus(200);
+    }
+    if (deposit.status === "rejected" && eventStatus === "failed") {
+      return res.sendStatus(200);
+    }
+    if (eventStatus === "pending") {
+      return res.sendStatus(200);
+    }
+
+    try {
+      const updated = await reconcileAshtechDeposit(deposit, transactionId);
+      if (
+        eventStatus === "completed" && updated.status !== "approved" ||
+        eventStatus === "failed" && updated.status !== "rejected"
+      ) {
+        return res.status(409).json({
+          message: "Le statut vérifié ne correspond pas à l'événement reçu.",
+        });
+      }
+    } catch {
+      return res.status(503).json({
+        message: "La transaction AshTech Pay n'a pas pu être vérifiée.",
+      });
+    }
+
+    res.sendStatus(200);
+  }));
 
   app.post("/api/withdrawals", requireAuth, async (req, res) => {
     try {
@@ -1081,29 +1711,34 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Dépôt non trouvé" });
     }
 
-    await storage.updateDeposit(deposit.id, {
-      status: "approved",
-      processedBy: req.session.userId,
-      processedAt: new Date(),
-    });
-
-    const user = await storage.getUser(deposit.userId);
-    if (user) {
-      await storage.updateUser(user.id, {
-        balance: user.balance + deposit.amount,
-        totalDeposits: user.totalDeposits + deposit.amount,
-        hasDeposited: true,
-      });
-
-      await storage.createEarning({
-        userId: user.id,
-        amount: deposit.amount,
-        type: "deposit",
-        description: "Dépôt validé",
-        sourceId: deposit.id,
-      });
+    if (deposit.ashtechReference) {
+      if (!deposit.ashtechTransactionId) {
+        return res.status(409).json({
+          message: "Ce dépôt AshTech Pay n'a pas encore de transaction vérifiable. Ne le validez pas manuellement.",
+        });
+      }
+      try {
+        const verified = await reconcileAshtechDeposit(
+          deposit,
+          deposit.ashtechTransactionId,
+        );
+        if (verified.status !== "approved") {
+          return res.status(409).json({
+            message: "AshTech Pay n'a pas confirmé ce paiement.",
+          });
+        }
+        return res.json({ success: true });
+      } catch {
+        return res.status(503).json({
+          message: "Le statut AshTech Pay n'a pas pu être vérifié.",
+        });
+      }
     }
 
+    const approved = await storage.completeDepositOnce(deposit.id, req.session.userId);
+    if (!approved) {
+      return res.status(409).json({ message: "Ce dépôt a déjà été traité." });
+    }
     res.json({ success: true });
   });
 
@@ -1114,11 +1749,38 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Dépôt non trouvé" });
     }
 
-    await storage.updateDeposit(deposit.id, {
-      status: "rejected",
-      processedBy: req.session.userId,
-      processedAt: new Date(),
-    });
+    if (deposit.ashtechReference) {
+      if (!deposit.ashtechTransactionId) {
+        return res.status(409).json({
+          message: "Vérifiez ce dépôt AshTech Pay dans le tableau de bord du fournisseur avant de le rejeter.",
+        });
+      }
+      try {
+        const verified = await reconcileAshtechDeposit(
+          deposit,
+          deposit.ashtechTransactionId,
+        );
+        if (verified.status === "approved") {
+          return res.status(409).json({
+            message: "AshTech Pay a confirmé ce paiement; il ne peut pas être rejeté.",
+          });
+        }
+        if (verified.status !== "rejected") {
+          return res.status(409).json({
+            message: "AshTech Pay indique que le paiement est toujours en attente.",
+          });
+        }
+      } catch {
+        return res.status(503).json({
+          message: "Le statut AshTech Pay n'a pas pu être vérifié.",
+        });
+      }
+    } else {
+      const rejected = await storage.rejectDepositOnce(deposit.id, req.session.userId);
+      if (!rejected) {
+        return res.status(409).json({ message: "Ce dépôt a déjà été traité." });
+      }
+    }
 
     if (ban) {
       await storage.updateUser(deposit.userId, { isBanned: true });
@@ -1404,6 +2066,8 @@ export async function registerRoutes(
       referralLevel3Percentage:
         payload.referralLevel3Percentage ?? currentBusinessSettings.referralLevel3Percentage,
       signupBonus: payload.signupBonus ?? currentBusinessSettings.signupBonus,
+      depositMinimum:
+        payload.depositMinimum ?? currentBusinessSettings.depositMinimum,
       withdrawalMinimum:
         payload.withdrawalMinimum ?? currentBusinessSettings.withdrawalMinimum,
       withdrawalFeePercentage:
@@ -1436,6 +2100,7 @@ export async function registerRoutes(
       "referralLevel2Percentage",
       "referralLevel3Percentage",
       "signupBonus",
+      "depositMinimum",
       "withdrawalMinimum",
       "withdrawalFeePercentage",
       "withdrawalStartHourGmt",

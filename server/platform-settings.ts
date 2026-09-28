@@ -17,6 +17,7 @@ export function resolvePlatformBusinessSettings(
     referralLevel2Percentage: toNumber("referralLevel2Percentage"),
     referralLevel3Percentage: toNumber("referralLevel3Percentage"),
     signupBonus: toNumber("signupBonus"),
+    depositMinimum: toNumber("depositMinimum"),
     withdrawalMinimum: toNumber("withdrawalMinimum"),
     withdrawalFeePercentage: toNumber("withdrawalFeePercentage"),
     withdrawalStartHourGmt: toNumber("withdrawalStartHourGmt"),
@@ -28,4 +29,12 @@ export function resolvePlatformBusinessSettings(
   }
 
   return result.data;
+}
+
+export function getDepositMinimumError(
+  amount: number,
+  minimum: number,
+): string | undefined {
+  if (amount >= minimum) return undefined;
+  return `Le montant minimum du dépôt est de ${minimum.toLocaleString("fr-FR")} FCFA.`;
 }

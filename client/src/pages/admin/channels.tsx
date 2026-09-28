@@ -17,6 +17,7 @@ import { ArrowLeft, Plus, Edit, Trash2, CreditCard, Link2, Zap, Loader2, History
 import type { PaymentChannel } from "@shared/schema";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AshtechCountrySettings } from "@/components/ashtech-country-settings";
 
 const channelSchema = z.object({
   name: z.string().min(2, "Nom requis"),
@@ -179,6 +180,8 @@ export default function AdminChannelsPage() {
         </header>
 
         <div className="p-4 space-y-4">
+          <AshtechCountrySettings />
+
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {

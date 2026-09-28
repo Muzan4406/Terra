@@ -75,9 +75,16 @@ export interface IStorage {
   
   getDeposits(filter?: string): Promise<(Deposit & { user: User })[]>;
   getDeposit(id: string): Promise<Deposit | undefined>;
+  getDepositByAshtechReference(reference: string): Promise<Deposit | undefined>;
   getUserDeposits(userId: string): Promise<Deposit[]>;
-  createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt">): Promise<Deposit>;
+  createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt" | "ashtechTransactionId" | "ashtechReference"> & {
+    id?: string;
+    ashtechTransactionId?: string | null;
+    ashtechReference?: string | null;
+  }): Promise<Deposit>;
   updateDeposit(id: string, updates: Partial<Deposit>): Promise<Deposit | undefined>;
+  completeDepositOnce(id: string, processedBy?: string | null): Promise<Deposit | undefined>;
+  rejectDepositOnce(id: string, processedBy?: string | null): Promise<Deposit | undefined>;
   
   getWithdrawals(filter?: string): Promise<(Withdrawal & { user: User; wallet: Wallet })[]>;
   getWithdrawal(id: string): Promise<Withdrawal | undefined>;
@@ -535,6 +542,8 @@ export class DatabaseStorage implements IStorage {
       userId: deposits.userId,
       amount: deposits.amount,
       channelId: deposits.channelId,
+      ashtechTransactionId: deposits.ashtechTransactionId,
+      ashtechReference: deposits.ashtechReference,
       accountName: deposits.accountName,
       accountNumber: deposits.accountNumber,
       country: deposits.country,
@@ -559,11 +568,25 @@ export class DatabaseStorage implements IStorage {
     return deposit || undefined;
   }
 
+  async getDepositByAshtechReference(reference: string): Promise<Deposit | undefined> {
+    const [deposit] = await db.select().from(deposits).where(
+      or(
+        eq(deposits.id, reference),
+        eq(deposits.ashtechReference, reference),
+      ),
+    );
+    return deposit || undefined;
+  }
+
   async getUserDeposits(userId: string): Promise<Deposit[]> {
     return db.select().from(deposits).where(eq(deposits.userId, userId)).orderBy(desc(deposits.createdAt));
   }
 
-  async createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt">): Promise<Deposit> {
+  async createDeposit(data: Omit<Deposit, "id" | "createdAt" | "status" | "processedAt" | "ashtechTransactionId" | "ashtechReference"> & {
+    id?: string;
+    ashtechTransactionId?: string | null;
+    ashtechReference?: string | null;
+  }): Promise<Deposit> {
     const [created] = await db.insert(deposits).values({
       ...data,
       status: "pending",
@@ -574,6 +597,68 @@ export class DatabaseStorage implements IStorage {
   async updateDeposit(id: string, updates: Partial<Deposit>): Promise<Deposit | undefined> {
     const [updated] = await db.update(deposits).set(updates).where(eq(deposits.id, id)).returning();
     return updated || undefined;
+  }
+
+  async completeDepositOnce(
+    id: string,
+    processedBy: string | null = null,
+  ): Promise<Deposit | undefined> {
+    return db.transaction(async (tx) => {
+      const [deposit] = await tx.update(deposits)
+        .set({
+          status: "approved",
+          processedBy,
+          processedAt: new Date(),
+        })
+        .where(and(
+          eq(deposits.id, id),
+          eq(deposits.status, "pending"),
+        ))
+        .returning();
+
+      if (!deposit) return undefined;
+
+      const [creditedUser] = await tx.update(users)
+        .set({
+          balance: sql`${users.balance} + ${deposit.amount}`,
+          totalDeposits: sql`${users.totalDeposits} + ${deposit.amount}`,
+          hasDeposited: true,
+        })
+        .where(eq(users.id, deposit.userId))
+        .returning({ id: users.id });
+
+      if (!creditedUser) {
+        throw new Error(`Cannot credit missing user for deposit ${deposit.id}`);
+      }
+
+      await tx.insert(earnings).values({
+        userId: deposit.userId,
+        amount: deposit.amount,
+        type: "deposit",
+        description: "Dépôt validé",
+        sourceId: deposit.id,
+      });
+
+      return deposit;
+    });
+  }
+
+  async rejectDepositOnce(
+    id: string,
+    processedBy: string | null = null,
+  ): Promise<Deposit | undefined> {
+    const [deposit] = await db.update(deposits)
+      .set({
+        status: "rejected",
+        processedBy,
+        processedAt: new Date(),
+      })
+      .where(and(
+        eq(deposits.id, id),
+        eq(deposits.status, "pending"),
+      ))
+      .returning();
+    return deposit || undefined;
   }
 
   async getWithdrawals(filter?: string): Promise<(Withdrawal & { user: User; wallet: Wallet })[]> {

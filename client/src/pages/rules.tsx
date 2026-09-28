@@ -7,6 +7,7 @@ import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 
 interface PublicBusinessSettings {
   signupBonus: number;
+  depositMinimum: number;
   withdrawalMinimum: number;
   withdrawalFeePercentage: number;
   withdrawalStartHourGmt: number;
@@ -20,7 +21,7 @@ export default function RulesPage() {
   const [, navigate] = useLocation();
   const { data: businessSettings } = useQuery<PublicBusinessSettings>({
     queryKey: ["/api/settings/public"],
-    refetchInterval: 15000,
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
   });
@@ -28,6 +29,8 @@ export default function RulesPage() {
     businessSettings?.signupBonus ?? DEFAULT_BUSINESS_SETTINGS.signupBonus;
   const withdrawalMinimum =
     businessSettings?.withdrawalMinimum ?? DEFAULT_BUSINESS_SETTINGS.withdrawalMinimum;
+  const depositMinimum =
+    businessSettings?.depositMinimum ?? DEFAULT_BUSINESS_SETTINGS.depositMinimum;
   const withdrawalFeePercentage =
     businessSettings?.withdrawalFeePercentage ??
     DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
@@ -56,7 +59,7 @@ export default function RulesPage() {
       icon: Wallet,
       title: "Dépôts",
       items: [
-        "Dépôt minimum: 3 000 FCFA",
+        `Dépôt minimum: ${depositMinimum.toLocaleString("fr-FR")} FCFA`,
         "Les dépôts sont traités dans les 24h",
         "Utilisez les moyens de paiement disponibles dans votre pays",
       ],

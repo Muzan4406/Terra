@@ -37,6 +37,7 @@ export const DEFAULT_BUSINESS_SETTINGS = {
   referralLevel2Percentage: 3,
   referralLevel3Percentage: 2,
   signupBonus: 700,
+  depositMinimum: 3000,
   withdrawalMinimum: 1500,
   withdrawalFeePercentage: 10,
   withdrawalStartHourGmt: 10,
@@ -48,6 +49,7 @@ export const businessSettingsFieldsSchema = z.object({
   referralLevel2Percentage: z.number().int().min(0).max(100),
   referralLevel3Percentage: z.number().int().min(0).max(100),
   signupBonus: z.number().int().min(0).max(100_000_000),
+  depositMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalFeePercentage: z.number().int().min(0).max(100),
   withdrawalStartHourGmt: z.number().int().min(0).max(23),
@@ -184,6 +186,8 @@ export const deposits = pgTable("deposits", {
   userId: varchar("user_id", { length: 36 }).notNull(),
   amount: integer("amount").notNull(),
   channelId: varchar("channel_id", { length: 36 }),
+  ashtechTransactionId: text("ashtech_transaction_id"),
+  ashtechReference: text("ashtech_reference"),
   accountName: text("account_name").notNull(),
   accountNumber: text("account_number").notNull(),
   country: text("country").notNull(),
@@ -337,8 +341,9 @@ export const loginSchema = z.object({
 });
 
 export const depositSchema = z.object({
-  amount: z.number().min(3000, "Dépôt minimum: 3000 FCFA"),
-  channelId: z.string(),
+  amount: z.number().int().min(1, "Le montant doit être supérieur à 0")
+    .max(2_147_483_647, "Le montant du dépôt est trop élevé"),
+  channelId: z.string().optional().default(""),
   accountName: z.string().min(2, "Nom du compte requis"),
   accountNumber: z.string().min(8, "Numéro de compte requis"),
   country: z.string(),
