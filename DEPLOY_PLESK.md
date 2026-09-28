@@ -60,9 +60,11 @@ Cette commande crée le schéma depuis `shared/schema.ts`, puis copie les lignes
 
 La migration initiale de ce projet a été effectuée et vérifiée : **18 tables et 18 lignes** copiées. Pour l’application sur Plesk, configurez ensuite `DATABASE_URL` dans la page Node.js avec la même URI PostgreSQL Supabase. Ne relancez pas la migration initiale.
 
-La variable Replit `SUPABASE_DATABASE_URL` sert à appliquer les changements de schéma depuis Replit avec `npm run db:push:supabase`. En production, Plesk utilise `DATABASE_URL`. Ne lancez ni `db:push` ni la migration initiale pendant un déploiement Git : un pull ne doit pas modifier le schéma ou recopier les données.
+La variable Replit `SUPABASE_DATABASE_URL` cible la base Supabase; en production, Plesk utilise `DATABASE_URL` avec la même URI. Ne lancez ni `db:push` ni la migration initiale pendant un déploiement Git : un pull ne doit pas modifier le schéma ou recopier les données.
 
-Avant de déployer une version qui modifie `shared/schema.ts`, appliquez les changements au projet Supabase depuis Replit avec `npm run db:push:supabase`, puis construisez et poussez le projet. Par exemple, le suivi lu/non lu du chat ajoute la colonne `support_messages.read_at`; son défaut considère les messages existants comme déjà lus. Vérifiez que la commande a réussi avant de déployer le nouveau serveur sur Plesk. Ne lancez pas cette commande automatiquement au démarrage ni depuis Plesk.
+**Attention :** `npm run db:push:supabase` a détecté la table `public.session`, créée automatiquement par le stockage des sessions mais absente de `shared/schema.ts`, et a proposé de la supprimer. Refusez toute synchronisation qui propose de supprimer cette table : cela déconnecterait les utilisateurs. Examinez le plan avant toute future synchronisation et préservez cette table.
+
+Pour cette version, la seule modification de schéma nécessaire au chat a été appliquée de façon additive : `support_messages.read_at` est nullable avec `DEFAULT now()`, donc les messages déjà présents sont considérés comme lus. La colonne et la présence de la table `session` ont été vérifiées. Il n’est pas nécessaire de relancer `db:push:supabase` pour cette version; construisez le projet, poussez-le sur GitHub, puis faites **Pull + Deploy Now** et **Restart** dans Plesk.
 
 ## Routage
 

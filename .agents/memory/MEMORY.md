@@ -1,4 +1,5 @@
 - [Terra logo lockup](terra-logo-lockup.md) — use one transparent horizontal brand asset in compact headers; derive favicon and social preview from the same artwork.
 - [Support message ordering](support-message-ordering.md) — use per-call timestamps so same-transaction acknowledgements sort after user messages.
 - [Support read receipts](support-read-receipts.md) — only mark inbound messages actually returned to the open thread as read.
+- [Supabase session table](supabase-session-table.md) — inspect Drizzle push plans and preserve `public.session`, which is created by the session store but absent from the schema.
 - [Plesk frontend/API split](plesk-frontend-api-split.md) — a current static bundle does not prove the Node API is listening; probe `/api/health` separately.
