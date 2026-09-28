@@ -13,6 +13,8 @@ import type { Wallet as WalletType } from "@shared/schema";
 interface PublicFinancialSettings {
   withdrawalMinimum: number;
   withdrawalFeePercentage: number;
+  withdrawalStartHourGmt: number;
+  withdrawalEndHourGmt: number;
 }
 
 export default function WithdrawPage() {
@@ -33,6 +35,9 @@ export default function WithdrawPage() {
   });
   const { data: platformSettings } = useQuery<PublicFinancialSettings>({
     queryKey: ["/api/settings/public"],
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
   const amountNum = parseInt(amount) || 0;
@@ -104,8 +109,12 @@ export default function WithdrawPage() {
 
   if (!user) return null;
 
-  const withdrawalHours = getWithdrawalHoursForCountry(user.country);
-  const isWithinHours = isWithdrawalWindowOpen(currentTime);
+  const withdrawalHoursGmt = {
+    start: platformSettings?.withdrawalStartHourGmt ?? DEFAULT_BUSINESS_SETTINGS.withdrawalStartHourGmt,
+    end: platformSettings?.withdrawalEndHourGmt ?? DEFAULT_BUSINESS_SETTINGS.withdrawalEndHourGmt,
+  };
+  const withdrawalHours = getWithdrawalHoursForCountry(user.country, withdrawalHoursGmt);
+  const isWithinHours = isWithdrawalWindowOpen(currentTime, withdrawalHoursGmt);
   const canWithdraw = user.hasProduct && !user.withdrawalBlocked && isWithinHours;
 
   const selectedWallet = wallets?.find(w => w.id === selectedWalletId);
@@ -240,7 +249,7 @@ export default function WithdrawPage() {
             <h3 className="text-blue-600 font-bold mb-3">À savoir avant votre retrait</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <p>1. Le montant minimum de retrait est de {withdrawalMinimum.toLocaleString("fr-FR")} FCFA.</p>
-              <p>2. Les retraits sont ouverts de {withdrawalHours.start}h à {withdrawalHours.end}h, heure locale (10h à 17h GMT), avec une limite de 3 retraits par jour.</p>
+              <p>2. Les retraits sont ouverts de {withdrawalHours.start}h à {withdrawalHours.end}h, heure locale ({withdrawalHoursGmt.start}h à {withdrawalHoursGmt.end}h GMT), avec une limite de 3 retraits par jour.</p>
               <p>3. {withdrawalFeePercentage}% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
               <p>4. Les retraits seront disponibles sous 2 heures, et exceptionnellement sous 24 heures.</p>
             </div>

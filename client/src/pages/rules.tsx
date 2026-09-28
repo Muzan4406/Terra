@@ -9,6 +9,8 @@ interface PublicBusinessSettings {
   signupBonus: number;
   withdrawalMinimum: number;
   withdrawalFeePercentage: number;
+  withdrawalStartHourGmt: number;
+  withdrawalEndHourGmt: number;
   referralLevel1Percentage: number;
   referralLevel2Percentage: number;
   referralLevel3Percentage: number;
@@ -18,6 +20,9 @@ export default function RulesPage() {
   const [, navigate] = useLocation();
   const { data: businessSettings } = useQuery<PublicBusinessSettings>({
     queryKey: ["/api/settings/public"],
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
   const signupBonus =
     businessSettings?.signupBonus ?? DEFAULT_BUSINESS_SETTINGS.signupBonus;
@@ -26,6 +31,12 @@ export default function RulesPage() {
   const withdrawalFeePercentage =
     businessSettings?.withdrawalFeePercentage ??
     DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
+  const withdrawalStartHourGmt =
+    businessSettings?.withdrawalStartHourGmt ??
+    DEFAULT_BUSINESS_SETTINGS.withdrawalStartHourGmt;
+  const withdrawalEndHourGmt =
+    businessSettings?.withdrawalEndHourGmt ??
+    DEFAULT_BUSINESS_SETTINGS.withdrawalEndHourGmt;
   const referralRates = [
     businessSettings?.referralLevel1Percentage ??
       DEFAULT_BUSINESS_SETTINGS.referralLevel1Percentage,
@@ -67,7 +78,7 @@ export default function RulesPage() {
         `Retrait minimum: ${withdrawalMinimum.toLocaleString("fr-FR")} FCFA`,
         `Frais de retrait: ${withdrawalFeePercentage}%`,
         "Maximum 3 retraits par jour",
-        "Heures: 10h-17h",
+        `Heures GMT: ${withdrawalStartHourGmt}h-${withdrawalEndHourGmt}h`,
         "Produit VIP requis pour débloquer les retraits",
       ],
     },

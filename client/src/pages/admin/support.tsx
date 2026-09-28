@@ -57,6 +57,7 @@ export default function AdminSupportPage() {
     refetchOnWindowFocus: true,
   });
   const conversations = conversationsQuery.data || [];
+  const totalUnreadCount = conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
   const selectedConversation = conversations.find((conversation) => conversation.userId === selectedUserId);
   const messageQueryKey = selectedUserId
     ? `/api/admin/support/conversations/${selectedUserId}/messages`
@@ -143,9 +144,14 @@ export default function AdminSupportPage() {
           >
             <div className="flex items-center justify-between border-b border-[#e8ece6] px-4 py-3">
               <h2 className="font-semibold text-[#203d31]">Conversations</h2>
-              <span className="rounded-full bg-[#edf3eb] px-2.5 py-1 text-xs font-bold text-[#365c43]">
-                {conversations.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[#edf3eb] px-2.5 py-1 text-xs font-bold text-[#365c43]">
+                  {conversations.length}
+                </span>
+                <span className="rounded-full bg-[#dff1df] px-2.5 py-1 text-xs font-bold text-[#24603b]">
+                  {totalUnreadCount} en attente
+                </span>
+              </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               {conversationsQuery.isLoading ? (
@@ -194,7 +200,7 @@ export default function AdminSupportPage() {
                         <p className="min-w-0 truncate text-xs text-[#65746a]">{preview}</p>
                         {conversation.unreadCount > 0 && (
                           <span className="shrink-0 rounded-full bg-[#dff1df] px-2 py-0.5 text-[10px] font-bold text-[#24603b]">
-                            Nouveau{conversation.unreadCount > 1 ? ` · ${conversation.unreadCount}` : ""}
+                            Nouveau · {conversation.unreadCount}
                           </span>
                         )}
                       </div>

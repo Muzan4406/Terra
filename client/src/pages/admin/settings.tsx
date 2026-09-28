@@ -25,6 +25,8 @@ const settingsSchema = z.object({
   signupBonus: z.number().int().min(0).max(100_000_000),
   withdrawalMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalFeePercentage: z.number().int().min(0).max(100),
+  withdrawalStartHourGmt: z.number().int().min(0).max(23),
+  withdrawalEndHourGmt: z.number().int().min(0).max(23),
 }).refine(
   (settings) =>
     settings.referralLevel1Percentage +
@@ -32,6 +34,12 @@ const settingsSchema = z.object({
       settings.referralLevel3Percentage <=
     100,
   { message: "La somme des commissions de parrainage ne peut pas dépasser 100%." },
+).refine(
+  (settings) => settings.withdrawalStartHourGmt !== settings.withdrawalEndHourGmt,
+  {
+    message: "Les heures d’ouverture et de fermeture des retraits doivent être différentes.",
+    path: ["withdrawalEndHourGmt"],
+  },
 );
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -41,12 +49,14 @@ type BusinessSettingName =
   | "referralLevel3Percentage"
   | "signupBonus"
   | "withdrawalMinimum"
-  | "withdrawalFeePercentage";
+  | "withdrawalFeePercentage"
+  | "withdrawalStartHourGmt"
+  | "withdrawalEndHourGmt";
 
 const businessSettingFields: {
   name: BusinessSettingName;
   label: string;
-  unit: "%" | "FCFA";
+  unit: "%" | "FCFA" | "h GMT";
   min: number;
   max: number;
 }[] = [
@@ -56,6 +66,8 @@ const businessSettingFields: {
   { name: "signupBonus", label: "Bonus d’inscription", unit: "FCFA", min: 0, max: 100_000_000 },
   { name: "withdrawalMinimum", label: "Retrait minimum", unit: "FCFA", min: 1, max: 100_000_000 },
   { name: "withdrawalFeePercentage", label: "Frais de retrait", unit: "%", min: 0, max: 100 },
+  { name: "withdrawalStartHourGmt", label: "Ouverture des retraits", unit: "h GMT", min: 0, max: 23 },
+  { name: "withdrawalEndHourGmt", label: "Fermeture des retraits", unit: "h GMT", min: 0, max: 23 },
 ];
 
 interface PlatformSettings {
@@ -69,6 +81,8 @@ interface PlatformSettings {
   signupBonus: number;
   withdrawalMinimum: number;
   withdrawalFeePercentage: number;
+  withdrawalStartHourGmt: number;
+  withdrawalEndHourGmt: number;
 }
 
 interface SettingsAuditEntry {
@@ -92,6 +106,8 @@ const settingLabels: Record<string, string> = {
   signupBonus: "Bonus d’inscription",
   withdrawalMinimum: "Retrait minimum",
   withdrawalFeePercentage: "Frais de retrait",
+  withdrawalStartHourGmt: "Ouverture des retraits (GMT)",
+  withdrawalEndHourGmt: "Fermeture des retraits (GMT)",
 };
 
 export default function AdminSettingsPage() {
@@ -254,8 +270,7 @@ export default function AdminSettingsPage() {
                     <div className="border-t border-border pt-6">
                       <h3 className="text-lg font-semibold">Règles financières et parrainage</h3>
                       <p className="mt-1 mb-4 text-sm text-muted-foreground">
-                        Ces valeurs s’appliquent aux nouvelles inscriptions, commissions et demandes de retrait après enregistrement.
-                        Les opérations déjà enregistrées ne sont pas recalculées.
+                         Après enregistrement, le minimum et les heures GMT s’appliquent aux nouvelles demandes de retrait. Les changements sont vérifiés par le serveur; les opérations déjà enregistrées ne sont pas recalculées.
                       </p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         {businessSettingFields.map((setting) => (
@@ -292,7 +307,7 @@ export default function AdminSettingsPage() {
                         ))}
                       </div>
                       <p className="mt-3 text-xs text-muted-foreground">
-                        La somme des trois commissions ne peut pas dépasser 100%.
+                        La somme des trois commissions ne peut pas dépasser 100%. Les heures de retrait sont réglées en GMT et converties à l’heure locale pour chaque pays.
                       </p>
                     </div>
 

@@ -671,10 +671,14 @@ export async function registerRoutes(
         }
       }
 
-      const hours = getWithdrawalHoursForCountry(user.country);
-      if (!isWithdrawalWindowOpen()) {
+      const withdrawalHoursGmt = {
+        start: businessSettings.withdrawalStartHourGmt,
+        end: businessSettings.withdrawalEndHourGmt,
+      };
+      const hours = getWithdrawalHoursForCountry(user.country, withdrawalHoursGmt);
+      if (!isWithdrawalWindowOpen(new Date(), withdrawalHoursGmt)) {
         return res.status(400).json({
-          message: `Les retraits sont disponibles de ${hours.start}h à ${hours.end}h, heure locale (10h à 17h GMT).`,
+          message: `Les retraits sont disponibles de ${hours.start}h à ${hours.end}h, heure locale (${withdrawalHoursGmt.start}h à ${withdrawalHoursGmt.end}h GMT).`,
         });
       }
 
@@ -1429,6 +1433,8 @@ export async function registerRoutes(
       "signupBonus",
       "withdrawalMinimum",
       "withdrawalFeePercentage",
+      "withdrawalStartHourGmt",
+      "withdrawalEndHourGmt",
     ] as const) {
       if (payload[key] !== undefined) {
         settingsToSave[key] = String(payload[key]);
