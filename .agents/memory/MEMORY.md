@@ -4,3 +4,4 @@
 - [Supabase session table](supabase-session-table.md) — inspect Drizzle push plans and preserve `public.session`, which is created by the session store but absent from the schema.
 - [Plesk frontend/API split](plesk-frontend-api-split.md) — a current static bundle does not prove the Node API is listening; probe `/api/health` separately.
 - [AshTech webhook signatures](ashtech-webhook-signatures.md) — signatures are account-optional; unsigned callbacks must only trigger server-side transaction verification.
+- [AshTech status aliases](ashtech-status-aliases.md) — verified transaction responses may use `success` where Direct API docs list `completed`.

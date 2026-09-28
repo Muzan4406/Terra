@@ -195,6 +195,25 @@ export async function getAshtechTransaction(
   return requestAshtech(`/v1/transaction/${encodeURIComponent(transactionId)}`);
 }
 
+export function normalizeAshtechTransactionStatus(
+  value: unknown,
+): "pending" | "completed" | "failed" | undefined {
+  if (typeof value !== "string") return undefined;
+
+  switch (value.trim().toLowerCase()) {
+    case "pending":
+      return "pending";
+    case "completed":
+    case "success":
+    case "succeeded":
+      return "completed";
+    case "failed":
+      return "failed";
+    default:
+      return undefined;
+  }
+}
+
 export function ashtechErrorCode(body: Record<string, unknown>): string | undefined {
   return typeof body.error === "string" ? body.error : undefined;
 }

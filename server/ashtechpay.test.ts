@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canAcceptAshtechWebhook,
   isValidAshtechWebhookSignature,
+  normalizeAshtechTransactionStatus,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
 } from "./ashtechpay";
@@ -23,6 +24,16 @@ test("only parses unique eligible AshTech country codes", () => {
     ["TG", "CI"],
   );
   assert.deepEqual(parseEnabledAshtechCountries("not-json"), []);
+});
+
+test("normalizes AshTech success aliases to confirmed status", () => {
+  assert.equal(normalizeAshtechTransactionStatus("success"), "completed");
+  assert.equal(normalizeAshtechTransactionStatus("succeeded"), "completed");
+  assert.equal(normalizeAshtechTransactionStatus(" COMPLETED "), "completed");
+  assert.equal(normalizeAshtechTransactionStatus("pending"), "pending");
+  assert.equal(normalizeAshtechTransactionStatus("failed"), "failed");
+  assert.equal(normalizeAshtechTransactionStatus("processing"), undefined);
+  assert.equal(normalizeAshtechTransactionStatus(null), undefined);
 });
 
 test("verifies the documented raw-body HMAC signature and rejects stale requests", () => {

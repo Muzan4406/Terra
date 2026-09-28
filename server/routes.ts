@@ -28,6 +28,7 @@ import {
   getOptionalAshtechWebhookSecret,
   getAshtechWebhookUrl,
   canAcceptAshtechWebhook,
+  normalizeAshtechTransactionStatus,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
 } from "./ashtechpay";
@@ -75,7 +76,7 @@ async function reconcileAshtechDeposit(
   }
 
   const transaction = asAshtechRecord(response.body);
-  const transactionStatus = asNonEmptyString(transaction.status)?.toLowerCase();
+  const transactionStatus = normalizeAshtechTransactionStatus(transaction.status);
   const transactionReference = asNonEmptyString(transaction.reference);
   const returnedTransactionId = asNonEmptyString(transaction.transaction_id);
 
@@ -111,7 +112,7 @@ async function reconcileAshtechDeposit(
     throw new Error("L'opérateur de la transaction AshTech Pay ne correspond pas.");
   }
 
-  if (!transactionStatus || !["pending", "completed", "failed"].includes(transactionStatus)) {
+  if (!transactionStatus) {
     throw new Error("AshTech Pay a renvoyé un statut de transaction inconnu.");
   }
 
@@ -1006,7 +1007,8 @@ export async function registerRoutes(
     });
 
     let status = "pending";
-    if (asNonEmptyString(body.status)?.toLowerCase() === "completed") {
+    const providerStatus = normalizeAshtechTransactionStatus(body.status);
+    if (providerStatus === "completed") {
       try {
         const latestDeposit = await storage.getDeposit(deposit.id);
         const verified = await reconcileAshtechDeposit(latestDeposit || deposit, transactionId);
@@ -1014,7 +1016,7 @@ export async function registerRoutes(
       } catch {
         // Keep the deposit pending until a later webhook or status check verifies it.
       }
-    } else if (asNonEmptyString(body.status)?.toLowerCase() === "failed") {
+    } else if (providerStatus === "failed") {
       try {
         const latestDeposit = await storage.getDeposit(deposit.id);
         const verified = await reconcileAshtechDeposit(latestDeposit || deposit, transactionId);
@@ -1208,12 +1210,11 @@ export async function registerRoutes(
 
     const reference = asNonEmptyString(event.reference);
     const transactionId = asNonEmptyString(event.transaction_id);
-    const eventStatus = asNonEmptyString(event.status)?.toLowerCase();
+    const eventStatus = normalizeAshtechTransactionStatus(event.status);
     if (
       !reference ||
       !transactionId ||
-      !eventStatus ||
-      !["pending", "completed", "failed"].includes(eventStatus)
+      !eventStatus
     ) {
       return res.status(400).json({ message: "Événement AshTech Pay incomplet." });
     }
