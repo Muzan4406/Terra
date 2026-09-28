@@ -332,6 +332,23 @@ export default function AdminUsersPage() {
                             </span>
                           )}
                         </div>
+                        {u.activeProducts.length > 0 && (
+                          <div className="flex items-center gap-2 flex-wrap pt-1">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Produits actifs :
+                            </span>
+                            {u.activeProducts.slice(0, 3).map((product) => (
+                              <Badge key={product.id} variant="outline" className="font-normal">
+                                {product.name} · {product.cyclesCompleted}/{product.duration} j
+                              </Badge>
+                            ))}
+                            {u.activeProducts.length > 3 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{u.activeProducts.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           Code: {u.referralCode} | Inscrit: {formatDate(u.createdAt)}
                         </p>

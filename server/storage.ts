@@ -264,7 +264,13 @@ export class DatabaseStorage implements IStorage {
         productCount: 0,
         totalInvestment: 0,
         withdrawalCount: 0,
-        activeProducts: [],
+        activeProducts: [] as {
+          id: string;
+          name: string;
+          level: number;
+          cyclesCompleted: number;
+          duration: number;
+        }[],
       },
     ]));
     if (userIds.length === 0) return metrics;
