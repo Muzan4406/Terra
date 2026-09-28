@@ -34,7 +34,7 @@ export function WhatsAppPopup({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 cursor-default bg-black/60"
+            className="absolute inset-0 cursor-default bg-black/75 backdrop-blur-sm"
           />
           <motion.div
             initial={{ scale: 0.8, y: 20 }}
@@ -44,7 +44,7 @@ export function WhatsAppPopup({
             role="dialog"
             aria-modal="true"
             aria-labelledby="community-popup-title"
-            className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="community-popup-panel relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10"
             data-testid="community-popup"
           >
             <div className="relative flex flex-col px-6 pb-6 pt-8">

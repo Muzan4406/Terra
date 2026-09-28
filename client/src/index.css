@@ -471,6 +471,13 @@ h1, h2, h3, h4 {
   background-color: hsl(43 40% 98% / .78);
 }
 
+.community-popup-panel {
+  background-color: #fff !important;
+  opacity: 1;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .site-page [class*="rounded-xl"].shadow-sm,
 .site-page [class*="rounded-2xl"].shadow-sm {
   box-shadow: 0 8px 24px hsl(157 27% 15% / .065);
