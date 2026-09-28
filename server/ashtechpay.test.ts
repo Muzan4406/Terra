@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canAcceptAshtechWebhook,
   isValidAshtechWebhookSignature,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
@@ -45,6 +46,26 @@ test("verifies the documented raw-body HMAC signature and rejects stale requests
   );
   assert.equal(
     isValidAshtechWebhookSignature(rawBody, timestamp, signature, secret, now + 6 * 60 * 1000),
+    false,
+  );
+  assert.equal(
+    canAcceptAshtechWebhook(rawBody, timestamp, signature, secret, now),
+    true,
+  );
+  assert.equal(
+    canAcceptAshtechWebhook(rawBody, "", "", undefined, now),
+    true,
+  );
+  assert.equal(
+    canAcceptAshtechWebhook(rawBody, "", "", secret, now),
+    true,
+  );
+  assert.equal(
+    canAcceptAshtechWebhook(rawBody, timestamp, signature, undefined, now),
+    false,
+  );
+  assert.equal(
+    canAcceptAshtechWebhook(undefined, "", "", undefined, now),
     false,
   );
 });

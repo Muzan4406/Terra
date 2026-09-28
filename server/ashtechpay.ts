@@ -241,13 +241,15 @@ export function canAcceptAshtechWebhook(
   secret?: string,
   nowMs = Date.now(),
 ): boolean {
+  if (!rawBody) return false;
+
   const hasTimestamp = Boolean(timestampHeader.trim());
   const hasSignature = Boolean(signatureHeader.trim());
 
   if (!hasTimestamp && !hasSignature) {
-    return !secret;
+    return true;
   }
-  if (!rawBody || !secret || !hasTimestamp || !hasSignature) {
+  if (!secret || !hasTimestamp || !hasSignature) {
     return false;
   }
 

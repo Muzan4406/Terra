@@ -41,7 +41,6 @@ export function AshtechCountrySettings() {
 
   const ready = Boolean(
     data?.readiness.apiKeyConfigured &&
-    data?.readiness.webhookSecretConfigured &&
     data?.readiness.publicUrlConfigured,
   );
   const dirty = (data?.enabledCountryCodes ?? []).slice().sort().join(",") !==
@@ -91,12 +90,14 @@ export function AshtechCountrySettings() {
             <p className="font-medium">{ready ? "Configuration prête" : "Configuration incomplète"}</p>
             <p className="mt-1">
               Clé API: {data?.readiness.apiKeyConfigured ? "configurée" : "absente"} ·
-              {" "}Secret webhook: {data?.readiness.webhookSecretConfigured ? "configuré" : "absent"} ·
+              {" "}Signature webhook: {data?.readiness.webhookSecretConfigured
+                ? "vérifiée si fournie"
+                : "optionnelle; statut contrôlé via l’API"} ·
               {" "}URL publique HTTPS: {data?.readiness.publicUrlConfigured ? "configurée" : "absente"}
             </p>
             {!ready && (
               <p className="mt-1">
-                Configurez ASHTECH_API_KEY, ASHTECH_WEBHOOK_SECRET et APP_PUBLIC_URL avant d'activer un pays.
+                Configurez ASHTECH_API_KEY et APP_PUBLIC_URL avant d'activer un pays. Le secret webhook n’est nécessaire que si AshTech fournit des signatures pour votre compte.
               </p>
             )}
           </div>

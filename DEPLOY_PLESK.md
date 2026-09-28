@@ -79,10 +79,10 @@ ALTER TABLE public.deposits
 Ne lancez pas `db:push:supabase` pour cette modification. Configurez ensuite dans les variables d’environnement Node.js de Plesk :
 
 - `ASHTECH_API_KEY` : clé Direct API AshTech Pay;
-- `ASHTECH_WEBHOOK_SECRET` : secret webhook fourni par AshTech Pay;
+- `ASHTECH_WEBHOOK_SECRET` : facultatif; configurez-le seulement si le compte AshTech fournit une signature `whsec_...`;
 - `APP_PUBLIC_URL` : origine HTTPS publique, par exemple `https://votre-domaine.tld` (sans chemin).
 
-L’URL webhook à enregistrer chez AshTech Pay est `https://votre-domaine.tld/api/webhooks/ashtechpay`. Les deux identifiants restent côté serveur et ne doivent pas être commités. Le panneau des moyens de paiement n’autorise l’activation que pour les pays et opérateurs présents dans le catalogue AshTech actif.
+L’URL webhook à enregistrer chez AshTech Pay est `https://votre-domaine.tld/api/webhooks/ashtechpay`. Les identifiants restent côté serveur et ne doivent pas être commités. Si le compte n’envoie pas de signature, le webhook sert uniquement à déclencher une vérification Direct API côté serveur; il ne suffit jamais à créditer le portefeuille. Le panneau des moyens de paiement n’autorise l’activation que pour les pays et opérateurs présents dans le catalogue AshTech actif.
 
 ## Routage
 

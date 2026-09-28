@@ -25,9 +25,9 @@ import {
   getAshtechCountries,
   getAshtechReadiness,
   getAshtechTransaction,
-  getAshtechWebhookSecret,
+  getOptionalAshtechWebhookSecret,
   getAshtechWebhookUrl,
-  isValidAshtechWebhookSignature,
+  canAcceptAshtechWebhook,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
 } from "./ashtechpay";
@@ -758,11 +758,10 @@ export async function registerRoutes(
       const readiness = getAshtechReadiness();
       if (
         !readiness.apiKeyConfigured ||
-        !readiness.webhookSecretConfigured ||
         !readiness.publicUrlConfigured
       ) {
         return res.status(400).json({
-          message: "Configurez ASHTECH_API_KEY, ASHTECH_WEBHOOK_SECRET et APP_PUBLIC_URL (HTTPS) avant d'activer un pays.",
+          message: "Configurez ASHTECH_API_KEY et APP_PUBLIC_URL (HTTPS) avant d'activer un pays.",
         });
       }
 
@@ -816,7 +815,6 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
-      !readiness.webhookSecretConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({
@@ -883,7 +881,6 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
-      !readiness.webhookSecretConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({
@@ -1058,7 +1055,6 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
-      !readiness.webhookSecretConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({
@@ -1190,18 +1186,13 @@ export async function registerRoutes(
     const signature = req.get("X-Ashtech-Signature") || "";
     const eventId = req.get("X-Ashtech-Event-Id") || "";
 
-    let webhookSecret: string;
-    try {
-      webhookSecret = getAshtechWebhookSecret();
-    } catch {
-      return res.status(503).json({ message: "Webhook AshTech Pay non configuré." });
-    }
+    const webhookSecret = getOptionalAshtechWebhookSecret();
     if (
       !rawBody ||
       !eventId ||
-      !isValidAshtechWebhookSignature(rawBody, timestamp, signature, webhookSecret)
+      !canAcceptAshtechWebhook(rawBody, timestamp, signature, webhookSecret)
     ) {
-      return res.status(401).json({ message: "Signature webhook invalide." });
+      return res.status(401).json({ message: "Signature webhook invalide ou incomplète." });
     }
 
     let event: Record<string, unknown>;
