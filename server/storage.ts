@@ -11,7 +11,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { resolvePlatformBusinessSettings } from "./platform-settings";
-import { eq, and, asc, desc, inArray, sql, gte, lte, or, count } from "drizzle-orm";
+import { eq, and, asc, desc, inArray, sql, gte, lte, or, count, isNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 function generateReferralCode(): string {
@@ -129,8 +129,9 @@ export interface IStorage {
   getPaymentChannelAuditHistory(channelId: string, limit?: number): Promise<(PaymentChannelAudit & { changedBy: User })[]>;
   getAllPaymentChannelAuditHistory(): Promise<(PaymentChannelAudit & { changedBy: User; channel?: PaymentChannel })[]>;
 
-  getSupportMessages(userId: string): Promise<SupportMessageWithAttachments[]>;
+  getSupportMessages(userId: string, readerRole: "user" | "admin"): Promise<SupportMessageWithAttachments[]>;
   getSupportConversations(): Promise<SupportConversationSummary[]>;
+  getSupportUnreadCount(userId: string): Promise<number>;
   createSupportUserMessage(userId: string, body: string, files: SupportAttachmentUpload[]): Promise<void>;
   createAdminSupportMessage(userId: string, adminId: string, body: string, files: SupportAttachmentUpload[]): Promise<void>;
   getSupportAttachment(id: string): Promise<SupportAttachment | undefined>;
@@ -140,6 +141,7 @@ export interface IStorage {
 
 export type SupportAttachmentUpload = Pick<SupportAttachment, "fileName" | "mimeType" | "size" | "data">;
 export type SupportMessageWithAttachments = Pick<SupportMessage, "id" | "senderType" | "body" | "createdAt"> & {
+  readAt: Date | null;
   attachments: Array<Pick<SupportAttachment, "id" | "messageId" | "fileName" | "mimeType" | "size">>;
 };
 export interface SupportConversationSummary {
@@ -150,6 +152,7 @@ export interface SupportConversationSummary {
   lastMessage: string;
   lastSenderType: SupportMessage["senderType"];
   lastMessageAt: Date;
+  unreadCount: number;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -987,7 +990,19 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getSupportMessages(userId: string): Promise<SupportMessageWithAttachments[]> {
+  async getSupportMessages(
+    userId: string,
+    readerRole: "user" | "admin",
+  ): Promise<SupportMessageWithAttachments[]> {
+    const incomingSenderType = readerRole === "user" ? "admin" : "user";
+    await db.update(supportMessages)
+      .set({ readAt: sql`clock_timestamp()` })
+      .where(and(
+        eq(supportMessages.userId, userId),
+        eq(supportMessages.senderType, incomingSenderType),
+        isNull(supportMessages.readAt),
+      ));
+
     const messages = await db.select()
       .from(supportMessages)
       .where(eq(supportMessages.userId, userId))
@@ -1018,32 +1033,61 @@ export class DatabaseStorage implements IStorage {
       senderType: message.senderType,
       body: message.body,
       createdAt: message.createdAt,
+      readAt: message.readAt,
       attachments: attachmentsByMessage.get(message.id) || [],
     }));
   }
 
   async getSupportConversations(): Promise<SupportConversationSummary[]> {
-    const recentMessages = await db.select({
-      userId: supportMessages.userId,
-      fullName: users.fullName,
-      phone: users.phone,
-      country: users.country,
-      lastMessage: supportMessages.body,
-      lastSenderType: supportMessages.senderType,
-      lastMessageAt: supportMessages.createdAt,
-    })
-      .from(supportMessages)
-      .innerJoin(users, eq(supportMessages.userId, users.id))
-      .orderBy(desc(supportMessages.createdAt))
-      .limit(2000);
+    const [recentMessages, unreadMessages] = await Promise.all([
+      db.select({
+        userId: supportMessages.userId,
+        fullName: users.fullName,
+        phone: users.phone,
+        country: users.country,
+        lastMessage: supportMessages.body,
+        lastSenderType: supportMessages.senderType,
+        lastMessageAt: supportMessages.createdAt,
+      })
+        .from(supportMessages)
+        .innerJoin(users, eq(supportMessages.userId, users.id))
+        .orderBy(desc(supportMessages.createdAt))
+        .limit(2000),
+      db.select({
+        userId: supportMessages.userId,
+        unreadCount: count(),
+      })
+        .from(supportMessages)
+        .where(and(
+          eq(supportMessages.senderType, "user"),
+          isNull(supportMessages.readAt),
+        ))
+        .groupBy(supportMessages.userId),
+    ]);
 
     const latestByUser = new Map<string, SupportConversationSummary>();
     for (const message of recentMessages) {
       if (!latestByUser.has(message.userId)) {
-        latestByUser.set(message.userId, message);
+        latestByUser.set(message.userId, { ...message, unreadCount: 0 });
       }
     }
+    for (const unread of unreadMessages) {
+      const conversation = latestByUser.get(unread.userId);
+      if (conversation) conversation.unreadCount = Number(unread.unreadCount);
+    }
     return Array.from(latestByUser.values());
+  }
+
+  async getSupportUnreadCount(userId: string): Promise<number> {
+    const [result] = await db.select({ unreadCount: count() })
+      .from(supportMessages)
+      .where(and(
+        eq(supportMessages.userId, userId),
+        eq(supportMessages.senderType, "admin"),
+        isNull(supportMessages.readAt),
+      ));
+
+    return Number(result?.unreadCount || 0);
   }
 
   async createSupportUserMessage(userId: string, body: string, files: SupportAttachmentUpload[]): Promise<void> {
@@ -1053,6 +1097,7 @@ export class DatabaseStorage implements IStorage {
         senderId: userId,
         senderType: "user",
         body,
+        readAt: null,
       }).returning();
 
       if (files.length > 0) {
@@ -1078,6 +1123,7 @@ export class DatabaseStorage implements IStorage {
         senderId: adminId,
         senderType: "admin",
         body,
+        readAt: null,
       }).returning();
 
       if (files.length > 0) {

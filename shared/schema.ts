@@ -405,6 +405,7 @@ export const supportMessages = pgTable("support_messages", {
   senderType: text("sender_type").$type<"user" | "admin" | "system">().notNull(),
   body: text("body").notNull().default(""),
   createdAt: timestamp("created_at").notNull().default(sql`clock_timestamp()`),
+  readAt: timestamp("read_at").defaultNow(),
 });
 
 export const supportAttachments = pgTable("support_attachments", {
