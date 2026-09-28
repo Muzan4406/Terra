@@ -84,6 +84,8 @@ Ne lancez pas `db:push:supabase` pour cette modification. Configurez ensuite dan
 
 L’URL webhook à enregistrer chez AshTech Pay est `https://votre-domaine.tld/api/webhooks/ashtechpay`. Les identifiants restent côté serveur et ne doivent pas être commités. Si le compte n’envoie pas de signature, le webhook sert uniquement à déclencher une vérification Direct API côté serveur; il ne suffit jamais à créditer le portefeuille. Le panneau des moyens de paiement n’autorise l’activation que pour les pays et opérateurs présents dans le catalogue AshTech actif.
 
+En production, le serveur retente aussi la vérification des dépôts AshTech en attente toutes les minutes; ce contrôle est limité aux dépôts ayant déjà un identifiant de transaction. Il s’exécute uniquement avec `NODE_ENV=production` et `ASHTECH_API_KEY` configurée. Après une mise à jour, faites **Pull + Deploy Now** puis **Restart** dans Plesk. Aucun changement de schéma de base n’est requis pour cette reprise.
+
 ## Routage
 
 Les routes `/api/...` sont enregistrées avant les fichiers statiques. En production, Express sert `dist/public` et renvoie `index.html` pour les autres chemins : les URL React comme `/customer-service/chat` ou `/admin/support` fonctionnent donc après actualisation sans règle `.htaccess` dédiée, tant que l’URL de l’application Plesk est `/`.

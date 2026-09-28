@@ -11,8 +11,20 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { resolvePlatformBusinessSettings } from "./platform-settings";
-import { eq, and, asc, desc, inArray, sql, gte, lte, or, count, isNull } from "drizzle-orm";
+import { eq, and, asc, desc, inArray, sql, gte, lte, or, count, isNull, isNotNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+
+export type PendingAshtechDeposit = Pick<
+  Deposit,
+  | "id"
+  | "amount"
+  | "ashtechTransactionId"
+  | "ashtechReference"
+  | "country"
+  | "paymentMethod"
+  | "status"
+  | "createdAt"
+>;
 
 function generateReferralCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -74,6 +86,7 @@ export interface IStorage {
   deletePaymentChannel(id: string): Promise<void>;
   
   getDeposits(filter?: string): Promise<(Deposit & { user: User })[]>;
+  getPendingAshtechDeposits(): Promise<PendingAshtechDeposit[]>;
   getDeposit(id: string): Promise<Deposit | undefined>;
   getDepositByAshtechReference(reference: string): Promise<Deposit | undefined>;
   getUserDeposits(userId: string): Promise<Deposit[]>;
@@ -566,6 +579,26 @@ export class DatabaseStorage implements IStorage {
   async getDeposit(id: string): Promise<Deposit | undefined> {
     const [deposit] = await db.select().from(deposits).where(eq(deposits.id, id));
     return deposit || undefined;
+  }
+
+  async getPendingAshtechDeposits(): Promise<PendingAshtechDeposit[]> {
+    return db.select({
+      id: deposits.id,
+      amount: deposits.amount,
+      ashtechTransactionId: deposits.ashtechTransactionId,
+      ashtechReference: deposits.ashtechReference,
+      country: deposits.country,
+      paymentMethod: deposits.paymentMethod,
+      status: deposits.status,
+      createdAt: deposits.createdAt,
+    })
+      .from(deposits)
+      .where(and(
+        eq(deposits.status, "pending"),
+        isNotNull(deposits.ashtechTransactionId),
+        isNotNull(deposits.ashtechReference),
+      ))
+      .orderBy(asc(deposits.createdAt));
   }
 
   async getDepositByAshtechReference(reference: string): Promise<Deposit | undefined> {

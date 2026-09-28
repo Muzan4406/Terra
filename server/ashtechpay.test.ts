@@ -7,6 +7,7 @@ import {
   normalizeAshtechTransactionStatus,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
+  verifyAshtechTransaction,
 } from "./ashtechpay";
 
 test("normalizes local and international phone numbers to the selected country", () => {
@@ -34,6 +35,60 @@ test("normalizes AshTech success aliases to confirmed status", () => {
   assert.equal(normalizeAshtechTransactionStatus("failed"), "failed");
   assert.equal(normalizeAshtechTransactionStatus("processing"), undefined);
   assert.equal(normalizeAshtechTransactionStatus(null), undefined);
+});
+
+test("verifies the exact AshTech transaction before accepting a success alias", () => {
+  const expected = {
+    transactionId: "tx-1",
+    acceptedReferences: ["deposit-ref", "deposit-id"],
+    amount: 5000,
+    currency: "XOF",
+    country: "TG",
+    operator: "T-Money",
+  };
+  const transaction = {
+    transaction_id: "tx-1",
+    reference: "deposit-ref",
+    amount: "5000",
+    currency: "XOF",
+    country_code: "TG",
+    operator: "T-Money",
+    status: "success",
+  };
+
+  assert.equal(verifyAshtechTransaction(transaction, expected), "completed");
+  assert.equal(
+    verifyAshtechTransaction({ ...transaction, status: "pending" }, expected),
+    "pending",
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, transaction_id: "other" }, expected),
+    /transaction_id_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, reference: "other" }, expected),
+    /reference_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, amount: 5001 }, expected),
+    /amount_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, currency: "XAF" }, expected),
+    /currency_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, operator: "Other" }, expected),
+    /operator_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, country_code: "CI" }, expected),
+    /country_mismatch/,
+  );
+  assert.throws(
+    () => verifyAshtechTransaction({ ...transaction, status: "processing" }, expected),
+    /unknown_status/,
+  );
 });
 
 test("verifies the documented raw-body HMAC signature and rejects stale requests", () => {
