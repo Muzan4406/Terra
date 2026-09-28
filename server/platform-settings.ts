@@ -19,6 +19,8 @@ export function resolvePlatformBusinessSettings(
     signupBonus: toNumber("signupBonus"),
     withdrawalMinimum: toNumber("withdrawalMinimum"),
     withdrawalFeePercentage: toNumber("withdrawalFeePercentage"),
+    withdrawalStartHourGmt: toNumber("withdrawalStartHourGmt"),
+    withdrawalEndHourGmt: toNumber("withdrawalEndHourGmt"),
   });
 
   if (!result.success) {

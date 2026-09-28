@@ -39,6 +39,8 @@ export const DEFAULT_BUSINESS_SETTINGS = {
   signupBonus: 700,
   withdrawalMinimum: 1500,
   withdrawalFeePercentage: 10,
+  withdrawalStartHourGmt: 10,
+  withdrawalEndHourGmt: 17,
 } as const;
 
 export const businessSettingsFieldsSchema = z.object({
@@ -48,6 +50,8 @@ export const businessSettingsFieldsSchema = z.object({
   signupBonus: z.number().int().min(0).max(100_000_000),
   withdrawalMinimum: z.number().int().min(1).max(100_000_000),
   withdrawalFeePercentage: z.number().int().min(0).max(100),
+  withdrawalStartHourGmt: z.number().int().min(0).max(23),
+  withdrawalEndHourGmt: z.number().int().min(0).max(23),
 });
 
 export const platformBusinessSettingsSchema = businessSettingsFieldsSchema.refine(
@@ -57,6 +61,9 @@ export const platformBusinessSettingsSchema = businessSettingsFieldsSchema.refin
       settings.referralLevel3Percentage <=
     100,
   { message: "La somme des commissions de parrainage ne peut pas dépasser 100%." },
+).refine(
+  (settings) => settings.withdrawalStartHourGmt !== settings.withdrawalEndHourGmt,
+  { message: "Les heures d’ouverture et de fermeture des retraits doivent être différentes." },
 );
 
 export type PlatformBusinessSettings = z.infer<typeof platformBusinessSettingsSchema>;
