@@ -8,9 +8,10 @@ import bcrypt from "bcryptjs";
 import { 
   registerSchema, loginSchema, depositSchema, withdrawalSchema, walletSchema,
   changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
-  ELIGIBLE_COUNTRIES, REFERRAL_TASKS, PRODUCT_TASK,
+  REFERRAL_TASKS, PRODUCT_TASK,
   businessSettingsFieldsSchema, platformBusinessSettingsSchema,
 } from "@shared/schema";
+import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { resolvePlatformBusinessSettings } from "./platform-settings";
 import { z } from "zod";
 import connectPgSimple from "connect-pg-simple";
@@ -670,12 +671,11 @@ export async function registerRoutes(
         }
       }
 
-      const country = ELIGIBLE_COUNTRIES.find(c => c.code === user.country);
-      const hours = country?.withdrawalHours || { start: 10, end: 17 };
-      const currentHour = new Date().getHours();
-      
-      if (currentHour < hours.start || currentHour >= hours.end) {
-        return res.status(400).json({ message: `Les retraits sont disponibles de ${hours.start}h à ${hours.end}h` });
+      const hours = getWithdrawalHoursForCountry(user.country);
+      if (!isWithdrawalWindowOpen()) {
+        return res.status(400).json({
+          message: `Les retraits sont disponibles de ${hours.start}h à ${hours.end}h, heure locale (10h à 17h GMT).`,
+        });
       }
 
       const todayWithdrawals = await storage.getUserTodayWithdrawals(user.id);
@@ -849,69 +849,69 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/team/stats", requireAuth, async (req, res) => {
-    const level1 = await storage.getUserReferrals(req.session.userId!, 1);
-    const level2 = await storage.getUserReferrals(req.session.userId!, 2);
-    const level3 = await storage.getUserReferrals(req.session.userId!, 3);
+  app.get("/api/team/stats", requireAuth, asyncRoute(async (req, res) => {
+    const userId = req.session.userId!;
+    const [level1, level2, level3, user] = await Promise.all([
+      storage.getUserReferrals(userId, 1),
+      storage.getUserReferrals(userId, 2),
+      storage.getUserReferrals(userId, 3),
+      storage.getUser(userId),
+    ]);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
 
-    const user = await storage.getUser(req.session.userId!);
-
-    const level1Investments = await Promise.all(level1.map(r => storage.getUserTotalInvestment(r.id)));
-    const level2Investments = await Promise.all(level2.map(r => storage.getUserTotalInvestment(r.id)));
-    const level3Investments = await Promise.all(level3.map(r => storage.getUserTotalInvestment(r.id)));
-
-    const level1Investment = level1Investments.reduce((sum, inv) => sum + inv, 0);
-    const level2Investment = level2Investments.reduce((sum, inv) => sum + inv, 0);
-    const level3Investment = level3Investments.reduce((sum, inv) => sum + inv, 0);
-    const referralEarnings = user
-      ? (await storage.getEarnings(user.id)).filter((earning) => earning.type === "referral")
-      : [];
+    const teamMemberIds = Array.from(new Set(
+      [...level1, ...level2, ...level3].map((member) => member.id),
+    ));
+    const investmentTotals = await storage.getUserInvestmentTotals(teamMemberIds);
+    const sumInvestments = (members: typeof level1) =>
+      members.reduce((sum, member) => sum + (investmentTotals.get(member.id) || 0), 0);
+    const referralEarnings = (await storage.getEarnings(user.id))
+      .filter((earning) => earning.type === "referral");
     const commissionForLevel = (level: number) =>
       referralEarnings
-        .filter((earning) =>
-          earning.description.includes(`Commission niveau ${level}`),
-        )
+        .filter((earning) => earning.description.includes(`Commission niveau ${level}`))
         .reduce((sum, earning) => sum + earning.amount, 0);
 
     res.json({
       level1Count: level1.length,
       level2Count: level2.length,
       level3Count: level3.length,
-      level1Investors: level1.filter(r => r.hasProduct).length,
-      level2Investors: level2.filter(r => r.hasProduct).length,
-      level3Investors: level3.filter(r => r.hasProduct).length,
-      level1Investment,
-      level2Investment,
-      level3Investment,
+      level1Investors: level1.filter((member) => member.hasProduct).length,
+      level2Investors: level2.filter((member) => member.hasProduct).length,
+      level3Investors: level3.filter((member) => member.hasProduct).length,
+      level1Investment: sumInvestments(level1),
+      level2Investment: sumInvestments(level2),
+      level3Investment: sumInvestments(level3),
       level1Commissions: commissionForLevel(1),
       level2Commissions: commissionForLevel(2),
       level3Commissions: commissionForLevel(3),
-      totalCommissions: user?.referralEarnings || 0,
+      totalCommissions: user.referralEarnings,
     });
-  });
+  }));
 
-  app.get("/api/team/referrals/:level", requireAuth, async (req, res) => {
+  app.get("/api/team/referrals/:level", requireAuth, asyncRoute(async (req, res) => {
     const level = parseInt(req.params.level);
     if (isNaN(level) || level < 1 || level > 3) {
       return res.status(400).json({ message: "Niveau invalide" });
     }
 
     const referrals = await storage.getUserReferrals(req.session.userId!, level);
-    
-    const referralDetails = await Promise.all(referrals.map(async r => {
-      const totalInvestment = await storage.getUserTotalInvestment(r.id);
-      return {
-        id: r.id,
-        phone: r.phone,
-        country: r.country,
-        totalInvestment,
-        hasProduct: r.hasProduct || false,
-        createdAt: r.createdAt,
-      };
+    const investmentTotals = await storage.getUserInvestmentTotals(
+      referrals.map((referral) => referral.id),
+    );
+    const referralDetails = referrals.map((referral) => ({
+      id: referral.id,
+      phone: referral.phone,
+      country: referral.country,
+      totalInvestment: investmentTotals.get(referral.id) || 0,
+      hasProduct: referral.hasProduct || false,
+      createdAt: referral.createdAt,
     }));
 
     res.json(referralDetails);
-  });
+  }));
 
   app.get("/api/support/messages", requireAuth, async (req, res) => {
     try {
@@ -1165,32 +1165,36 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
-  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  app.get("/api/admin/users", asyncRoute(requireAdmin), asyncRoute(async (req, res) => {
     const filter = req.query.filter as string;
     const users = await storage.getAllUsers(filter === "all" ? undefined : filter);
-    
-    const usersWithDetails = await Promise.all(users.map(async u => {
-      const [referrals, products, totalInvestment, withdrawalCount, referrer] = await Promise.all([
-        storage.getUserReferrals(u.id, 1),
-        storage.getUserProducts(u.id),
-        storage.getUserTotalInvestment(u.id),
-        storage.getUserWithdrawalCount(u.id),
-        u.referrerId ? storage.getUser(u.referrerId) : Promise.resolve(null),
-      ]);
+    const userIds = users.map((user) => user.id);
+    const referrerIds = Array.from(new Set(
+      users.flatMap((user) => user.referrerId ? [user.referrerId] : []),
+    ));
+    const [metrics, referrers] = await Promise.all([
+      storage.getAdminUserMetrics(userIds),
+      storage.getUsersByIds(referrerIds),
+    ]);
+    const referrersById = new Map(referrers.map((referrer) => [referrer.id, referrer]));
+
+    const usersWithDetails = users.map((user) => {
+      const summary = metrics.get(user.id);
+      const referrer = user.referrerId ? referrersById.get(user.referrerId) : undefined;
       return {
-        ...u,
+        ...user,
         password: undefined,
-        referralCount: referrals.length,
-        productCount: products.length,
-        totalInvestment,
-        withdrawalCount,
+        referralCount: summary?.referralCount || 0,
+        productCount: summary?.productCount || 0,
+        totalInvestment: summary?.totalInvestment || 0,
+        withdrawalCount: summary?.withdrawalCount || 0,
         referrerName: referrer?.fullName || null,
         referrerPhone: referrer?.phone || null,
       };
-    }));
+    });
 
     res.json(usersWithDetails);
-  });
+  }));
 
   app.get("/api/admin/users/:id", requireAdmin, async (req, res) => {
     const user = await storage.getUser(req.params.id);
@@ -1200,41 +1204,35 @@ export async function registerRoutes(
     res.json({ ...user, password: undefined });
   });
 
-  app.get("/api/admin/users/:id/team", requireAdmin, async (req, res) => {
+  app.get("/api/admin/users/:id/team", asyncRoute(requireAdmin), asyncRoute(async (req, res) => {
     const userId = req.params.id;
     const user = await storage.getUser(userId);
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
-    const level1 = await storage.getUserReferrals(userId, 1);
-    const level2Promises = level1.map(u => storage.getUserReferrals(u.id, 1));
-    const level2Arrays = await Promise.all(level2Promises);
-    const level2 = level2Arrays.flat();
-    
-    const level3Promises = level2.map(u => storage.getUserReferrals(u.id, 1));
-    const level3Arrays = await Promise.all(level3Promises);
-    const level3 = level3Arrays.flat();
-
-    const mapMember = async (u: any) => {
-      const totalInvestment = await storage.getUserTotalInvestment(u.id);
-      return {
-        id: u.id,
-        fullName: u.fullName,
-        phone: u.phone,
-        country: u.country,
-        balance: u.balance,
-        hasProduct: u.hasProduct,
-        totalInvestment,
-        createdAt: u.createdAt,
-      };
-    };
-
-    const [l1Members, l2Members, l3Members] = await Promise.all([
-      Promise.all(level1.map(mapMember)),
-      Promise.all(level2.map(mapMember)),
-      Promise.all(level3.map(mapMember)),
+    const [level1, level2, level3] = await Promise.all([
+      storage.getUserReferrals(userId, 1),
+      storage.getUserReferrals(userId, 2),
+      storage.getUserReferrals(userId, 3),
     ]);
+    const allMembers = [...level1, ...level2, ...level3];
+    const investmentTotals = await storage.getUserInvestmentTotals(
+      Array.from(new Set(allMembers.map((member) => member.id))),
+    );
+    const mapMember = (member: typeof level1[number]) => ({
+      id: member.id,
+      fullName: member.fullName,
+      phone: member.phone,
+      country: member.country,
+      balance: member.balance,
+      hasProduct: member.hasProduct,
+      totalInvestment: investmentTotals.get(member.id) || 0,
+      createdAt: member.createdAt,
+    });
+    const l1Members = level1.map(mapMember);
+    const l2Members = level2.map(mapMember);
+    const l3Members = level3.map(mapMember);
 
     const totalInvestment = [...l1Members, ...l2Members, ...l3Members]
       .reduce((sum, m) => sum + m.totalInvestment, 0);
@@ -1246,7 +1244,7 @@ export async function registerRoutes(
       totalTeamSize: l1Members.length + l2Members.length + l3Members.length,
       totalInvestment,
     });
-  });
+  }));
 
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     const updates = req.body;

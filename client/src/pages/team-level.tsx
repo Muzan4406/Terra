@@ -21,22 +21,28 @@ const levelConfig: Record<number, { label: string; medalColor: string }> = {
 };
 
 export default function TeamLevelPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const params = useParams<{ level: string }>();
   const level = parseInt(params.level || "1");
 
-  const { data: referrals, isLoading } = useQuery<ReferralUser[]>({
+  const {
+    data: referrals,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<ReferralUser[]>({
     queryKey: ["/api/team/referrals", level],
     queryFn: async () => {
-      const res = await fetch(`/api/team/referrals/${level}`);
-      if (!res.ok) throw new Error("Failed to fetch referrals");
+      const res = await fetch(`/api/team/referrals/${level}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Impossible de charger les membres de ce niveau.");
       return res.json();
     },
+    enabled: !!user,
   });
 
   const config = levelConfig[level] || levelConfig[1];
 
-  if (!user || isLoading) {
+  if (authLoading || !user || isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         <div className="max-w-md mx-auto p-4 space-y-4">
@@ -44,6 +50,27 @@ export default function TeamLevelPage() {
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-100 pb-20">
+        <div className="mx-auto max-w-md p-4">
+          <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+            <p className="font-semibold text-gray-800">Impossible de charger les membres.</p>
+            <p className="mt-2 text-sm text-gray-600">Vérifiez votre connexion puis réessayez.</p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Réessayer
+            </button>
+          </div>
         </div>
         <BottomNav />
       </div>

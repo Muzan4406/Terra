@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { DEFAULT_BUSINESS_SETTINGS, ELIGIBLE_COUNTRIES } from "@shared/schema";
+import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
+import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Loader2, CreditCard, ChevronRight } from "lucide-react";
@@ -20,6 +21,12 @@ export default function WithdrawPage() {
   const { toast } = useToast();
   const [amount, setAmount] = useState<string>("");
   const [selectedWalletId, setSelectedWalletId] = useState<string>("");
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { data: wallets } = useQuery<WalletType[]>({
     queryKey: ["/api/wallets"],
@@ -97,10 +104,8 @@ export default function WithdrawPage() {
 
   if (!user) return null;
 
-  const country = ELIGIBLE_COUNTRIES.find((c) => c.code === user.country);
-  const withdrawalHours = country?.withdrawalHours || { start: 10, end: 17 };
-  const currentHour = new Date().getHours();
-  const isWithinHours = currentHour >= withdrawalHours.start && currentHour < withdrawalHours.end;
+  const withdrawalHours = getWithdrawalHoursForCountry(user.country);
+  const isWithinHours = isWithdrawalWindowOpen(currentTime);
   const canWithdraw = user.hasProduct && !user.withdrawalBlocked && isWithinHours;
 
   const selectedWallet = wallets?.find(w => w.id === selectedWalletId);
@@ -235,7 +240,7 @@ export default function WithdrawPage() {
             <h3 className="text-blue-600 font-bold mb-3">À savoir avant votre retrait</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <p>1. Le montant minimum de retrait est de {withdrawalMinimum.toLocaleString("fr-FR")} FCFA.</p>
-              <p>2. Les heures de retrait sont de {withdrawalHours.start}h à {withdrawalHours.end}h, avec une limite de 3 retraits par jour.</p>
+              <p>2. Les retraits sont ouverts de {withdrawalHours.start}h à {withdrawalHours.end}h, heure locale (10h à 17h GMT), avec une limite de 3 retraits par jour.</p>
               <p>3. {withdrawalFeePercentage}% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
               <p>4. Les retraits seront disponibles sous 2 heures, et exceptionnellement sous 24 heures.</p>
             </div>

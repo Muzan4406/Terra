@@ -45,7 +45,7 @@ interface UserWithDetails extends User {
 }
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,12 +56,20 @@ export default function AdminUsersPage() {
   const [selectedProductId, setSelectedProductId] = useState("");
   const [managingUserId, setManagingUserId] = useState<string | null>(null);
 
-  const { data: users, isLoading } = useQuery<UserWithDetails[]>({
+  const {
+    data: users,
+    isLoading,
+    isError,
+    error,
+    refetch: refetchUsers,
+  } = useQuery<UserWithDetails[]>({
     queryKey: [`/api/admin/users?filter=${filter}`],
+    enabled: !!user?.isAdmin,
   });
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products/all"],
+    enabled: !!user?.isAdmin,
   });
 
   const { data: userProducts, refetch: refetchUserProducts } = useQuery<UserProductItem[]>({
@@ -155,6 +163,18 @@ export default function AdminUsersPage() {
     },
   });
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-4xl space-y-4 p-4">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   if (!user?.isAdmin) {
     navigate("/");
     return null;
@@ -231,6 +251,18 @@ export default function AdminUsersPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
             </div>
+          ) : isError ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="font-medium">Impossible de charger la liste des utilisateurs.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {error instanceof Error ? error.message : "Vérifiez la connexion puis réessayez."}
+                </p>
+                <Button variant="outline" className="mt-4" onClick={() => void refetchUsers()}>
+                  Réessayer
+                </Button>
+              </CardContent>
+            </Card>
           ) : filteredUsers?.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">

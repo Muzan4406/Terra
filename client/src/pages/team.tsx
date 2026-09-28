@@ -33,11 +33,17 @@ interface PublicBusinessSettings {
 }
 
 export default function TeamPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  const { data: stats, isLoading } = useQuery<TeamStats>({
+  const {
+    data: stats,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<TeamStats>({
     queryKey: ["/api/team/stats"],
+    enabled: !!user,
   });
   const { data: businessSettings } = useQuery<PublicBusinessSettings>({
     queryKey: ["/api/settings/public"],
@@ -50,13 +56,34 @@ export default function TeamPage() {
     toast({ title: "Copié!", description: `${label} copié dans le presse-papier` });
   };
 
-  if (!user || isLoading) {
+  if (authLoading || !user || isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 pb-20">
         <div className="max-w-md mx-auto p-4 space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-48 w-full" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-100 pb-20">
+        <div className="mx-auto max-w-md p-4">
+          <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+            <p className="font-semibold text-gray-800">Impossible de charger votre équipe.</p>
+            <p className="mt-2 text-sm text-gray-600">Vérifiez votre connexion puis réessayez.</p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Réessayer
+            </button>
+          </div>
         </div>
         <BottomNav />
       </div>

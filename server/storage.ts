@@ -30,7 +30,15 @@ export interface IStorage {
   createUser(user: Omit<InsertUser, "referralCode"> & { referralCode?: string }): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(filter?: string): Promise<User[]>;
+  getUsersByIds(userIds: string[]): Promise<User[]>;
+  getAdminUserMetrics(userIds: string[]): Promise<Map<string, {
+    referralCount: number;
+    productCount: number;
+    totalInvestment: number;
+    withdrawalCount: number;
+  }>>;
   getUserReferrals(userId: string, level: number): Promise<User[]>;
+  getUserInvestmentTotals(userIds: string[]): Promise<Map<string, number>>;
   
   getProducts(): Promise<Product[]>;
   getAllProducts(): Promise<Product[]>;
@@ -209,29 +217,82 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(users).orderBy(desc(users.createdAt));
   }
 
+  async getUsersByIds(userIds: string[]): Promise<User[]> {
+    if (userIds.length === 0) return [];
+    return db.select().from(users).where(inArray(users.id, userIds));
+  }
+
+  async getAdminUserMetrics(userIds: string[]): Promise<Map<string, {
+    referralCount: number;
+    productCount: number;
+    totalInvestment: number;
+    withdrawalCount: number;
+  }>> {
+    const metrics = new Map(userIds.map((id) => [
+      id,
+      { referralCount: 0, productCount: 0, totalInvestment: 0, withdrawalCount: 0 },
+    ]));
+    if (userIds.length === 0) return metrics;
+
+    const [referralRows, productRows, withdrawalRows] = await Promise.all([
+      db.select({
+        referrerId: users.referrerId,
+        referralCount: count(),
+      })
+        .from(users)
+        .where(inArray(users.referrerId, userIds))
+        .groupBy(users.referrerId),
+      db.select({
+        userId: userProducts.userId,
+        productCount: count(userProducts.id),
+        totalInvestment: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+      })
+        .from(userProducts)
+        .innerJoin(products, eq(userProducts.productId, products.id))
+        .where(inArray(userProducts.userId, userIds))
+        .groupBy(userProducts.userId),
+      db.select({
+        userId: withdrawals.userId,
+        withdrawalCount: count(withdrawals.id),
+      })
+        .from(withdrawals)
+        .where(inArray(withdrawals.userId, userIds))
+        .groupBy(withdrawals.userId),
+    ]);
+
+    for (const row of referralRows) {
+      if (row.referrerId) {
+        const summary = metrics.get(row.referrerId);
+        if (summary) summary.referralCount = Number(row.referralCount);
+      }
+    }
+    for (const row of productRows) {
+      const summary = metrics.get(row.userId);
+      if (summary) {
+        summary.productCount = Number(row.productCount);
+        summary.totalInvestment = Number(row.totalInvestment || 0);
+      }
+    }
+    for (const row of withdrawalRows) {
+      const summary = metrics.get(row.userId);
+      if (summary) summary.withdrawalCount = Number(row.withdrawalCount);
+    }
+
+    return metrics;
+  }
+
   async getUserReferrals(userId: string, level: number): Promise<User[]> {
     if (level === 1) {
       return db.select().from(users).where(eq(users.referrerId, userId));
     }
-    if (level === 2) {
-      const level1 = await this.getUserReferrals(userId, 1);
-      const level2Users: User[] = [];
-      for (const u of level1) {
-        const refs = await db.select().from(users).where(eq(users.referrerId, u.id));
-        level2Users.push(...refs);
-      }
-      return level2Users;
-    }
-    if (level === 3) {
-      const level2 = await this.getUserReferrals(userId, 2);
-      const level3Users: User[] = [];
-      for (const u of level2) {
-        const refs = await db.select().from(users).where(eq(users.referrerId, u.id));
-        level3Users.push(...refs);
-      }
-      return level3Users;
-    }
-    return [];
+    if (level < 2 || level > 3) return [];
+
+    const parents = await this.getUserReferrals(userId, level - 1);
+    if (parents.length === 0) return [];
+
+    return db.select().from(users).where(
+      inArray(users.referrerId, parents.map((parent) => parent.id)),
+    );
   }
 
   async getProducts(): Promise<Product[]> {
@@ -300,6 +361,20 @@ export class DatabaseStorage implements IStorage {
     .where(eq(userProducts.userId, userId));
     
     return Number(result[0]?.total || 0);
+  }
+
+  async getUserInvestmentTotals(userIds: string[]): Promise<Map<string, number>> {
+    if (userIds.length === 0) return new Map();
+    const rows = await db.select({
+      userId: userProducts.userId,
+      totalInvestment: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+    })
+      .from(userProducts)
+      .innerJoin(products, eq(userProducts.productId, products.id))
+      .where(inArray(userProducts.userId, userIds))
+      .groupBy(userProducts.userId);
+
+    return new Map(rows.map((row) => [row.userId, Number(row.totalInvestment || 0)]));
   }
 
   async createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct> {
@@ -474,7 +549,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserTodayWithdrawals(userId: string): Promise<Withdrawal[]> {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
     return db.select().from(withdrawals).where(
       and(
         eq(withdrawals.userId, userId),
@@ -650,7 +725,7 @@ export class DatabaseStorage implements IStorage {
     pendingWithdrawals: number;
   }> {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const [totalUsersResult] = await db.select({ count: count() }).from(users);
     const [todayRegsResult] = await db.select({ count: count() }).from(users).where(gte(users.createdAt, today));

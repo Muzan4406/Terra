@@ -8,11 +8,11 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 });
 
 export const ELIGIBLE_COUNTRIES = [
-  { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", withdrawalHours: { start: 10, end: 17 } },
-  { code: "BF", name: "Burkina Faso", flag: "BF", dialCode: "226", withdrawalHours: { start: 10, end: 17 } },
-  { code: "TG", name: "Togo", flag: "TG", dialCode: "228", withdrawalHours: { start: 10, end: 17 } },
-  { code: "BJ", name: "Bénin", flag: "BJ", dialCode: "229", withdrawalHours: { start: 10, end: 17 } },
-  { code: "CI", name: "Côte d'Ivoire", flag: "CI", dialCode: "225", withdrawalHours: { start: 10, end: 17 } },
+  { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", gmtOffsetHours: 1 },
+  { code: "BF", name: "Burkina Faso", flag: "BF", dialCode: "226", gmtOffsetHours: 0 },
+  { code: "TG", name: "Togo", flag: "TG", dialCode: "228", gmtOffsetHours: 0 },
+  { code: "BJ", name: "Bénin", flag: "BJ", dialCode: "229", gmtOffsetHours: 1 },
+  { code: "CI", name: "Côte d'Ivoire", flag: "CI", dialCode: "225", gmtOffsetHours: 0 },
 ] as const;
 
 export const PAYMENT_METHODS_BY_COUNTRY: Record<string, string[]> = {
