@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Headphones, Loader2, MessageSquare, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
@@ -15,6 +15,7 @@ interface SupportConversation {
   lastMessage: string;
   lastSenderType: "user" | "admin" | "system";
   lastMessageAt: string | Date;
+  unreadCount: number;
 }
 
 async function postAdminReply(userId: string, body: string, files: File[]) {
@@ -48,6 +49,7 @@ export default function AdminSupportPage() {
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showThreadOnMobile, setShowThreadOnMobile] = useState(false);
+  const readThreadUserId = useRef<string | null>(null);
 
   const conversationsQuery = useQuery<SupportConversation[]>({
     queryKey: ["/api/admin/support/conversations"],
@@ -66,6 +68,17 @@ export default function AdminSupportPage() {
     refetchInterval: selectedUserId ? 4000 : false,
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      readThreadUserId.current = null;
+      return;
+    }
+    if (messagesQuery.dataUpdatedAt > 0 && readThreadUserId.current !== selectedUserId) {
+      readThreadUserId.current = selectedUserId;
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/support/conversations"] });
+    }
+  }, [messagesQuery.dataUpdatedAt, selectedUserId]);
 
   useEffect(() => {
     if (!selectedUserId && conversations.length > 0) {
@@ -177,7 +190,14 @@ export default function AdminSupportPage() {
                           {formatConversationTime(conversation.lastMessageAt)}
                         </time>
                       </div>
-                      <p className="mt-2 truncate text-xs text-[#65746a]">{preview}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-xs text-[#65746a]">{preview}</p>
+                        {conversation.unreadCount > 0 && (
+                          <span className="shrink-0 rounded-full bg-[#dff1df] px-2 py-0.5 text-[10px] font-bold text-[#24603b]">
+                            Nouveau{conversation.unreadCount > 1 ? ` · ${conversation.unreadCount}` : ""}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })

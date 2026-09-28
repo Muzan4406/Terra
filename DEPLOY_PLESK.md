@@ -62,6 +62,8 @@ La migration initiale de ce projet a été effectuée et vérifiée : **18 table
 
 La variable Replit `SUPABASE_DATABASE_URL` sert à appliquer les changements de schéma depuis Replit avec `npm run db:push:supabase`. En production, Plesk utilise `DATABASE_URL`. Ne lancez ni `db:push` ni la migration initiale pendant un déploiement Git : un pull ne doit pas modifier le schéma ou recopier les données.
 
+Avant de déployer une version qui modifie `shared/schema.ts`, appliquez les changements au projet Supabase depuis Replit avec `npm run db:push:supabase`, puis construisez et poussez le projet. Par exemple, le suivi lu/non lu du chat ajoute la colonne `support_messages.read_at`; son défaut considère les messages existants comme déjà lus. Vérifiez que la commande a réussi avant de déployer le nouveau serveur sur Plesk. Ne lancez pas cette commande automatiquement au démarrage ni depuis Plesk.
+
 ## Routage
 
 Les routes `/api/...` sont enregistrées avant les fichiers statiques. En production, Express sert `dist/public` et renvoie `index.html` pour les autres chemins : les URL React comme `/customer-service/chat` ou `/admin/support` fonctionnent donc après actualisation sans règle `.htaccess` dédiée, tant que l’URL de l’application Plesk est `/`.

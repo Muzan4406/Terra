@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Headphones, Loader2, MessageSquareText } from "lucide-react";
 import { useLocation } from "wouter";
@@ -31,6 +32,12 @@ export default function CustomerServiceChatPage() {
     refetchInterval: 4000,
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (messagesQuery.dataUpdatedAt > 0) {
+      queryClient.invalidateQueries({ queryKey: ["/api/support/unread-count"] });
+    }
+  }, [messagesQuery.dataUpdatedAt]);
 
   const sendMutation = useMutation({
     mutationFn: ({ body, files }: { body: string; files: File[] }) => postSupportMessage(body, files),

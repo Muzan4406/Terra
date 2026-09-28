@@ -24,6 +24,12 @@ export default function AccountPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
+  const { data: supportUnreadCount = 0 } = useQuery<number>({
+    queryKey: ["/api/support/unread-count"],
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
   });
@@ -202,6 +208,11 @@ export default function AccountPage() {
                 <item.icon className={`h-5 w-5 ${item.iconColor}`} aria-hidden="true" />
               </div>
               <span className="flex-1 text-left font-semibold text-[#30453c]">{item.label}</span>
+              {item.testId === "menu-support" && supportUnreadCount > 0 && (
+                <span className="shrink-0 rounded-full bg-[#dff1df] px-2 py-1 text-[10px] font-bold text-[#24603b]">
+                  Nouveau{supportUnreadCount > 1 ? ` · ${supportUnreadCount}` : ""}
+                </span>
+              )}
               <ChevronRight className="h-5 w-5 shrink-0 text-[#9c9d91]" aria-hidden="true" />
             </button>
           ))}

@@ -915,9 +915,17 @@ export async function registerRoutes(
 
   app.get("/api/support/messages", requireAuth, async (req, res) => {
     try {
-      res.json(await storage.getSupportMessages(req.session.userId!));
+      res.json(await storage.getSupportMessages(req.session.userId!, "user"));
     } catch {
       res.status(500).json({ message: "Impossible de charger la conversation." });
+    }
+  });
+
+  app.get("/api/support/unread-count", requireAuth, async (req, res) => {
+    try {
+      res.json(await storage.getSupportUnreadCount(req.session.userId!));
+    } catch {
+      res.status(500).json({ message: "Impossible de charger le nombre de nouveaux messages." });
     }
   });
 
@@ -991,7 +999,7 @@ export async function registerRoutes(
     try {
       const user = await storage.getUser(req.params.userId);
       if (!user) return res.status(404).json({ message: "Utilisateur introuvable." });
-      res.json(await storage.getSupportMessages(user.id));
+      res.json(await storage.getSupportMessages(user.id, "admin"));
     } catch {
       res.status(500).json({ message: "Impossible de charger cette conversation." });
     }

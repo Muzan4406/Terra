@@ -995,14 +995,6 @@ export class DatabaseStorage implements IStorage {
     readerRole: "user" | "admin",
   ): Promise<SupportMessageWithAttachments[]> {
     const incomingSenderType = readerRole === "user" ? "admin" : "user";
-    await db.update(supportMessages)
-      .set({ readAt: sql`clock_timestamp()` })
-      .where(and(
-        eq(supportMessages.userId, userId),
-        eq(supportMessages.senderType, incomingSenderType),
-        isNull(supportMessages.readAt),
-      ));
-
     const messages = await db.select()
       .from(supportMessages)
       .where(eq(supportMessages.userId, userId))
@@ -1012,6 +1004,32 @@ export class DatabaseStorage implements IStorage {
     if (messages.length === 0) return [];
 
     const orderedMessages = messages.reverse();
+    const unreadIncomingIds = orderedMessages
+      .filter((message) => message.senderType === incomingSenderType && message.readAt === null)
+      .map((message) => message.id);
+
+    if (unreadIncomingIds.length > 0) {
+      await db.update(supportMessages)
+        .set({ readAt: sql`clock_timestamp()` })
+        .where(and(
+          inArray(supportMessages.id, unreadIncomingIds),
+          eq(supportMessages.senderType, incomingSenderType),
+          isNull(supportMessages.readAt),
+        ));
+
+      const newlyReadMessages = await db.select({
+        id: supportMessages.id,
+        readAt: supportMessages.readAt,
+      })
+        .from(supportMessages)
+        .where(inArray(supportMessages.id, unreadIncomingIds));
+      const readAtById = new Map(newlyReadMessages.map((message) => [message.id, message.readAt]));
+      for (const message of orderedMessages) {
+        const readAt = readAtById.get(message.id);
+        if (readAt) message.readAt = readAt;
+      }
+    }
+
     const attachments = await db.select({
       id: supportAttachments.id,
       messageId: supportAttachments.messageId,

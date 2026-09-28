@@ -13,6 +13,7 @@ export interface SupportMessageView {
   senderType: "user" | "admin" | "system";
   body: string;
   createdAt: string | Date;
+  readAt: string | Date | null;
   attachments: SupportAttachmentView[];
 }
 
@@ -179,9 +180,14 @@ export function SupportChatThread({
                       ))}
                     </div>
                   )}
-                  <time className="mt-1.5 block text-right text-[10px] opacity-70">
-                    {formatMessageTime(message.createdAt)}
-                  </time>
+                  <div className="mt-1.5 flex items-center justify-end gap-2 text-[10px] opacity-70">
+                    <time>{formatMessageTime(message.createdAt)}</time>
+                    {isMine && !isSystem && (
+                      <span aria-label={message.readAt ? "Message lu" : "Message non lu"}>
+                        {message.readAt ? "Lu" : "Non lu"}
+                      </span>
+                    )}
+                  </div>
                 </article>
               </div>
             );
