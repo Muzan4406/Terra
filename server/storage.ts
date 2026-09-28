@@ -36,6 +36,13 @@ export interface IStorage {
     productCount: number;
     totalInvestment: number;
     withdrawalCount: number;
+    activeProducts: {
+      id: string;
+      name: string;
+      level: number;
+      cyclesCompleted: number;
+      duration: number;
+    }[];
   }>>;
   getUserReferrals(userId: string, level: number): Promise<User[]>;
   getUserInvestmentTotals(userIds: string[]): Promise<Map<string, number>>;
@@ -205,6 +212,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(filter?: string): Promise<User[]> {
+    if (filter === "active_products") {
+      const activeUserRows = await db
+        .selectDistinct({ userId: userProducts.userId })
+        .from(userProducts)
+        .where(eq(userProducts.isActive, true));
+      const activeUserIds = activeUserRows.map(({ userId }) => userId);
+      if (activeUserIds.length === 0) return [];
+      return db.select()
+        .from(users)
+        .where(inArray(users.id, activeUserIds))
+        .orderBy(desc(users.createdAt));
+    }
     if (filter === "banned") {
       return db.select().from(users).where(eq(users.isBanned, true));
     }
@@ -230,14 +249,27 @@ export class DatabaseStorage implements IStorage {
     productCount: number;
     totalInvestment: number;
     withdrawalCount: number;
+    activeProducts: {
+      id: string;
+      name: string;
+      level: number;
+      cyclesCompleted: number;
+      duration: number;
+    }[];
   }>> {
     const metrics = new Map(userIds.map((id) => [
       id,
-      { referralCount: 0, productCount: 0, totalInvestment: 0, withdrawalCount: 0 },
+      {
+        referralCount: 0,
+        productCount: 0,
+        totalInvestment: 0,
+        withdrawalCount: 0,
+        activeProducts: [],
+      },
     ]));
     if (userIds.length === 0) return metrics;
 
-    const [referralRows, productRows, withdrawalRows] = await Promise.all([
+    const [referralRows, productRows, withdrawalRows, activeProductRows] = await Promise.all([
       db.select({
         referrerId: users.referrerId,
         referralCount: count(),
@@ -261,6 +293,21 @@ export class DatabaseStorage implements IStorage {
         .from(withdrawals)
         .where(inArray(withdrawals.userId, userIds))
         .groupBy(withdrawals.userId),
+      db.select({
+        userId: userProducts.userId,
+        id: userProducts.id,
+        name: products.name,
+        level: products.level,
+        cyclesCompleted: userProducts.cyclesCompleted,
+        duration: products.duration,
+      })
+        .from(userProducts)
+        .innerJoin(products, eq(userProducts.productId, products.id))
+        .where(and(
+          inArray(userProducts.userId, userIds),
+          eq(userProducts.isActive, true),
+        ))
+        .orderBy(asc(products.level), asc(userProducts.purchasedAt)),
     ]);
 
     for (const row of referralRows) {
@@ -279,6 +326,18 @@ export class DatabaseStorage implements IStorage {
     for (const row of withdrawalRows) {
       const summary = metrics.get(row.userId);
       if (summary) summary.withdrawalCount = Number(row.withdrawalCount);
+    }
+    for (const row of activeProductRows) {
+      const summary = metrics.get(row.userId);
+      if (summary) {
+        summary.activeProducts.push({
+          id: row.id,
+          name: row.name,
+          level: row.level,
+          cyclesCompleted: row.cyclesCompleted,
+          duration: row.duration,
+        });
+      }
     }
 
     return metrics;

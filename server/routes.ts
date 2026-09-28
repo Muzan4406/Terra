@@ -1200,6 +1200,7 @@ export async function registerRoutes(
         productCount: summary?.productCount || 0,
         totalInvestment: summary?.totalInvestment || 0,
         withdrawalCount: summary?.withdrawalCount || 0,
+        activeProducts: summary?.activeProducts || [],
         referrerName: referrer?.fullName || null,
         referrerPhone: referrer?.phone || null,
       };

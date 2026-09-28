@@ -40,6 +40,13 @@ interface UserWithDetails extends User {
   productCount: number;
   totalInvestment: number;
   withdrawalCount: number;
+  activeProducts: {
+    id: string;
+    name: string;
+    level: number;
+    cyclesCompleted: number;
+    duration: number;
+  }[];
   referrerName: string | null;
   referrerPhone: string | null;
 }
@@ -49,7 +56,9 @@ export default function AdminUsersPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"all" | "banned" | "blocked" | "promoter" | "admin">("all");
+  const [filter, setFilter] = useState<
+    "all" | "active_products" | "banned" | "blocked" | "promoter" | "admin"
+  >("all");
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [editBalance, setEditBalance] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -230,7 +239,7 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="flex gap-1 flex-wrap">
-              {(["all", "banned", "blocked", "promoter", "admin"] as const).map((f) => (
+              {(["all", "active_products", "banned", "blocked", "promoter", "admin"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={filter === f ? "default" : "outline"}
@@ -238,6 +247,7 @@ export default function AdminUsersPage() {
                   onClick={() => setFilter(f)}
                 >
                   {f === "all" && "Tous"}
+                  {f === "active_products" && "Avec produits actifs"}
                   {f === "banned" && "Bannis"}
                   {f === "blocked" && "Retraits bloqués"}
                   {f === "promoter" && "Promoteurs"}
