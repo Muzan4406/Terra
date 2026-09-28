@@ -26,6 +26,94 @@ export class AshtechConfigurationError extends Error {
   }
 }
 
+export type AshtechVerificationFailureCode =
+  | "provider_configuration"
+  | "provider_unavailable"
+  | "provider_http_error"
+  | "catalog_unavailable"
+  | "transaction_id_mismatch"
+  | "reference_mismatch"
+  | "amount_mismatch"
+  | "currency_mismatch"
+  | "country_mismatch"
+  | "operator_mismatch"
+  | "unknown_status";
+
+export class AshtechVerificationError extends Error {
+  constructor(
+    readonly code: AshtechVerificationFailureCode,
+    readonly providerHttpStatus?: number,
+  ) {
+    super(code);
+    this.name = "AshtechVerificationError";
+  }
+}
+
+export interface AshtechTransactionExpectation {
+  transactionId: string;
+  acceptedReferences: string[];
+  amount: number;
+  currency: string;
+  country: string;
+  operator: string;
+}
+
+export function verifyAshtechTransaction(
+  transaction: Record<string, unknown>,
+  expected: AshtechTransactionExpectation,
+): "pending" | "completed" | "failed" {
+  const returnedTransactionId =
+    typeof transaction.transaction_id === "string"
+      ? transaction.transaction_id.trim()
+      : "";
+  if (!returnedTransactionId || returnedTransactionId !== expected.transactionId) {
+    throw new AshtechVerificationError("transaction_id_mismatch");
+  }
+
+  const reference =
+    typeof transaction.reference === "string"
+      ? transaction.reference.trim()
+      : "";
+  if (!reference || !expected.acceptedReferences.includes(reference)) {
+    throw new AshtechVerificationError("reference_mismatch");
+  }
+
+  const amount =
+    typeof transaction.amount === "number" || typeof transaction.amount === "string"
+      ? Number(transaction.amount)
+      : Number.NaN;
+  if (!Number.isFinite(amount) || amount !== expected.amount) {
+    throw new AshtechVerificationError("amount_mismatch");
+  }
+
+  if (
+    typeof transaction.currency !== "string" ||
+    transaction.currency.trim() !== expected.currency
+  ) {
+    throw new AshtechVerificationError("currency_mismatch");
+  }
+
+  if (
+    typeof transaction.operator !== "string" ||
+    transaction.operator.trim() !== expected.operator
+  ) {
+    throw new AshtechVerificationError("operator_mismatch");
+  }
+
+  if (
+    typeof transaction.country_code === "string" &&
+    transaction.country_code.trim() !== expected.country
+  ) {
+    throw new AshtechVerificationError("country_mismatch");
+  }
+
+  const status = normalizeAshtechTransactionStatus(transaction.status);
+  if (!status) {
+    throw new AshtechVerificationError("unknown_status");
+  }
+  return status;
+}
+
 function getApiKey(): string {
   const key = process.env.ASHTECH_API_KEY?.trim();
   if (!key) {
