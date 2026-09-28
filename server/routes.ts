@@ -1407,6 +1407,10 @@ export async function registerRoutes(
         payload.withdrawalMinimum ?? currentBusinessSettings.withdrawalMinimum,
       withdrawalFeePercentage:
         payload.withdrawalFeePercentage ?? currentBusinessSettings.withdrawalFeePercentage,
+      withdrawalStartHourGmt:
+        payload.withdrawalStartHourGmt ?? currentBusinessSettings.withdrawalStartHourGmt,
+      withdrawalEndHourGmt:
+        payload.withdrawalEndHourGmt ?? currentBusinessSettings.withdrawalEndHourGmt,
     });
     if (!businessSettings.success) {
       return res.status(400).json({
