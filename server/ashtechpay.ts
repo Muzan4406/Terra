@@ -80,14 +80,9 @@ export function getAshtechWebhookUrl(): string {
   return new URL("/api/webhooks/ashtechpay", parsed.origin).toString();
 }
 
-export function getAshtechWebhookSecret(): string {
+export function getOptionalAshtechWebhookSecret(): string | undefined {
   const secret = process.env.ASHTECH_WEBHOOK_SECRET?.trim();
-  if (!secret) {
-    throw new AshtechConfigurationError(
-      "Le secret webhook AshTech Pay n'est pas configuré.",
-    );
-  }
-  return secret;
+  return secret || undefined;
 }
 
 async function requestAshtech(
@@ -237,6 +232,32 @@ export function isValidAshtechWebhookSignature(
   const received = Buffer.from(match[1], "hex");
 
   return received.length === expected.length && timingSafeEqual(received, expected);
+}
+
+export function canAcceptAshtechWebhook(
+  rawBody: Buffer | undefined,
+  timestampHeader: string,
+  signatureHeader: string,
+  secret?: string,
+  nowMs = Date.now(),
+): boolean {
+  const hasTimestamp = Boolean(timestampHeader.trim());
+  const hasSignature = Boolean(signatureHeader.trim());
+
+  if (!hasTimestamp && !hasSignature) {
+    return !secret;
+  }
+  if (!rawBody || !secret || !hasTimestamp || !hasSignature) {
+    return false;
+  }
+
+  return isValidAshtechWebhookSignature(
+    rawBody,
+    timestampHeader,
+    signatureHeader,
+    secret,
+    nowMs,
+  );
 }
 
 export function parseEnabledAshtechCountries(value: string | undefined): string[] {
