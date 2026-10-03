@@ -2,12 +2,13 @@ import {
   users, products, userProducts, wallets, paymentChannels, 
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
   bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit, platformSettingsAudit,
-  supportMessages, supportAttachments,
+  supportMessages, supportAttachments, withdrawalProofs,
   type User, type InsertUser, type Product, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
   type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage,
   type AdminAppointment, type PaymentChannelAudit, type PlatformSettingsAudit,
-  type SupportMessage, type SupportAttachment, VIP_PRODUCTS
+  type SupportMessage, type SupportAttachment, type WithdrawalProof,
+  VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
 import { resolvePlatformBusinessSettings } from "./platform-settings";
@@ -25,6 +26,43 @@ export type PendingAshtechDeposit = Pick<
   | "status"
   | "createdAt"
 >;
+
+export type WithdrawalProofRecord = Omit<
+  WithdrawalProof,
+  "websiteImageData" | "smsImageData"
+>;
+
+export type WithdrawalProofWithUser = WithdrawalProofRecord & {
+  user: Pick<User, "id" | "fullName" | "phone" | "country">;
+};
+
+export type ProductPurchaseResult =
+  | {
+      success: true;
+      userProduct: UserProduct;
+      depositBalance: number;
+      withdrawalBalance: number;
+    }
+  | {
+      success: false;
+      reason: "user_not_found" | "product_not_found" | "insufficient_balance";
+    };
+
+export type WithdrawalRequestResult =
+  | { success: true; withdrawal: Withdrawal }
+  | {
+      success: false;
+      reason: "user_not_found" | "withdrawal_blocked" | "insufficient_balance";
+    };
+
+function stripWithdrawalProofImages(proof: WithdrawalProof): WithdrawalProofRecord {
+  const {
+    websiteImageData: _websiteImageData,
+    smsImageData: _smsImageData,
+    ...record
+  } = proof;
+  return record;
+}
 
 function generateReferralCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -66,10 +104,18 @@ export interface IStorage {
   createProduct(product: Omit<Product, "id">): Promise<Product>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
   deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void>;
+  createProductPurchase(
+    userId: string,
+    productId: string,
+    referralPercentages: [number, number, number],
+  ): Promise<ProductPurchaseResult>;
+  processDueProductCycle(userProductId: string): Promise<number>;
   
   getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]>;
   getUserTotalInvestment(userId: string): Promise<number>;
-  createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct>;
+  createUserProduct(
+    data: Omit<UserProduct, "id" | "pendingReturns"> & { pendingReturns?: number },
+  ): Promise<UserProduct>;
   updateUserProduct(id: string, updates: Partial<UserProduct>): Promise<UserProduct | undefined>;
   deleteUserProduct(id: string): Promise<void>;
   getActiveUserProducts(): Promise<(UserProduct & { product: Product; user: User })[]>;
@@ -105,10 +151,35 @@ export interface IStorage {
   getUserTodayWithdrawals(userId: string): Promise<Withdrawal[]>;
   getUserWithdrawalCount(userId: string): Promise<number>;
   createWithdrawal(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<Withdrawal>;
+  createWithdrawalRequest(data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">): Promise<WithdrawalRequestResult>;
+  rejectWithdrawalOnce(id: string, adminNotes: string, processedBy: string): Promise<Withdrawal | undefined>;
   updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<Withdrawal | undefined>;
   
   getEarnings(userId: string): Promise<Earning[]>;
   createEarning(data: Omit<Earning, "id" | "createdAt">): Promise<Earning>;
+
+  getApprovedWithdrawalCount(userId: string): Promise<number>;
+  getUserWithdrawalProofs(userId: string): Promise<WithdrawalProofRecord[]>;
+  getWithdrawalProofs(filter?: string): Promise<WithdrawalProofWithUser[]>;
+  getWithdrawalProof(id: string): Promise<WithdrawalProof | undefined>;
+  getWithdrawalProofImage(
+    id: string,
+    kind: "website" | "sms",
+  ): Promise<{ data: Buffer; mimeType: string } | undefined>;
+  createWithdrawalProof(data: Omit<
+    WithdrawalProof,
+    "id" | "status" | "commission" | "adminNotes" | "processedBy" | "createdAt" | "processedAt"
+  >): Promise<WithdrawalProofRecord>;
+  approveWithdrawalProofOnce(
+    id: string,
+    commission: number,
+    processedBy: string,
+  ): Promise<WithdrawalProofRecord | undefined>;
+  rejectWithdrawalProofOnce(
+    id: string,
+    adminNotes: string,
+    processedBy: string,
+  ): Promise<WithdrawalProofRecord | undefined>;
   
   getClaimedTasks(userId: string): Promise<ClaimedTask[]>;
   createClaimedTask(data: Omit<ClaimedTask, "id" | "claimedAt">): Promise<ClaimedTask>;
@@ -209,7 +280,7 @@ export class DatabaseStorage implements IStorage {
       ...userData,
       password: hashedPassword,
       referralCode,
-      balance: signupBonus,
+      withdrawalBalance: signupBonus,
     }).returning();
     
     await this.createEarning({
@@ -412,13 +483,180 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void> {
-    await db.update(userProducts)
-      .set({ isActive: false })
-      .where(and(
-        eq(userProducts.productId, productId),
-        eq(userProducts.isActive, true),
-        gte(userProducts.cyclesCompleted, duration),
-      ));
+    await db.transaction(async (tx) => {
+      const completed = await tx.select({
+        investment: userProducts,
+        product: products,
+      })
+        .from(userProducts)
+        .innerJoin(products, eq(userProducts.productId, products.id))
+        .where(and(
+          eq(userProducts.productId, productId),
+          eq(userProducts.isActive, true),
+          gte(userProducts.cyclesCompleted, duration),
+        ))
+        .for("update");
+
+      for (const { investment, product } of completed) {
+        const pending = investment.pendingReturns;
+        if (pending > 0) {
+          await tx.update(users).set({
+            withdrawalBalance: sql`${users.withdrawalBalance} + ${pending}`,
+            totalEarnings: sql`${users.totalEarnings} + ${pending}`,
+            todayEarnings: sql`${users.todayEarnings} + ${pending}`,
+          }).where(eq(users.id, investment.userId));
+          await tx.insert(earnings).values({
+            userId: investment.userId,
+            amount: pending,
+            type: "product_payout",
+            description: `Gains bloqués libérés — ${product.name}`,
+            sourceId: investment.id,
+          });
+        }
+        await tx.update(userProducts).set({
+          isActive: false,
+          pendingReturns: 0,
+        }).where(eq(userProducts.id, investment.id));
+      }
+    });
+  }
+
+  async createProductPurchase(
+    userId: string,
+    productId: string,
+    referralPercentages: [number, number, number],
+  ): Promise<ProductPurchaseResult> {
+    return db.transaction(async (tx) => {
+      const [user] = await tx.select().from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      if (!user) return { success: false, reason: "user_not_found" };
+
+      const [product] = await tx.select().from(products)
+        .where(and(eq(products.id, productId), eq(products.isActive, true)))
+        .for("update");
+      if (!product) return { success: false, reason: "product_not_found" };
+
+      const available = user.depositBalance + user.withdrawalBalance;
+      if (available < product.price) {
+        return { success: false, reason: "insufficient_balance" };
+      }
+
+      const depositSpend = Math.min(user.depositBalance, product.price);
+      const withdrawalSpend = product.price - depositSpend;
+      const depositBalance = user.depositBalance - depositSpend;
+      const withdrawalBalance = user.withdrawalBalance - withdrawalSpend;
+      await tx.update(users).set({
+        depositBalance,
+        withdrawalBalance,
+        hasProduct: true,
+      }).where(eq(users.id, user.id));
+
+      const purchasedAt = new Date();
+      const nextPayoutAt = new Date(purchasedAt.getTime() + 24 * 60 * 60 * 1000);
+      const [userProduct] = await tx.insert(userProducts).values({
+        userId: user.id,
+        productId: product.id,
+        purchasedAt,
+        nextPayoutAt,
+        pendingReturns: 0,
+        cyclesCompleted: 0,
+        isActive: true,
+        assignedByAdmin: false,
+      }).returning();
+
+      if (user.referrerId && !user.hasProduct) {
+        const visited = new Set([user.id]);
+        let referrerId: string | null = user.referrerId;
+        for (let index = 0; index < referralPercentages.length && referrerId; index++) {
+          if (visited.has(referrerId)) break;
+          visited.add(referrerId);
+          const [referrer] = await tx.select().from(users)
+            .where(eq(users.id, referrerId))
+            .for("update");
+          if (!referrer) break;
+
+          const commission = Math.floor(
+            product.price * referralPercentages[index] / 100,
+          );
+          if (commission > 0) {
+            await tx.update(users).set({
+              withdrawalBalance: sql`${users.withdrawalBalance} + ${commission}`,
+              referralEarnings: sql`${users.referralEarnings} + ${commission}`,
+              todayEarnings: sql`${users.todayEarnings} + ${commission}`,
+              totalEarnings: sql`${users.totalEarnings} + ${commission}`,
+            }).where(eq(users.id, referrer.id));
+            await tx.insert(earnings).values({
+              userId: referrer.id,
+              amount: commission,
+              type: "referral",
+              description: `Commission niveau ${index + 1} — premier achat de ${user.fullName}`,
+              sourceId: user.id,
+            });
+          }
+          referrerId = referrer.referrerId;
+        }
+      }
+
+      return {
+        success: true,
+        userProduct,
+        depositBalance,
+        withdrawalBalance,
+      };
+    });
+  }
+
+  async processDueProductCycle(userProductId: string): Promise<number> {
+    return db.transaction(async (tx) => {
+      const now = new Date();
+      const [row] = await tx.select({
+        investment: userProducts,
+        product: products,
+      })
+        .from(userProducts)
+        .innerJoin(products, eq(userProducts.productId, products.id))
+        .where(and(
+          eq(userProducts.id, userProductId),
+          eq(userProducts.isActive, true),
+          lte(userProducts.nextPayoutAt, now),
+        ))
+        .for("update");
+      if (!row) return 0;
+
+      const { investment, product } = row;
+      if (investment.cyclesCompleted >= product.duration) return 0;
+
+      const completedCycles = investment.cyclesCompleted + 1;
+      const pendingReturns = investment.pendingReturns + product.dailyReturn;
+      const isMatured = completedCycles >= product.duration;
+      const nextPayoutAt = new Date(
+        investment.nextPayoutAt.getTime() + 24 * 60 * 60 * 1000,
+      );
+
+      await tx.update(userProducts).set({
+        cyclesCompleted: completedCycles,
+        nextPayoutAt,
+        pendingReturns: isMatured ? 0 : pendingReturns,
+        isActive: !isMatured,
+      }).where(eq(userProducts.id, investment.id));
+
+      if (!isMatured) return 0;
+
+      await tx.update(users).set({
+        withdrawalBalance: sql`${users.withdrawalBalance} + ${pendingReturns}`,
+        totalEarnings: sql`${users.totalEarnings} + ${pendingReturns}`,
+        todayEarnings: sql`${users.todayEarnings} + ${pendingReturns}`,
+      }).where(eq(users.id, investment.userId));
+      await tx.insert(earnings).values({
+        userId: investment.userId,
+        amount: pendingReturns,
+        type: "product_payout",
+        description: `Gains bloqués libérés — ${product.name}`,
+        sourceId: investment.id,
+      });
+      return pendingReturns;
+    });
   }
 
   async getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]> {
@@ -428,6 +666,7 @@ export class DatabaseStorage implements IStorage {
       productId: userProducts.productId,
       purchasedAt: userProducts.purchasedAt,
       nextPayoutAt: userProducts.nextPayoutAt,
+      pendingReturns: userProducts.pendingReturns,
       cyclesCompleted: userProducts.cyclesCompleted,
       isActive: userProducts.isActive,
       assignedByAdmin: userProducts.assignedByAdmin,
@@ -465,7 +704,9 @@ export class DatabaseStorage implements IStorage {
     return new Map(rows.map((row) => [row.userId, Number(row.totalInvestment || 0)]));
   }
 
-  async createUserProduct(data: Omit<UserProduct, "id">): Promise<UserProduct> {
+  async createUserProduct(
+    data: Omit<UserProduct, "id" | "pendingReturns"> & { pendingReturns?: number },
+  ): Promise<UserProduct> {
     const [created] = await db.insert(userProducts).values(data).returning();
     return created;
   }
@@ -486,6 +727,7 @@ export class DatabaseStorage implements IStorage {
       productId: userProducts.productId,
       purchasedAt: userProducts.purchasedAt,
       nextPayoutAt: userProducts.nextPayoutAt,
+      pendingReturns: userProducts.pendingReturns,
       cyclesCompleted: userProducts.cyclesCompleted,
       isActive: userProducts.isActive,
       assignedByAdmin: userProducts.assignedByAdmin,
@@ -653,7 +895,7 @@ export class DatabaseStorage implements IStorage {
 
       const [creditedUser] = await tx.update(users)
         .set({
-          balance: sql`${users.balance} + ${deposit.amount}`,
+          depositBalance: sql`${users.depositBalance} + ${deposit.amount}`,
           totalDeposits: sql`${users.totalDeposits} + ${deposit.amount}`,
           hasDeposited: true,
         })
@@ -761,6 +1003,61 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async createWithdrawalRequest(
+    data: Omit<Withdrawal, "id" | "createdAt" | "status" | "processedAt">,
+  ): Promise<WithdrawalRequestResult> {
+    return db.transaction(async (tx) => {
+      const [user] = await tx.select().from(users)
+        .where(eq(users.id, data.userId))
+        .for("update");
+      if (!user) return { success: false, reason: "user_not_found" };
+      if (user.withdrawalBlocked) {
+        return { success: false, reason: "withdrawal_blocked" };
+      }
+      if (user.withdrawalBalance < data.grossAmount) {
+        return { success: false, reason: "insufficient_balance" };
+      }
+
+      const [withdrawal] = await tx.insert(withdrawals).values({
+        ...data,
+        status: "pending",
+      }).returning();
+      await tx.update(users).set({
+        withdrawalBalance: user.withdrawalBalance - data.grossAmount,
+      }).where(eq(users.id, user.id));
+      return { success: true, withdrawal };
+    });
+  }
+
+  async rejectWithdrawalOnce(
+    id: string,
+    adminNotes: string,
+    processedBy: string,
+  ): Promise<Withdrawal | undefined> {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(withdrawals)
+        .where(eq(withdrawals.id, id))
+        .for("update");
+      if (!existing || existing.status !== "pending") return undefined;
+
+      const [rejected] = await tx.update(withdrawals).set({
+        status: "rejected",
+        adminNotes,
+        processedBy,
+        processedAt: new Date(),
+      }).where(and(
+        eq(withdrawals.id, id),
+        eq(withdrawals.status, "pending"),
+      )).returning();
+      if (!rejected) return undefined;
+
+      await tx.update(users).set({
+        withdrawalBalance: sql`${users.withdrawalBalance} + ${existing.grossAmount}`,
+      }).where(eq(users.id, existing.userId));
+      return rejected;
+    });
+  }
+
   async updateWithdrawal(id: string, updates: Partial<Withdrawal>): Promise<Withdrawal | undefined> {
     const [updated] = await db.update(withdrawals).set(updates).where(eq(withdrawals.id, id)).returning();
     return updated || undefined;
@@ -773,6 +1070,155 @@ export class DatabaseStorage implements IStorage {
   async createEarning(data: Omit<Earning, "id" | "createdAt">): Promise<Earning> {
     const [created] = await db.insert(earnings).values(data).returning();
     return created;
+  }
+
+  async getApprovedWithdrawalCount(userId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(withdrawals)
+      .where(and(
+        eq(withdrawals.userId, userId),
+        eq(withdrawals.status, "approved"),
+      ));
+    return Number(result?.count ?? 0);
+  }
+
+  async getUserWithdrawalProofs(userId: string): Promise<WithdrawalProofRecord[]> {
+    const rows = await db.select({
+      id: withdrawalProofs.id,
+      userId: withdrawalProofs.userId,
+      submittedDay: withdrawalProofs.submittedDay,
+      websiteImageMimeType: withdrawalProofs.websiteImageMimeType,
+      smsImageMimeType: withdrawalProofs.smsImageMimeType,
+      status: withdrawalProofs.status,
+      commission: withdrawalProofs.commission,
+      adminNotes: withdrawalProofs.adminNotes,
+      processedBy: withdrawalProofs.processedBy,
+      createdAt: withdrawalProofs.createdAt,
+      processedAt: withdrawalProofs.processedAt,
+    })
+      .from(withdrawalProofs)
+      .where(eq(withdrawalProofs.userId, userId))
+      .orderBy(desc(withdrawalProofs.createdAt));
+    return rows;
+  }
+
+  async getWithdrawalProofs(filter = "pending"): Promise<WithdrawalProofWithUser[]> {
+    const whereClause = filter === "all"
+      ? undefined
+      : eq(withdrawalProofs.status, filter);
+    return db.select({
+      id: withdrawalProofs.id,
+      userId: withdrawalProofs.userId,
+      submittedDay: withdrawalProofs.submittedDay,
+      websiteImageMimeType: withdrawalProofs.websiteImageMimeType,
+      smsImageMimeType: withdrawalProofs.smsImageMimeType,
+      status: withdrawalProofs.status,
+      commission: withdrawalProofs.commission,
+      adminNotes: withdrawalProofs.adminNotes,
+      processedBy: withdrawalProofs.processedBy,
+      createdAt: withdrawalProofs.createdAt,
+      processedAt: withdrawalProofs.processedAt,
+      user: {
+        id: users.id,
+        fullName: users.fullName,
+        phone: users.phone,
+        country: users.country,
+      },
+    })
+      .from(withdrawalProofs)
+      .innerJoin(users, eq(withdrawalProofs.userId, users.id))
+      .where(whereClause)
+      .orderBy(desc(withdrawalProofs.createdAt));
+  }
+
+  async getWithdrawalProof(id: string): Promise<WithdrawalProof | undefined> {
+    const [proof] = await db.select().from(withdrawalProofs)
+      .where(eq(withdrawalProofs.id, id));
+    return proof;
+  }
+
+  async getWithdrawalProofImage(
+    id: string,
+    kind: "website" | "sms",
+  ): Promise<{ data: Buffer; mimeType: string } | undefined> {
+    const [image] = await db.select({
+      data: kind === "website"
+        ? withdrawalProofs.websiteImageData
+        : withdrawalProofs.smsImageData,
+      mimeType: kind === "website"
+        ? withdrawalProofs.websiteImageMimeType
+        : withdrawalProofs.smsImageMimeType,
+    }).from(withdrawalProofs).where(eq(withdrawalProofs.id, id));
+    return image;
+  }
+
+  async createWithdrawalProof(data: Omit<
+    WithdrawalProof,
+    "id" | "status" | "commission" | "adminNotes" | "processedBy" | "createdAt" | "processedAt"
+  >): Promise<WithdrawalProofRecord> {
+    const [proof] = await db.insert(withdrawalProofs).values({
+      ...data,
+      status: "pending",
+      commission: 0,
+    }).returning();
+    return stripWithdrawalProofImages(proof);
+  }
+
+  async approveWithdrawalProofOnce(
+    id: string,
+    commission: number,
+    processedBy: string,
+  ): Promise<WithdrawalProofRecord | undefined> {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(withdrawalProofs)
+        .where(eq(withdrawalProofs.id, id))
+        .for("update");
+      if (!existing || existing.status !== "pending") return undefined;
+
+      const [approved] = await tx.update(withdrawalProofs).set({
+        status: "approved",
+        commission,
+        processedBy,
+        processedAt: new Date(),
+      }).where(and(
+        eq(withdrawalProofs.id, id),
+        eq(withdrawalProofs.status, "pending"),
+      )).returning();
+      if (!approved) return undefined;
+
+      if (commission > 0) {
+        await tx.update(users).set({
+          withdrawalBalance: sql`${users.withdrawalBalance} + ${commission}`,
+          totalEarnings: sql`${users.totalEarnings} + ${commission}`,
+          todayEarnings: sql`${users.todayEarnings} + ${commission}`,
+        }).where(eq(users.id, approved.userId));
+        await tx.insert(earnings).values({
+          userId: approved.userId,
+          amount: commission,
+          type: "withdrawal_proof_commission",
+          description: "Commission de preuve de retrait approuvée",
+          sourceId: approved.id,
+        });
+      }
+      return stripWithdrawalProofImages(approved);
+    });
+  }
+
+  async rejectWithdrawalProofOnce(
+    id: string,
+    adminNotes: string,
+    processedBy: string,
+  ): Promise<WithdrawalProofRecord | undefined> {
+    const [rejected] = await db.update(withdrawalProofs).set({
+      status: "rejected",
+      adminNotes,
+      processedBy,
+      processedAt: new Date(),
+    }).where(and(
+      eq(withdrawalProofs.id, id),
+      eq(withdrawalProofs.status, "pending"),
+    )).returning();
+    return rejected ? stripWithdrawalProofImages(rejected) : undefined;
   }
 
   async getClaimedTasks(userId: string): Promise<ClaimedTask[]> {
@@ -966,6 +1412,7 @@ export class DatabaseStorage implements IStorage {
           duration: vip.duration,
           totalReturn: vip.totalReturn,
           imageUrl: null,
+          category: "fixed",
           isActive: true,
         });
       }
@@ -1016,7 +1463,8 @@ export class DatabaseStorage implements IStorage {
         referralCode: "ADMIN001",
         isAdmin: true,
         isSuperAdmin: true,
-        balance: 0,
+        depositBalance: 0,
+        withdrawalBalance: 0,
       });
     } else if (existingAdmin.isAdmin && !existingAdmin.isSuperAdmin) {
       onProgress?.("defaults.admin.update");
@@ -1312,7 +1760,7 @@ export class DatabaseStorage implements IStorage {
       await tx.insert(supportMessages).values({
         userId,
         senderType: "system",
-        body: "Bonjour, votre message a bien été reçu. L’équipe Terra vous répondra dès que possible.",
+        body: "Bonjour, votre message a bien été reçu. L’équipe du service client vous répondra dès que possible.",
       });
     });
   }

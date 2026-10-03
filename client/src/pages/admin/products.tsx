@@ -15,7 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Product } from "@shared/schema";
+import {
+  PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
+  type Product,
+  type ProductCategory,
+} from "@shared/schema";
 
 const productFormSchema = z.object({
   name: z.string().trim().min(1, "Le nom du produit est requis"),
@@ -23,7 +28,7 @@ const productFormSchema = z.object({
   dailyReturn: z.number().int().positive("Le rendement doit être supérieur à zéro"),
   duration: z.number().int().positive("La durée doit être supérieure à zéro"),
   totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro"),
-  imageUrl: z.union([z.string().url("URL invalide"), z.literal("")]),
+  category: z.enum(PRODUCT_CATEGORIES),
   isActive: z.boolean(),
 });
 
@@ -84,7 +89,7 @@ export default function AdminProductsPage() {
       dailyReturn: 1,
       duration: 1,
       totalReturn: 1,
-      imageUrl: "",
+      category: "fixed",
       isActive: true,
     },
   });
@@ -125,7 +130,7 @@ export default function AdminProductsPage() {
       dailyReturn: product.dailyReturn,
       duration: product.duration,
       totalReturn: product.totalReturn,
-      imageUrl: product.imageUrl || "",
+      category: product.category as ProductCategory,
       isActive: product.isActive,
     });
     setDialogOpen(true);
@@ -170,6 +175,9 @@ export default function AdminProductsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold">{product.name}</span>
                         <Badge variant="outline">Niveau {product.level}</Badge>
+                        <Badge variant="secondary">
+                          {PRODUCT_CATEGORY_LABELS[product.category as ProductCategory]}
+                        </Badge>
                         <Badge className={product.isActive ? "bg-green-600" : ""} variant={product.isActive ? "default" : "secondary"}>
                           {product.isActive ? "Actif" : "Inactif"}
                         </Badge>
@@ -230,11 +238,24 @@ export default function AdminProductsPage() {
                 </div>
                 <FormField
                   control={form.control}
-                  name="imageUrl"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL de l’image (facultatif)</FormLabel>
-                      <FormControl><Input {...field} placeholder="https://..." data-testid="input-product-image-url" /></FormControl>
+                      <FormLabel>Catégorie</FormLabel>
+                      <FormControl>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={field.value}
+                          onChange={field.onChange}
+                          data-testid="select-product-category"
+                        >
+                          {PRODUCT_CATEGORIES.map((category) => (
+                            <option key={category} value={category}>
+                              {PRODUCT_CATEGORY_LABELS[category]}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

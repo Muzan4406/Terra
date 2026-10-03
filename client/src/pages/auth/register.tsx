@@ -16,8 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { z } from "zod";
-import { solarImages } from "@/lib/solar-images";
-import { BrandLogo } from "@/components/brand-logo";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -71,18 +69,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="auth-hero-image h-40 w-full overflow-hidden sm:h-48 md:h-56">
-        <img
-          src={solarImages[1].src}
-          alt={solarImages[1].alt}
-          className="h-full w-full object-cover"
-        />
-      </div>
       <div className="px-6 pt-8 pb-2 max-w-md mx-auto w-full text-center">
-        <h1 className="flex justify-center">
-          <BrandLogo className="h-10 w-auto" />
-        </h1>
-        <p className="mt-2 text-sm text-gray-500">Quelques informations pour ouvrir votre espace</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Créer un compte</h1>
+        <p className="mt-2 text-sm text-gray-500">Quelques informations pour ouvrir votre espace personnel</p>
       </div>
 
       <div className="auth-form-panel px-6 py-6 max-w-md mx-auto w-full">

@@ -3,9 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { Link } from "wouter";
-import referralIcon from "@assets/prime-de-parrainage-3d-icon-png-download-4862975_1790362738847.png";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 
 interface TeamStats {
@@ -139,7 +138,9 @@ export default function TeamPage() {
       <div className="max-w-md mx-auto">
         <div className="p-4 space-y-4">
           <section className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm" aria-label="Parrainage">
-            <img src={referralIcon} alt="" className="h-14 w-14 shrink-0 object-contain" />
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Users className="h-6 w-6" aria-hidden="true" />
+            </span>
             <div className="min-w-0">
               <h1 className="text-lg font-semibold text-gray-800">Votre équipe</h1>
               <p className="text-sm text-gray-600">Partagez votre code et suivez les membres de votre réseau.</p>

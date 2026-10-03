@@ -10,7 +10,8 @@ interface User {
   phone: string;
   country: string;
   referralCode: string;
-  balance: number;
+  depositBalance: number;
+  withdrawalBalance: number;
   totalEarnings: number;
   isAdmin: boolean;
   hasProduct: boolean;
@@ -22,7 +23,8 @@ interface TeamMember {
   fullName: string;
   phone: string;
   country: string;
-  balance: number;
+  depositBalance: number;
+  withdrawalBalance: number;
   hasProduct: boolean;
   totalInvestment: number;
   createdAt: string;

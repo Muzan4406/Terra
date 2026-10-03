@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, jsonb, real, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, jsonb, real, customType, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -89,6 +89,21 @@ export const REFERRAL_TASKS = [
 
 export const PRODUCT_TASK = { requiredProduct: 5, reward: 700, description: "Acheter un produit VIP5 pour recevoir 700F" };
 
+export const PRODUCT_CATEGORIES = [
+  "fixed",
+  "wellness",
+  "activities",
+] as const;
+
+export const productCategorySchema = z.enum(PRODUCT_CATEGORIES);
+export type ProductCategory = z.infer<typeof productCategorySchema>;
+
+export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
+  fixed: "Produits fixes",
+  wellness: "Produits Bien-être",
+  activities: "Activités",
+};
+
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   fullName: text("full_name").notNull(),
@@ -97,7 +112,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   referralCode: text("referral_code").notNull().unique(),
   referrerId: varchar("referrer_id", { length: 36 }),
-  balance: integer("balance").notNull().default(0),
+  depositBalance: integer("balance").notNull().default(0),
+  withdrawalBalance: integer("withdrawal_balance").notNull().default(0),
   todayEarnings: integer("today_earnings").notNull().default(0),
   totalEarnings: integer("total_earnings").notNull().default(0),
   totalDeposits: integer("total_deposits").notNull().default(0),
@@ -134,6 +150,7 @@ export const products = pgTable("products", {
   duration: integer("duration").notNull().default(100),
   totalReturn: integer("total_return").notNull(),
   imageUrl: text("image_url"),
+  category: text("category").notNull().default("fixed"),
   isActive: boolean("is_active").notNull().default(true),
 });
 
@@ -147,6 +164,7 @@ export const userProducts = pgTable("user_products", {
   productId: varchar("product_id", { length: 36 }).notNull(),
   purchasedAt: timestamp("purchased_at").notNull().defaultNow(),
   nextPayoutAt: timestamp("next_payout_at").notNull(),
+  pendingReturns: integer("pending_returns").notNull().default(0),
   cyclesCompleted: integer("cycles_completed").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   assignedByAdmin: boolean("assigned_by_admin").notNull().default(false),
@@ -237,6 +255,29 @@ export const earningsRelations = relations(earnings, ({ one }) => ({
   user: one(users, { fields: [earnings.userId], references: [users.id] }),
 }));
 
+export const withdrawalProofs = pgTable("withdrawal_proofs", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  submittedDay: varchar("submitted_day", { length: 10 }).notNull(),
+  websiteImageData: bytea("website_image_data").notNull(),
+  websiteImageMimeType: text("website_image_mime_type").notNull(),
+  smsImageData: bytea("sms_image_data").notNull(),
+  smsImageMimeType: text("sms_image_mime_type").notNull(),
+  status: text("status").notNull().default("pending"),
+  commission: integer("commission").notNull().default(0),
+  adminNotes: text("admin_notes"),
+  processedBy: varchar("processed_by", { length: 36 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at"),
+}, (table) => ({
+  oneSubmissionPerUserPerDay: uniqueIndex("withdrawal_proofs_user_day_unique")
+    .on(table.userId, table.submittedDay),
+}));
+
+export const withdrawalProofsRelations = relations(withdrawalProofs, ({ one }) => ({
+  user: one(users, { fields: [withdrawalProofs.userId], references: [users.id] }),
+}));
+
 export const claimedTasks = pgTable("claimed_tasks", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id", { length: 36 }).notNull(),
@@ -308,7 +349,8 @@ export const bonusCodeUsagesRelations = relations(bonusCodeUsages, ({ one }) => 
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true, 
-  balance: true, 
+  depositBalance: true,
+  withdrawalBalance: true,
   todayEarnings: true,
   totalEarnings: true,
   totalDeposits: true,
@@ -460,3 +502,4 @@ export type AdminAppointment = typeof adminAppointments.$inferSelect;
 export type PaymentChannelAudit = typeof paymentChannelAudit.$inferSelect;
 export type SupportMessage = typeof supportMessages.$inferSelect;
 export type SupportAttachment = typeof supportAttachments.$inferSelect;
+export type WithdrawalProof = typeof withdrawalProofs.$inferSelect;

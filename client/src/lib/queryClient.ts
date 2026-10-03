@@ -13,7 +13,7 @@ export async function fetchWithTimeout(
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (error) {
     if (controller.signal.aborted) {
-      throw new Error("Le serveur Terra met trop de temps à répondre. Réessaie dans quelques instants.");
+      throw new Error("Le serveur met trop de temps à répondre. Réessaie dans quelques instants.");
     }
     throw error;
   } finally {
@@ -30,7 +30,7 @@ async function throwIfResNotOk(res: Response) {
       res.headers.get("content-type")?.includes("text/html") ||
       /^\s*<!doctype html|^\s*<html\b/i.test(text)
     ) {
-      message = "Le serveur Terra a renvoyé une page d’erreur. Réessaie dans quelques instants.";
+      message = "Le serveur a renvoyé une page d’erreur. Réessaie dans quelques instants.";
     } else {
       try {
         const json = JSON.parse(text);

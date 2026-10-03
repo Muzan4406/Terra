@@ -11,8 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { z } from "zod";
-import { solarImages } from "@/lib/solar-images";
-import { BrandLogo } from "@/components/brand-logo";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -52,18 +50,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="auth-hero-image h-48 w-full overflow-hidden sm:h-56 md:h-64">
-        <img
-          src={solarImages[0].src}
-          alt={solarImages[0].alt}
-          className="h-full w-full object-cover"
-        />
-      </div>
       <div className="px-6 pt-10 pb-2 max-w-md mx-auto w-full text-center">
-        <h1 className="flex justify-center">
-          <BrandLogo className="h-10 w-auto" />
-        </h1>
-        <p className="mt-2 text-sm text-gray-500">Retrouvez votre compte Terra</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Connexion</h1>
+        <p className="mt-2 text-sm text-gray-500">Accédez à votre espace personnel</p>
       </div>
 
       <div className="auth-form-panel px-6 py-8 max-w-md mx-auto w-full">
@@ -152,7 +141,7 @@ export default function LoginPage() {
         </Form>
 
         <div className="flex justify-between mt-8 text-sm">
-          <span className="text-gray-500">Nouveau sur Terra ?</span>
+          <span className="text-gray-500">Nouveau ici ?</span>
           <Link href="/register">
             <span className="text-gray-700 font-medium cursor-pointer" data-testid="link-register">
               S'inscrire

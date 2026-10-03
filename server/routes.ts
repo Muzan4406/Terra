@@ -10,7 +10,7 @@ import {
   changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
   REFERRAL_TASKS, PRODUCT_TASK,
   businessSettingsFieldsSchema, platformBusinessSettingsSchema,
-  ELIGIBLE_COUNTRIES, type Deposit,
+  ELIGIBLE_COUNTRIES, productCategorySchema, type Deposit,
 } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import {
@@ -379,6 +379,42 @@ const supportImageUpload = multer({
   storage: multer.memoryStorage(),
   limits: { files: 4, fileSize: 5 * 1024 * 1024 },
 });
+const withdrawalProofImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { files: 2, fileSize: 5 * 1024 * 1024 },
+});
+
+function parseWithdrawalProofUploads(req: Request, res: Response, next: NextFunction) {
+  withdrawalProofImageUpload.fields([
+    { name: "websiteProof", maxCount: 1 },
+    { name: "smsProof", maxCount: 1 },
+  ])(req, res, (error) => {
+    if (error) {
+      const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
+        ? "Chaque capture doit faire 5 Mo maximum"
+        : "Ajoutez une capture du site et une capture du SMS.";
+      return res.status(400).json({ message });
+    }
+    next();
+  });
+}
+
+function getVerifiedProofImage(
+  file: Express.Multer.File | undefined,
+): { data: Buffer; mimeType: string } | null {
+  if (!file) return null;
+  const buffer = file.buffer;
+  const isPng = buffer.length >= 8 &&
+    buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const isJpeg = buffer.length >= 3 &&
+    buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isWebp = buffer.length >= 12 &&
+    buffer.toString("ascii", 0, 4) === "RIFF" &&
+    buffer.toString("ascii", 8, 12) === "WEBP";
+  const mimeType = isPng ? "image/png" : isJpeg ? "image/jpeg" : isWebp ? "image/webp" : null;
+  if (!mimeType || file.mimetype !== mimeType) return null;
+  return { data: buffer, mimeType };
+}
 
 function parseSupportUploads(req: Request, res: Response, next: NextFunction) {
   supportImageUpload.array("attachments", 4)(req, res, (error) => {
@@ -713,111 +749,132 @@ export async function registerRoutes(
     res.json(userProducts);
   }));
 
+  app.get("/api/withdrawal-proofs", requireAuth, asyncRoute(async (req, res) => {
+    const userId = req.session.userId!;
+    const [approvedWithdrawals, proofs] = await Promise.all([
+      storage.getApprovedWithdrawalCount(userId),
+      storage.getUserWithdrawalProofs(userId),
+    ]);
+    const today = new Date().toISOString().slice(0, 10);
+    res.json({
+      eligible: approvedWithdrawals > 0,
+      approvedWithdrawals,
+      submittedToday: proofs.some((proof) => proof.submittedDay === today),
+      proofs,
+    });
+  }));
+
+  app.post(
+    "/api/withdrawal-proofs",
+    requireAuth,
+    parseWithdrawalProofUploads,
+    asyncRoute(async (req, res) => {
+      const userId = req.session.userId!;
+      const approvedWithdrawals = await storage.getApprovedWithdrawalCount(userId);
+      if (approvedWithdrawals < 1) {
+        return res.status(403).json({
+          message: "Une première demande de retrait doit avoir été approuvée avant de soumettre une preuve.",
+        });
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const existingProofs = await storage.getUserWithdrawalProofs(userId);
+      if (existingProofs.some((proof) => proof.submittedDay === today)) {
+        return res.status(409).json({ message: "Une preuve a déjà été envoyée aujourd’hui." });
+      }
+
+      const uploadedFiles = req.files as Record<string, Express.Multer.File[]> | undefined;
+      const websiteProof = getVerifiedProofImage(uploadedFiles?.websiteProof?.[0]);
+      const smsProof = getVerifiedProofImage(uploadedFiles?.smsProof?.[0]);
+      if (!websiteProof || !smsProof) {
+        return res.status(400).json({
+          message: "Envoyez une capture valide du site et une capture valide du SMS (JPG, PNG ou WebP).",
+        });
+      }
+
+      try {
+        const proof = await storage.createWithdrawalProof({
+          userId,
+          submittedDay: today,
+          websiteImageData: websiteProof.data,
+          websiteImageMimeType: websiteProof.mimeType,
+          smsImageData: smsProof.data,
+          smsImageMimeType: smsProof.mimeType,
+        });
+        return res.status(201).json(proof);
+      } catch (error) {
+        if (getSafeDatabaseErrorCode(error) === "23505") {
+          return res.status(409).json({ message: "Une preuve a déjà été envoyée aujourd’hui." });
+        }
+        throw error;
+      }
+    }),
+  );
+
+  app.get(
+    "/api/withdrawal-proofs/:id/image/:kind",
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const proof = await storage.getWithdrawalProof(req.params.id);
+      if (!proof) return res.status(404).json({ message: "Preuve introuvable" });
+
+      const viewer = await storage.getUser(req.session.userId!);
+      if (proof.userId !== req.session.userId && !viewer?.isAdmin) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+      if (req.params.kind !== "website" && req.params.kind !== "sms") {
+        return res.status(400).json({ message: "Type d’image invalide" });
+      }
+
+      const image = await storage.getWithdrawalProofImage(
+        proof.id,
+        req.params.kind,
+      );
+      if (!image) return res.status(404).json({ message: "Image introuvable" });
+      res.set({
+        "Cache-Control": "private, no-store",
+        "Content-Type": image.mimeType,
+        "X-Content-Type-Options": "nosniff",
+      });
+      return res.send(image.data);
+    }),
+  );
+
   app.post("/api/products/purchase", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
-      const user = await storage.getUser(req.session.userId!);
-      const product = await storage.getProduct(productId);
-      
-      if (!user || !product || !product.isActive) {
-        return res.status(404).json({ message: "Produit non trouvé" });
-      }
-
-      if (user.balance < product.price) {
-        return res.status(400).json({ message: "Solde insuffisant" });
+      if (typeof productId !== "string" || !productId) {
+        return res.status(400).json({ message: "Produit invalide" });
       }
 
       const businessSettings = resolvePlatformBusinessSettings(
         await storage.getAllSettings(),
       );
+      const result = await storage.createProductPurchase(
+        req.session.userId!,
+        productId,
+        [
+          businessSettings.referralLevel1Percentage,
+          businessSettings.referralLevel2Percentage,
+          businessSettings.referralLevel3Percentage,
+        ],
+      );
 
-      const nextPayoutAt = new Date();
-      nextPayoutAt.setHours(nextPayoutAt.getHours() + 24);
-
-      await storage.createUserProduct({
-        userId: user.id,
-        productId: product.id,
-        purchasedAt: new Date(),
-        nextPayoutAt,
-        cyclesCompleted: 0,
-        isActive: true,
-        assignedByAdmin: false,
-      });
-
-      const isFirstInvestment = !user.hasProduct;
-
-      await storage.updateUser(user.id, {
-        balance: user.balance - product.price,
-        hasProduct: true,
-      });
-
-      if (user.referrerId && isFirstInvestment) {
-        const referrer = await storage.getUser(user.referrerId);
-        if (referrer) {
-          const commission1 = Math.floor(
-            product.price * businessSettings.referralLevel1Percentage / 100,
-          );
-          await storage.updateUser(referrer.id, {
-            balance: referrer.balance + commission1,
-            referralEarnings: referrer.referralEarnings + commission1,
-            todayEarnings: referrer.todayEarnings + commission1,
-            totalEarnings: referrer.totalEarnings + commission1,
+      if (!result.success) {
+        if (result.reason === "insufficient_balance") {
+          return res.status(400).json({
+            message: "Solde insuffisant. Le solde dépôt est utilisé en premier, puis le solde retrait.",
           });
-          await storage.createEarning({
-            userId: referrer.id,
-            amount: commission1,
-            type: "referral",
-            description: `Commission niveau 1 - Premier investissement de ${user.fullName}`,
-            sourceId: user.id,
-          });
-
-          if (referrer.referrerId) {
-            const referrer2 = await storage.getUser(referrer.referrerId);
-            if (referrer2) {
-              const commission2 = Math.floor(
-                product.price * businessSettings.referralLevel2Percentage / 100,
-              );
-              await storage.updateUser(referrer2.id, {
-                balance: referrer2.balance + commission2,
-                referralEarnings: referrer2.referralEarnings + commission2,
-                todayEarnings: referrer2.todayEarnings + commission2,
-                totalEarnings: referrer2.totalEarnings + commission2,
-              });
-              await storage.createEarning({
-                userId: referrer2.id,
-                amount: commission2,
-                type: "referral",
-                description: `Commission niveau 2`,
-                sourceId: user.id,
-              });
-
-              if (referrer2.referrerId) {
-                const referrer3 = await storage.getUser(referrer2.referrerId);
-                if (referrer3) {
-                  const commission3 = Math.floor(
-                    product.price * businessSettings.referralLevel3Percentage / 100,
-                  );
-                  await storage.updateUser(referrer3.id, {
-                    balance: referrer3.balance + commission3,
-                    referralEarnings: referrer3.referralEarnings + commission3,
-                    todayEarnings: referrer3.todayEarnings + commission3,
-                    totalEarnings: referrer3.totalEarnings + commission3,
-                  });
-                  await storage.createEarning({
-                    userId: referrer3.id,
-                    amount: commission3,
-                    type: "referral",
-                    description: `Commission niveau 3`,
-                    sourceId: user.id,
-                  });
-                }
-              }
-            }
-          }
         }
+        return res.status(404).json({ message: "Produit non trouvé" });
       }
 
-      res.json({ success: true });
+      res.json({
+        success: true,
+        userProduct: result.userProduct,
+        depositBalance: result.depositBalance,
+        withdrawalBalance: result.withdrawalBalance,
+      });
     } catch (error) {
       console.error("Purchase error:", error);
       res.status(500).json({ message: "Erreur serveur" });
@@ -1454,7 +1511,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Vous avez atteint la limite de 3 retraits par jour" });
       }
 
-      if (user.balance < data.amount) {
+      if (user.withdrawalBalance < data.amount) {
         return res.status(400).json({ message: "Solde insuffisant" });
       }
 
@@ -1463,7 +1520,7 @@ export async function registerRoutes(
       );
       const netAmount = data.amount - feeAmount;
 
-      const withdrawal = await storage.createWithdrawal({
+      const result = await storage.createWithdrawalRequest({
         userId: user.id,
         walletId: data.walletId,
         grossAmount: data.amount,
@@ -1473,11 +1530,16 @@ export async function registerRoutes(
         processedBy: null,
       });
 
-      await storage.updateUser(user.id, {
-        balance: user.balance - data.amount,
-      });
+      if (!result.success) {
+        const message = result.reason === "withdrawal_blocked"
+          ? "Les retraits sont désactivés pour ce compte"
+          : result.reason === "insufficient_balance"
+            ? "Solde retrait insuffisant"
+            : "Utilisateur non trouvé";
+        return res.status(400).json({ message });
+      }
 
-      res.json(withdrawal);
+      res.json(result.withdrawal);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
@@ -1560,7 +1622,7 @@ export async function registerRoutes(
         });
 
         await storage.updateUser(user.id, {
-          balance: user.balance + PRODUCT_TASK.reward,
+          withdrawalBalance: user.withdrawalBalance + PRODUCT_TASK.reward,
         });
 
         await storage.createEarning({
@@ -1599,7 +1661,7 @@ export async function registerRoutes(
         });
 
         await storage.updateUser(user.id, {
-          balance: user.balance + task.reward,
+          withdrawalBalance: user.withdrawalBalance + task.reward,
         });
 
         await storage.createEarning({
@@ -1809,6 +1871,7 @@ export async function registerRoutes(
     duration: z.number().int().positive("La durée doit être supérieure à zéro").optional(),
     totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro").optional(),
     imageUrl: z.union([z.string().url("URL invalide"), z.literal("")]).nullable().optional(),
+    category: productCategorySchema.optional(),
     isActive: z.boolean().optional(),
   }).strict().refine((updates) => Object.keys(updates).length > 0, {
     message: "Aucune modification fournie",
@@ -1928,6 +1991,58 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.get("/api/admin/withdrawal-proofs", requireAdmin, async (req, res) => {
+    const requestedStatus = typeof req.query.status === "string"
+      ? req.query.status
+      : "pending";
+    if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
+      return res.status(400).json({ message: "Statut de preuve invalide" });
+    }
+    res.json(await storage.getWithdrawalProofs(requestedStatus));
+  });
+
+  app.post("/api/admin/withdrawal-proofs/:id/approve", requireAdmin, async (req, res) => {
+    const schema = z.object({
+      commission: z.number().int().min(0).max(2_147_483_647),
+    });
+    try {
+      const { commission } = schema.parse(req.body);
+      const proof = await storage.approveWithdrawalProofOnce(
+        req.params.id,
+        commission,
+        req.session.userId!,
+      );
+      if (!proof) return res.status(409).json({ message: "Cette preuve n’est plus en attente." });
+      return res.json(proof);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      throw error;
+    }
+  });
+
+  app.post("/api/admin/withdrawal-proofs/:id/reject", requireAdmin, async (req, res) => {
+    const schema = z.object({
+      adminNotes: z.string().trim().max(1000).default(""),
+    });
+    try {
+      const { adminNotes } = schema.parse(req.body);
+      const proof = await storage.rejectWithdrawalProofOnce(
+        req.params.id,
+        adminNotes,
+        req.session.userId!,
+      );
+      if (!proof) return res.status(409).json({ message: "Cette preuve n’est plus en attente." });
+      return res.json(proof);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      throw error;
+    }
+  });
+
   app.get("/api/admin/withdrawals", requireAdmin, async (req, res) => {
     const filter = req.query.filter as string || "pending";
     const withdrawals = await storage.getWithdrawals(filter);
@@ -1957,25 +2072,18 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/withdrawals/:id/reject", requireAdmin, async (req, res) => {
-    const withdrawal = await storage.getWithdrawal(req.params.id);
-    if (!withdrawal) {
+    const notes = typeof req.body?.adminNotes === "string"
+      ? req.body.adminNotes.trim().slice(0, 1000)
+      : "";
+    const rejected = await storage.rejectWithdrawalOnce(
+      req.params.id,
+      notes,
+      req.session.userId!,
+    );
+    if (!rejected) {
       return res.status(404).json({ message: "Retrait non trouvé" });
     }
-
-    await storage.updateWithdrawal(withdrawal.id, {
-      status: "rejected",
-      processedBy: req.session.userId,
-      processedAt: new Date(),
-    });
-
-    const user = await storage.getUser(withdrawal.userId);
-    if (user) {
-      await storage.updateUser(user.id, {
-        balance: user.balance + withdrawal.grossAmount,
-      });
-    }
-
-    res.json({ success: true });
+    res.json({ success: true, withdrawal: rejected });
   });
 
   app.get("/api/admin/users", asyncRoute(requireAdmin), asyncRoute(async (req, res) => {
@@ -2039,7 +2147,8 @@ export async function registerRoutes(
       fullName: member.fullName,
       phone: member.phone,
       country: member.country,
-      balance: member.balance,
+      depositBalance: member.depositBalance,
+      withdrawalBalance: member.withdrawalBalance,
       hasProduct: member.hasProduct,
       totalInvestment: investmentTotals.get(member.id) || 0,
       createdAt: member.createdAt,
@@ -2326,7 +2435,7 @@ export async function registerRoutes(
       });
 
       await storage.updateUser(user.id, {
-        balance: user.balance + bonusCode.amount,
+        withdrawalBalance: user.withdrawalBalance + bonusCode.amount,
       });
 
       await storage.createEarning({
@@ -2409,36 +2518,11 @@ export async function registerRoutes(
 
       for (const up of activeProducts) {
         if (new Date(up.nextPayoutAt) <= now && up.cyclesCompleted < up.product.duration) {
-          const user = await storage.getUser(up.userId);
-          if (!user) continue;
-
-          await storage.updateUser(user.id, {
-            balance: user.balance + up.product.dailyReturn,
-            todayEarnings: user.todayEarnings + up.product.dailyReturn,
-            totalEarnings: user.totalEarnings + up.product.dailyReturn,
-          });
-
-          await storage.createEarning({
-            userId: user.id,
-            amount: up.product.dailyReturn,
-            type: "daily",
-            description: `Gain quotidien ${up.product.name}`,
-            sourceId: up.id,
-          });
-
-          const nextPayout = new Date(up.nextPayoutAt);
-          nextPayout.setHours(nextPayout.getHours() + 24);
-
-          const newCycles = up.cyclesCompleted + 1;
-          await storage.updateUserProduct(up.id, {
-            nextPayoutAt: nextPayout,
-            cyclesCompleted: newCycles,
-            isActive: newCycles < up.product.duration,
-          });
+          await storage.processDueProductCycle(up.id);
         }
       }
     } catch (error) {
-      console.error("Daily payout error:", error);
+      console.error("Product maturity processing error:", error);
     }
   }, 60000);
 

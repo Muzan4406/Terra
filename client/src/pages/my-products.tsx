@@ -4,13 +4,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { ArrowLeft, Crown, Calendar, TrendingUp, CheckCircle, Clock } from "lucide-react";
 import { Link } from "wouter";
-import { solarImages } from "@/lib/solar-images";
 
 interface UserProduct {
   id: string;
   productId: string;
   purchasedAt: string;
   nextPayoutAt: string;
+  pendingReturns: number;
   cyclesCompleted: number;
   isActive: boolean;
   assignedByAdmin: boolean;
@@ -93,7 +93,6 @@ export default function MyProductsPage() {
                   </h2>
                   {activeProducts.map((userProduct) => {
                     const daysRemaining = userProduct.product.duration - userProduct.cyclesCompleted;
-                    const cumulativeRevenue = userProduct.cyclesCompleted * userProduct.product.dailyReturn;
                     const progressPercent = (userProduct.cyclesCompleted / userProduct.product.duration) * 100;
                     
                     return (
@@ -103,11 +102,6 @@ export default function MyProductsPage() {
                         data-testid={`card-product-${userProduct.id}`}
                       >
                         <div className={`relative overflow-hidden bg-gradient-to-r ${getLevelColor(userProduct.product.level)} p-4`}>
-                          <img
-                            src={solarImages[(userProduct.product.level - 1) % solarImages.length].src}
-                            alt={solarImages[(userProduct.product.level - 1) % solarImages.length].alt}
-                            className="absolute inset-0 h-full w-full object-cover opacity-50"
-                          />
                           <div className="absolute inset-0 bg-slate-950/40" />
                           <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -136,10 +130,10 @@ export default function MyProductsPage() {
                             <div className="bg-green-50 rounded-lg p-3 text-center">
                               <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
                                 <TrendingUp className="w-4 h-4" />
-                    <span className="text-xs font-medium">Montant cumulé</span>
+                                <span className="text-xs font-medium">Gains bloqués</span>
                               </div>
                               <p className="text-xl font-bold text-green-700" data-testid="text-cumulative-revenue">
-                                {formatNumber(cumulativeRevenue)} F
+                                {formatNumber(userProduct.pendingReturns)} F
                               </p>
                             </div>
                           </div>
@@ -152,7 +146,7 @@ export default function MyProductsPage() {
                           </div>
                           
                           <div className="flex justify-between items-center">
-                              <span className="text-gray-500 text-sm">Montant quotidien</span>
+                              <span className="text-gray-500 text-sm">Gain quotidien bloqué</span>
                             <span className="font-semibold text-green-600">
                               +{formatNumber(userProduct.product.dailyReturn)} FCFA
                             </span>
@@ -164,6 +158,9 @@ export default function MyProductsPage() {
                               {userProduct.cyclesCompleted} / {userProduct.product.duration} jours
                             </span>
                           </div>
+                          <p className="text-xs text-muted-foreground">
+                            Les gains seront versés au solde retrait à la fin du cycle.
+                          </p>
                           
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
@@ -201,11 +198,6 @@ export default function MyProductsPage() {
                       data-testid={`card-product-completed-${userProduct.id}`}
                     >
                       <div className="relative overflow-hidden bg-gray-300 p-4">
-                        <img
-                          src={solarImages[(userProduct.product.level - 1) % solarImages.length].src}
-                          alt={solarImages[(userProduct.product.level - 1) % solarImages.length].alt}
-                          className="absolute inset-0 h-full w-full object-cover opacity-50"
-                        />
                         <div className="absolute inset-0 bg-slate-950/40" />
                         <div className="relative z-10 flex items-center justify-between">
                           <div className="flex items-center gap-2">

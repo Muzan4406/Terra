@@ -1,6 +1,5 @@
 import { useLocation } from "wouter";
 import { ArrowLeft, ChevronRight, Headphones } from "lucide-react";
-import { solarImages } from "@/lib/solar-images";
 
 export default function CustomerServicePage() {
   const [, navigate] = useLocation();
@@ -21,11 +20,6 @@ export default function CustomerServicePage() {
           </h1>
         </header>
 
-        <div className="relative h-40 w-full overflow-hidden">
-          <img src={solarImages[0].src} alt={solarImages[0].alt} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-teal-950/45 to-transparent" />
-        </div>
-
         <div className="relative px-4 pt-8 pb-4">
           <div 
             className="absolute top-0 left-0 right-0 h-64 bg-card/75"
@@ -37,7 +31,7 @@ export default function CustomerServicePage() {
           <div className="relative z-10 flex flex-col items-center">
             <div className="relative mb-4">
               <div className="w-32 h-32 rounded-full border-4 border-card shadow-lg bg-accent/45 flex items-center justify-center">
-                <span className="font-serif text-4xl font-bold text-primary" aria-hidden="true">T</span>
+                <Headphones className="h-12 w-12 text-primary" aria-hidden="true" />
               </div>
               <div className="absolute -right-1 top-4 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full font-medium">
                 AIDE
@@ -64,7 +58,7 @@ export default function CustomerServicePage() {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">Discuter avec le service client</span>
-              <span className="mt-0.5 block text-xs text-white/75">Échange direct et sécurisé avec l’équipe Terra</span>
+              <span className="mt-0.5 block text-xs text-white/75">Échange direct et sécurisé avec l’équipe support</span>
             </span>
             <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
           </button>

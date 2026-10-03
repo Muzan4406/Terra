@@ -96,7 +96,7 @@ export default function WithdrawPage() {
       });
       return;
     }
-    if (amountNum > (user?.balance || 0)) {
+    if (amountNum > (user?.withdrawalBalance || 0)) {
       toast({ 
         title: "Erreur", 
         description: "Solde insuffisant",
@@ -137,7 +137,7 @@ export default function WithdrawPage() {
             </div>
             <div>
               <p className="text-3xl font-bold text-white">
-                FCFA {user.balance.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
+                FCFA {user.withdrawalBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
               </p>
               <p className="text-blue-100">Solde du compte</p>
             </div>

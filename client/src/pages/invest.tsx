@@ -25,8 +25,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { Product, UserProduct } from "@shared/schema";
-import { solarImages } from "@/lib/solar-images";
+import {
+  PRODUCT_CATEGORIES,
+  PRODUCT_CATEGORY_LABELS,
+  type Product,
+  type ProductCategory,
+  type UserProduct,
+} from "@shared/schema";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
@@ -41,6 +46,7 @@ export default function InvestPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showConfirmPurchase, setShowConfirmPurchase] = useState(false);
   const [productToPurchase, setProductToPurchase] = useState<ProductWithOwnership | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("fixed");
 
   const {
     data: products,
@@ -68,6 +74,7 @@ export default function InvestPage() {
         description: "Votre investissement est maintenant actif." 
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/products"] });
       refetchUser();
       setShowConfirmPurchase(false);
       setProductToPurchase(null);
@@ -89,6 +96,16 @@ export default function InvestPage() {
   const calculateProfitRate = (dailyReturn: number, price: number) => {
     return ((dailyReturn / price) * 100).toFixed(1);
   };
+
+  const depositAfterPurchase = productToPurchase
+    ? Math.max(0, user!.depositBalance - productToPurchase.price)
+    : 0;
+  const withdrawalAfterPurchase = productToPurchase
+    ? Math.max(0, user!.withdrawalBalance - Math.max(0, productToPurchase.price - user!.depositBalance))
+    : 0;
+  const visibleProducts = (products ?? []).filter(
+    (product) => product.category === selectedCategory,
+  );
 
   const handleShowDetails = (product: ProductWithOwnership) => {
     setSelectedProduct(product);
@@ -125,11 +142,40 @@ export default function InvestPage() {
       <div className="max-w-md mx-auto">
         <header className="py-6 px-4 bg-white">
           <h1 className="text-base font-bold text-center text-gray-800">
-            Produits d’investissement
+            Investir
           </h1>
         </header>
 
-        <div className="px-4 py-2 space-y-4">
+        <div className="mx-4 mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Solde dépôt</p>
+            <p className="mt-1 text-lg font-bold tabular-nums">{formatNumber(user.depositBalance)} F</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Solde retrait</p>
+            <p className="mt-1 text-lg font-bold tabular-nums">{formatNumber(user.withdrawalBalance)} F</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto px-4 py-4">
+          {PRODUCT_CATEGORIES.map((category) => (
+            <button
+              key={category}
+              type="button"
+              aria-pressed={selectedCategory === category}
+              onClick={() => setSelectedCategory(category)}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                selectedCategory === category
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {PRODUCT_CATEGORY_LABELS[category]}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-4 pb-4 space-y-4">
           {isError ? (
             <div
               role="alert"
@@ -148,23 +194,18 @@ export default function InvestPage() {
                 Réessayer
               </Button>
             </div>
-          ) : products?.length === 0 ? (
+          ) : visibleProducts.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-600">
-              Aucun produit d’investissement n’est disponible pour le moment.
+              Aucun produit n’est disponible dans cette catégorie.
             </div>
           ) : (
-          products?.map((product) => {
-            const productImage = solarImages[(product.level - 1) % solarImages.length];
-
+          visibleProducts.map((product) => {
             return (
               <div 
                 key={product.id} 
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
               >
                 <div className="flex gap-4">
-                  <div className="h-28 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                    <img src={productImage.src} alt={productImage.alt} className="h-full w-full object-cover" />
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-lg text-blue-600">
@@ -174,20 +215,20 @@ export default function InvestPage() {
                     
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Montant quotidien :</span>
+                        <span className="text-gray-500">Gain quotidien (bloqué) :</span>
                         <span className="font-medium text-gray-800">{formatNumber(product.dailyReturn)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Montant total indiqué :</span>
+                        <span className="text-gray-500">Gains à l’échéance :</span>
                         <span className="font-medium text-gray-800">{formatNumber(product.totalReturn)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Taux quotidien affiché :</span>
+                        <span className="text-gray-500">Taux quotidien indicatif :</span>
                         <span className="font-medium text-gray-800">{calculateProfitRate(product.dailyReturn, product.price)}%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Durée du produit :</span>
-                        <span className="font-medium text-gray-800">{product.duration} Jour</span>
+                        <span className="font-medium text-gray-800">{product.duration} jours</span>
                       </div>
                     </div>
                   </div>
@@ -236,15 +277,8 @@ export default function InvestPage() {
           
           {selectedProduct && (
             <div className="space-y-3">
-              <div className="h-32 w-full overflow-hidden rounded-lg bg-gray-100">
-                <img
-                  src={solarImages[(selectedProduct.level - 1) % solarImages.length].src}
-                  alt={solarImages[(selectedProduct.level - 1) % solarImages.length].alt}
-                  className="h-full w-full object-cover"
-                />
-              </div>
               <p className="text-gray-600 text-xs">
-                Consultez les montants et la durée indiqués avant de confirmer votre choix.
+                Les gains s’accumulent pendant le cycle et sont versés au solde retrait à l’échéance.
               </p>
               
               <div className="space-y-2 bg-gray-50 rounded-lg p-3">
@@ -263,7 +297,7 @@ export default function InvestPage() {
                     <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500">Revenu quotidien</p>
+                    <p className="text-[10px] text-gray-500">Gain quotidien bloqué</p>
                     <p className="font-bold text-sm text-green-600">{formatNumber(selectedProduct.dailyReturn)} F CFA</p>
                   </div>
                 </div>
@@ -273,7 +307,7 @@ export default function InvestPage() {
                     <CheckCircle className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500">Revenu total (100 jours)</p>
+                    <p className="text-[10px] text-gray-500">Gains à l’échéance ({selectedProduct.duration} jours)</p>
                     <p className="font-bold text-sm text-purple-600">{formatNumber(selectedProduct.totalReturn)} F CFA</p>
                   </div>
                 </div>
@@ -326,24 +360,16 @@ export default function InvestPage() {
                 <p>Voulez-vous vraiment acheter ce produit?</p>
                 {productToPurchase && (
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                        <img
-                          src={solarImages[(productToPurchase.level - 1) % solarImages.length].src}
-                          alt={solarImages[(productToPurchase.level - 1) % solarImages.length].alt}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-800">{productToPurchase.name}</p>
-                        <p className="text-blue-600 font-bold">{formatNumber(productToPurchase.price)} F CFA</p>
-                      </div>
+                    <div>
+                      <p className="font-bold text-gray-800">{productToPurchase.name}</p>
+                      <p className="text-blue-600 font-bold">{formatNumber(productToPurchase.price)} F CFA</p>
                     </div>
                     <div className="text-xs text-gray-500 pt-2 border-t">
-                      <p>Votre solde: <span className="font-bold text-gray-800">{formatNumber(user.balance)} F CFA</span></p>
-                      <p>Après achat: <span className={`font-bold ${user.balance >= productToPurchase.price ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatNumber(user.balance - productToPurchase.price)} F CFA
-                      </span></p>
+                      <p>Solde dépôt avant achat: <span className="font-bold text-gray-800">{formatNumber(user.depositBalance)} F</span></p>
+                      <p>Solde retrait avant achat: <span className="font-bold text-gray-800">{formatNumber(user.withdrawalBalance)} F</span></p>
+                      <p className="pt-1">Après achat — dépôt: <span className="font-bold text-gray-800">{formatNumber(depositAfterPurchase)} F</span></p>
+                      <p>Après achat — retrait: <span className="font-bold text-gray-800">{formatNumber(withdrawalAfterPurchase)} F</span></p>
+                      <p className="mt-2 border-t pt-2 text-muted-foreground">Le solde dépôt est utilisé en premier. Le solde retrait couvre le reste.</p>
                     </div>
                   </div>
                 )}

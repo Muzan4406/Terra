@@ -60,7 +60,8 @@ export default function AdminUsersPage() {
     "all" | "active_products" | "banned" | "blocked" | "promoter" | "admin"
   >("all");
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
-  const [editBalance, setEditBalance] = useState("");
+  const [editDepositBalance, setEditDepositBalance] = useState("");
+  const [editWithdrawalBalance, setEditWithdrawalBalance] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [managingUserId, setManagingUserId] = useState<string | null>(null);
@@ -204,7 +205,7 @@ export default function AdminUsersPage() {
   const activeUsersInResults =
     filteredUsers?.filter((candidate) => candidate.activeProducts.length > 0) ?? [];
   const activeAccountsTotalBalance = activeUsersInResults.reduce(
-    (total, candidate) => total + candidate.balance,
+    (total, candidate) => total + candidate.depositBalance + candidate.withdrawalBalance,
     0,
   );
 
@@ -327,7 +328,11 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
                             <Wallet className="h-3 w-3" />
-                            <MoneyDisplay amount={u.balance} />
+                            Dépôt <MoneyDisplay amount={u.depositBalance} />
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Wallet className="h-3 w-3" />
+                            Retrait <MoneyDisplay amount={u.withdrawalBalance} />
                           </span>
                           <span className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3 text-green-600" />
@@ -388,7 +393,8 @@ export default function AdminUsersPage() {
                             className="gap-1"
                             onClick={() => {
                               setSelectedUser(u);
-                              setEditBalance(u.balance.toString());
+                              setEditDepositBalance(u.depositBalance.toString());
+                              setEditWithdrawalBalance(u.withdrawalBalance.toString());
                               setManagingUserId(u.id);
                             }}
                           >
@@ -406,14 +412,26 @@ export default function AdminUsersPage() {
                               <div className="flex gap-2">
                                 <Input
                                   type="number"
-                                  value={editBalance}
-                                  onChange={(e) => setEditBalance(e.target.value)}
-                                  data-testid="input-balance"
+                                  value={editDepositBalance}
+                                  onChange={(e) => setEditDepositBalance(e.target.value)}
+                                  data-testid="input-deposit-balance"
+                                />
+                                <Label htmlFor="edit-withdrawal-balance">Solde retrait</Label>
+                                <Input
+                                  id="edit-withdrawal-balance"
+                                  type="number"
+                                  min="0"
+                                  value={editWithdrawalBalance}
+                                  onChange={(e) => setEditWithdrawalBalance(e.target.value)}
+                                  data-testid="input-withdrawal-balance"
                                 />
                                 <Button
                                   onClick={() => updateUserMutation.mutate({
                                     userId: u.id,
-                                    updates: { balance: parseInt(editBalance) }
+                                    updates: {
+                                      depositBalance: parseInt(editDepositBalance),
+                                      withdrawalBalance: parseInt(editWithdrawalBalance),
+                                    }
                                   })}
                                   disabled={updateUserMutation.isPending}
                                 >

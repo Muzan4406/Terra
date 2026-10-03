@@ -8,10 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   ChevronRight, Globe, Copy, Info, 
   Headphones, RefreshCw, Lock, Shield, LogOut,
-  ArrowRight, Package
+  ArrowRight, Package, FileCheck2
 } from "lucide-react";
-import { solarImages } from "@/lib/solar-images";
-import { BrandLogo } from "@/components/brand-logo";
 
 interface PlatformSettings {
   customerService: string;
@@ -77,11 +75,19 @@ export default function AccountPage() {
     },
     { 
       icon: Info, 
-      label: "À propos de Terra",
+      label: "À propos",
       iconBg: "bg-blue-100",
       iconColor: "text-blue-500",
       action: () => navigate("/about"),
       testId: "menu-about" 
+    },
+    {
+      icon: FileCheck2,
+      label: "Preuves de retrait",
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-700",
+      action: () => navigate("/withdrawal-proofs"),
+      testId: "menu-withdrawal-proofs",
     },
     { 
       icon: Headphones, 
@@ -112,11 +118,7 @@ export default function AccountPage() {
   return (
     <div className="min-h-[100dvh] bg-[#f2eee3] pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <div className="mx-auto max-w-md overflow-hidden bg-[#fbf8f0] shadow-[0_12px_36px_rgba(40,54,42,0.08)]">
-        <div className="relative overflow-hidden px-4 pb-5 pt-7 sm:px-5">
-          <div className="absolute inset-0">
-            <img src={solarImages[4].src} alt={solarImages[4].alt} className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#102e2a]/85 via-[#17463b]/65 to-[#6b542e]/55" />
-          </div>
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-800 px-4 pb-5 pt-7 sm:px-5">
           <div className="absolute right-2 top-2 z-20">
             <button 
               className="flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10"
@@ -129,7 +131,7 @@ export default function AccountPage() {
           
           <div className="relative z-10">
             <h1 className="mb-3 w-fit rounded-xl bg-[#fbf8f0]/95 px-3 py-1.5 shadow-sm">
-              <BrandLogo className="h-8 w-auto" />
+              <span className="text-sm font-bold uppercase tracking-[0.12em] text-white">Mon compte</span>
             </h1>
             <p className="text-lg font-semibold tracking-[0.01em] text-white" data-testid="text-phone">
               {getCountryDialCode(user.country)} {user.phone}
@@ -142,20 +144,26 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mt-5 grid grid-cols-3 gap-1 rounded-2xl border border-white/20 bg-[#f8f4e9]/15 p-3.5 shadow-sm backdrop-blur-md sm:gap-2 sm:p-4">
+          <div className="relative z-10 mt-5 grid grid-cols-2 gap-2 rounded-2xl border border-white/20 bg-white/10 p-3.5 shadow-sm backdrop-blur-md sm:gap-3 sm:p-4">
             <div className="text-center flex flex-col items-center justify-center min-w-0">
               <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-balance">
-                {formatNumber(user.balance)}
+                {formatNumber(user.depositBalance)}
               </p>
-              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Solde du compte</p>
+              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Solde dépôt</p>
             </div>
-            <div className="flex min-w-0 flex-col items-center justify-center border-x border-white/25 px-1 text-center sm:px-2">
+            <div className="flex min-w-0 flex-col items-center justify-center border-l border-white/25 px-1 text-center sm:px-2">
+              <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-withdrawal-balance">
+                {formatNumber(user.withdrawalBalance)}
+              </p>
+              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Solde retrait</p>
+            </div>
+            <div className="flex min-w-0 flex-col items-center justify-center border-t border-white/25 px-1 pt-2 text-center sm:px-2">
               <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-total-earnings">
                 {formatNumber(user.totalEarnings)}
               </p>
               <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Revenus cumulés</p>
             </div>
-            <div className="text-center flex flex-col items-center justify-center min-w-0">
+            <div className="text-center flex flex-col items-center justify-center min-w-0 border-t border-l border-white/25 px-1 pt-2 sm:px-2">
               <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-today-earnings">
                 {formatNumber(user.todayEarnings)}
               </p>
@@ -175,7 +183,6 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" aria-hidden="true" />
                 </div>
               </div>
-              <img src={solarImages[0].src} alt={solarImages[0].alt} className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/35 sm:h-16 sm:w-16" />
             </button>
             
             <button
@@ -189,7 +196,6 @@ export default function AccountPage() {
                   <ArrowRight className="h-4 w-4 text-white" aria-hidden="true" />
                 </div>
               </div>
-              <img src={solarImages[3].src} alt={solarImages[3].alt} className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/35 sm:h-16 sm:w-16" />
             </button>
           </div>
         </div>

@@ -166,7 +166,7 @@ app.use((req, res, next) => {
     }
     return res.status(503).json({
       status: dependencyFailed ? "failed" : "starting",
-      message: "Le serveur Terra n’a pas terminé son initialisation.",
+      message: "Le serveur n’a pas terminé son initialisation.",
     });
   }
 

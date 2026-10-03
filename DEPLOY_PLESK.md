@@ -66,6 +66,16 @@ La variable Replit `SUPABASE_DATABASE_URL` cible la base Supabase; en production
 
 Pour cette version, la seule modification de schéma nécessaire au chat a été appliquée de façon additive : `support_messages.read_at` est nullable avec `DEFAULT now()`, donc les messages déjà présents sont considérés comme lus. La colonne et la présence de la table `session` ont été vérifiées. Il n’est pas nécessaire de relancer `db:push:supabase` pour cette version; construisez le projet, poussez-le sur GitHub, puis faites **Pull + Deploy Now** et **Restart** dans Plesk.
 
+### Soldes distincts, gains à échéance et preuves de retrait
+
+Avant de déployer le code qui utilise ces fonctions en production :
+
+1. Faites une sauvegarde PostgreSQL.
+2. Appliquez manuellement `migrations/20261003_dual_balances_and_withdrawal_proofs.sql` à la base Supabase utilisée par Plesk.
+3. Vérifiez les nouvelles colonnes et la table `public.withdrawal_proofs`, puis déployez le code.
+
+Cette migration est additive. Elle conserve chaque valeur historique de `users.balance`, désormais traitée comme le solde dépôt, et initialise le nouveau solde retrait à zéro. Elle ajoute aussi la catégorie des produits, les gains en attente jusqu’à l’échéance et la table des preuves quotidiennes. N’exécutez pas `db:push:supabase` pour cette mise à jour et refusez tout plan qui propose de supprimer `public.session`. La migration de production n’a pas été exécutée pendant cette session.
+
 ## AshTech Pay — Direct API Mobile Money
 
 Avant d’activer un pays dans **Administration → Moyens de paiement**, appliquez une fois ces colonnes additives à la base PostgreSQL utilisée par Plesk :

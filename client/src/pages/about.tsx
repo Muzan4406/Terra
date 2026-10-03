@@ -2,8 +2,6 @@ import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2, Users, Globe, Award, Heart, Wallet } from "lucide-react";
-import { solarImages } from "@/lib/solar-images";
-import { BrandLogo } from "@/components/brand-logo";
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -15,34 +13,15 @@ export default function AboutPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">À propos de Terra</h1>
+          <h1 className="text-xl font-bold">À propos</h1>
         </header>
 
         <div className="p-4 space-y-4">
           <div className="text-center py-6">
-            <h2 className="flex justify-center">
-              <BrandLogo className="h-10 w-auto" />
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground">Votre espace financier</h2>
             <p className="text-muted-foreground">Un espace pour consulter et gérer votre compte</p>
           </div>
 
-          <div className="space-y-3">
-            <img
-              src={solarImages[1].src}
-              alt={solarImages[1].alt}
-              className="h-44 w-full rounded-xl object-cover"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              {[solarImages[2], solarImages[4]].map((image) => (
-                <img
-                  key={image.src}
-                  src={image.src}
-                  alt={image.alt}
-                  className="h-28 w-full rounded-lg object-cover"
-                />
-              ))}
-            </div>
-          </div>
 
           <Card>
             <CardContent className="p-4 space-y-4">
@@ -53,7 +32,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold">Un espace centralisé</h3>
                   <p className="text-sm text-muted-foreground">
-                    Terra rassemble les fonctions essentielles de votre compte dans un espace conçu pour être facile à consulter.
+                    Cette application rassemble les fonctions essentielles de votre compte dans un espace conçu pour être facile à consulter.
                   </p>
                 </div>
               </div>

@@ -24,9 +24,11 @@ import CustomerServiceChatPage from "@/pages/customer-service-chat";
 import ChangePasswordPage from "@/pages/change-password";
 import ExchangeCodePage from "@/pages/exchange-code";
 import MyProductsPage from "@/pages/my-products";
+import WithdrawalProofsPage from "@/pages/withdrawal-proofs";
 import AdminDashboard from "@/pages/admin/index";
 import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
+import AdminWithdrawalProofsPage from "@/pages/admin/withdrawal-proofs";
 import AdminUsersPage from "@/pages/admin/users";
 import AdminChannelsPage from "@/pages/admin/channels";
 import AdminProductsPage from "@/pages/admin/products";
@@ -244,6 +246,11 @@ function Router() {
           <MyProductsPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/withdrawal-proofs">
+        <ProtectedRoute>
+          <WithdrawalProofsPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route path="/admin">
         <AdminRoute>
@@ -263,6 +270,11 @@ function Router() {
       <Route path="/admin/withdrawals">
         <AdminRoute>
           <AdminWithdrawalsPage />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/withdrawal-proofs">
+        <AdminRoute>
+          <AdminWithdrawalProofsPage />
         </AdminRoute>
       </Route>
       <Route path="/admin/users">

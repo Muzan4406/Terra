@@ -72,7 +72,7 @@ export default function CustomerServiceChatPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-bold text-[#1d3f31]">Service client</h1>
-            <p className="truncate text-xs text-[#6b7a70]">Discussion directe avec l’équipe Terra</p>
+            <p className="truncate text-xs text-[#6b7a70]">Discussion directe avec l’équipe support</p>
           </div>
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f0f4ed] text-[#50745d]">
             <MessageSquareText className="h-4 w-4" aria-hidden="true" />
@@ -97,7 +97,7 @@ export default function CustomerServiceChatPage() {
               myRole="user"
               isSending={sendMutation.isPending}
               onSend={(body, files) => sendMutation.mutateAsync({ body, files }).then(() => undefined)}
-              emptyTitle="Écrivez à l’équipe Terra"
+              emptyTitle="Écrivez à l’équipe support"
               emptyDescription="Envoyez votre question ou une capture d’écran. Une confirmation automatique apparaîtra après chaque envoi."
             />
           )}

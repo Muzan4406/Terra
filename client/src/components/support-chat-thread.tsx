@@ -132,11 +132,11 @@ export function SupportChatThread({
             const isSystem = message.senderType === "system";
             const isMine = message.senderType === myRole;
             const senderName = isSystem
-              ? "Terra · message automatique"
+              ? "Service client · message automatique"
               : isMine
                 ? "Vous"
                 : myRole === "user"
-                  ? "Équipe Terra"
+                  ? "Équipe support"
                   : "Utilisateur";
 
             return (

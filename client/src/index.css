@@ -343,7 +343,7 @@ a {
   }
 }
 
-/* Terra — a warm, legible field-journal for everyday account management. */
+/* Shared visual system for the financial workspace. */
 :root {
   --background: 42 39% 94%;
   --foreground: 157 27% 15%;
@@ -664,4 +664,150 @@ h1, h2, h3, h4 {
   backdrop-filter: none;
   border-color: #ded7c7;
   box-shadow: 0 14px 35px hsl(157 27% 15% / .18);
+}
+
+/* Clean, image-free financial workspace theme */
+:root {
+  --background: 210 35% 97%;
+  --foreground: 221 32% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 221 32% 16%;
+  --card-border: 214 29% 89%;
+  --border: 214 29% 89%;
+  --sidebar: 210 35% 97%;
+  --sidebar-foreground: 221 32% 16%;
+  --sidebar-border: 214 29% 89%;
+  --sidebar-primary: 210 76% 38%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 205 36% 92%;
+  --sidebar-accent-foreground: 221 32% 16%;
+  --sidebar-ring: 205 72% 42%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 221 32% 16%;
+  --popover-border: 214 29% 89%;
+  --primary: 210 76% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 199 38% 92%;
+  --secondary-foreground: 210 48% 25%;
+  --muted: 210 24% 94%;
+  --muted-foreground: 215 14% 44%;
+  --accent: 190 45% 89%;
+  --accent-foreground: 200 55% 22%;
+  --destructive: 0 68% 49%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 214 23% 82%;
+  --ring: 210 76% 42%;
+  --chart-1: 210 76% 38%;
+  --chart-2: 168 54% 39%;
+  --chart-3: 35 79% 51%;
+  --chart-4: 270 49% 56%;
+  --chart-5: 0 63% 56%;
+  --font-sans: "DM Sans", sans-serif;
+  --font-serif: "DM Sans", sans-serif;
+  --radius: .9rem;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: hsl(var(--background));
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.site-page,
+.site-page > div[class*="min-h-screen"],
+.site-page > div[class*="min-h-\\[100dvh\\]"],
+.site-page > div.fixed.inset-0.bg-gray-50 {
+  background-color: hsl(var(--background)) !important;
+  background-image: none !important;
+  color: hsl(var(--foreground));
+}
+
+#root > div[class*="min-h-screen"],
+#root > div[class*="min-h-\\[100dvh\\]"],
+.min-h-screen.bg-gray-100,
+.min-h-screen.bg-gray-50,
+.min-h-screen.bg-white {
+  background-color: hsl(var(--background)) !important;
+}
+
+[class*="bg-[#f2eee3]"],
+[class*="bg-[#f3f2e9]"],
+[class*="bg-[#fbf8f0]"] {
+  background-color: hsl(var(--background)) !important;
+}
+
+.site-page h1,
+.site-page h2,
+.site-page h3,
+.site-page h4 {
+  font-family: var(--font-sans);
+}
+
+.site-page .home-shell {
+  background: hsl(var(--background));
+}
+
+.site-page .home-header {
+  min-height: 4.25rem;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.site-page .home-content {
+  background: hsl(var(--background));
+}
+
+.site-page .home-account-summary {
+  background: linear-gradient(135deg, hsl(215 67% 25%), hsl(197 72% 35%)) !important;
+  box-shadow: 0 14px 32px hsl(210 55% 25% / .18) !important;
+}
+
+.site-page .home-service-tile {
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  box-shadow: 0 7px 20px hsl(215 35% 24% / .06) !important;
+}
+
+.site-page .home-service-tile:hover {
+  border-color: hsl(var(--primary) / .35) !important;
+  box-shadow: 0 12px 26px hsl(215 35% 24% / .1) !important;
+}
+
+.site-page .home-service-image-wrap {
+  background: hsl(var(--primary) / .1) !important;
+  box-shadow: none !important;
+}
+
+.site-page .home-welcome h2 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.site-page .auth-form-panel {
+  border-color: hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: 0 16px 42px hsl(215 35% 24% / .08);
+}
+
+.site-page input,
+.site-page select,
+.site-page textarea {
+  border-color: hsl(var(--input));
+  border-radius: .7rem;
+}
+
+.country-select-content,
+.operator-select-content {
+  background-color: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground));
+  border-color: hsl(var(--border));
+  box-shadow: 0 14px 35px hsl(215 35% 24% / .14);
 }

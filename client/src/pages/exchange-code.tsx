@@ -18,7 +18,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BottomNav } from "@/components/bottom-nav";
-import { solarImages } from "@/lib/solar-images";
 
 const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Veuillez saisir le code cadeau"),
@@ -96,15 +95,11 @@ export default function ExchangeCodePage() {
           <h1 className="text-xl font-bold text-gray-900">Utiliser un code bonus</h1>
         </div>
 
-        <div className="h-48 w-full overflow-hidden">
-          <img src={solarImages[3].src} alt={solarImages[3].alt} className="h-full w-full object-cover" />
-        </div>
-
         {/* Form Container */}
         <div className="flex-1 px-4 py-6 relative z-10 pb-6">
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              Saisissez un code bonus communiqué par Terra. Les conditions associées s’appliquent.
+              Saisissez le code bonus qui vous a été communiqué. Les conditions associées s’appliquent.
             </p>
 
             <a
