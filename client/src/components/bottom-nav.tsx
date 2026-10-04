@@ -1,12 +1,16 @@
 import { useLocation, Link } from "wouter";
-import { FileCheck2, Home, TrendingUp, UsersRound, User } from "lucide-react";
+import homeNavIcon from "@assets/nav-home.png";
+import proofsNavIcon from "@assets/2098276_1768062243190.png";
+import investNavIcon from "@assets/4985809_1768062243229.png";
+import teamNavIcon from "@assets/377005_1768062243282.png";
+import accountNavIcon from "@assets/nav-account.png";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/withdrawal-proofs", icon: FileCheck2, label: "Preuves de retrait" },
-  { path: "/invest", icon: TrendingUp, label: "Investir" },
-  { path: "/team", icon: UsersRound, label: "Équipe" },
-  { path: "/account", icon: User, label: "Compte" },
+  { path: "/", image: homeNavIcon, label: "Accueil" },
+  { path: "/withdrawal-proofs", image: proofsNavIcon, label: "Preuves de retrait" },
+  { path: "/invest", image: investNavIcon, label: "Investir" },
+  { path: "/team", image: teamNavIcon, label: "Équipe" },
+  { path: "/account", image: accountNavIcon, label: "Compte" },
 ];
 
 export function BottomNav() {
@@ -28,7 +32,12 @@ export function BottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon className={`w-6 h-6 ${isActive ? "opacity-100" : "opacity-70"}`} aria-hidden="true" />
+              <img
+                src={item.image}
+                alt=""
+                aria-hidden="true"
+                className={`h-7 w-7 shrink-0 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}
+              />
               <span className={`max-w-[4.5rem] whitespace-normal text-center text-xs font-bold leading-tight ${isActive ? "text-primary" : ""}`}>{item.label}</span>
             </Link>
           );
