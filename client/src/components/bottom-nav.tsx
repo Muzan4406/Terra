@@ -1,15 +1,16 @@
 import { useLocation, Link } from "wouter";
-import { ClipboardCheck, Home, TrendingUp, UsersRound, User } from "lucide-react";
-import walletImage from "@assets/images_(27)_1791106022965.jpeg";
-import receiptImage from "@assets/images_(29)_1791106022925.jpeg";
-import bankImage from "@assets/pngtree-bank-money-finance-icon-symbolizing-secure-transaction_1791106023203.png";
+import balanceIcon from "@assets/images_1791113100431.png";
+import withdrawalProofIcon from "@assets/images_(19)_1791113100409.jpeg";
+import depositIcon from "@assets/depot-3d-icon-png-download-13937730_1791113100353.png";
+import teamIcon from "@assets/pngtree-3d-colorful-people-group-icons-png-image_21103607_1791113100449.png";
+import accountInfoIcon from "@assets/images_(2)_1791113100473.jpeg";
 
 const navItems = [
-  { path: "/", icon: Home, image: null, label: "Accueil" },
-  { path: "/withdrawal-proofs", icon: ClipboardCheck, image: receiptImage, label: "Preuves de retrait" },
-  { path: "/invest", icon: TrendingUp, image: bankImage, label: "Investir" },
-  { path: "/team", icon: UsersRound, image: null, label: "Équipe" },
-  { path: "/account", icon: User, image: walletImage, label: "Compte" },
+  { path: "/", image: balanceIcon, label: "Accueil" },
+  { path: "/withdrawal-proofs", image: withdrawalProofIcon, label: "Preuves de retrait" },
+  { path: "/invest", image: depositIcon, label: "Investir" },
+  { path: "/team", image: teamIcon, label: "Équipe" },
+  { path: "/account", image: accountInfoIcon, label: "Compte" },
 ];
 
 export function BottomNav() {
@@ -31,19 +32,12 @@ export function BottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {item.image ? (
-                <img
-                  src={item.image}
-                  alt=""
-                  aria-hidden="true"
-                  className={`h-7 w-7 shrink-0 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}
-                />
-              ) : (
-                <item.icon
-                  className={`h-6 w-6 ${isActive ? "opacity-100" : "opacity-70"} ${isActive && item.path === "/" ? "fill-primary" : ""}`}
-                  aria-hidden="true"
-                />
-              )}
+              <img
+                src={item.image}
+                alt=""
+                aria-hidden="true"
+                className={`h-7 w-7 shrink-0 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}
+              />
               <span className={`max-w-[4.5rem] whitespace-normal text-center text-xs font-bold leading-tight ${isActive ? "text-primary" : ""}`}>{item.label}</span>
             </Link>
           );

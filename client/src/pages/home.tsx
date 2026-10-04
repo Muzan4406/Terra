@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
+import { AppSidebar } from "@/components/app-sidebar";
 import { TelegramChannelPopup } from "@/components/telegram-channel-popup";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -55,7 +56,8 @@ export default function HomePage() {
   return (
     <div className="site-page fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f3f2e9]">
       <div className="home-shell mx-auto flex h-full max-w-md flex-col overflow-hidden">
-        <header className="home-header flex shrink-0 items-center justify-between px-5">
+        <header className="home-header flex shrink-0 items-center gap-3 px-5">
+          <AppSidebar />
           <div className="flex items-center gap-2.5">
             <BrandLogo className="h-11 w-11 rounded-lg object-contain" alt="" />
             <div>
