@@ -3,12 +3,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canAcceptAshtechWebhook,
+  filterAvailableAshtechOperators,
   isValidAshtechWebhookSignature,
   normalizeAshtechTransactionStatus,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
   verifyAshtechTransaction,
 } from "./ashtechpay";
+
+test("removes Celtis only from Benin's AshTech operator list", () => {
+  assert.deepEqual(
+    filterAvailableAshtechOperators("BJ", ["Celtis", "  cElTiS ", "Moov Money"]),
+    ["Moov Money"],
+  );
+  assert.deepEqual(
+    filterAvailableAshtechOperators("TG", ["Celtis", "Moov Money"]),
+    ["Celtis", "Moov Money"],
+  );
+});
 
 test("normalizes local and international phone numbers to the selected country", () => {
   assert.equal(normalizeAshtechPhone("90 12 34 56", "TG"), "22890123456");

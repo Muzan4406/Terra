@@ -17,7 +17,7 @@ export const ELIGIBLE_COUNTRIES = [
 export const PAYMENT_METHODS_BY_COUNTRY: Record<string, string[]> = {
   TG: ["Moov Money", "Mixx by Yas"],
   CI: ["Wave", "MTN", "Orange Money", "Moov Money"],
-  BJ: ["Celtis", "Moov Money", "MTN", "Momo"],
+  BJ: ["Moov Money", "MTN", "Momo"],
   BF: ["Orange Money", "Moov Money"],
 };
 

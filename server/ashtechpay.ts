@@ -228,9 +228,12 @@ export async function getAshtechCountries(
       return [];
     }
 
-    const operators = value.operators.filter(
-      (operator): operator is string =>
-        typeof operator === "string" && operator.trim().length > 0,
+    const operators = filterAvailableAshtechOperators(
+      value.code,
+      value.operators.filter(
+        (operator): operator is string =>
+          typeof operator === "string" && operator.trim().length > 0,
+      ),
     );
     if (!operators.length) return [];
 
@@ -244,6 +247,16 @@ export async function getAshtechCountries(
 
   countryCache = { countries, expiresAt: Date.now() + COUNTRY_CACHE_MS };
   return countries;
+}
+
+export function filterAvailableAshtechOperators(
+  countryCode: string,
+  operators: string[],
+): string[] {
+  const isBenin = countryCode.trim().toUpperCase() === "BJ";
+  return operators.filter(
+    (operator) => !(isBenin && operator.trim().toLowerCase() === "celtis"),
+  );
 }
 
 export function findEligibleCountry(code: string) {

@@ -89,13 +89,22 @@ export function AppSidebar({ triggerClassName = "" }: AppSidebarProps) {
                 aria-current={isActive ? "page" : undefined}
                 data-testid={`sidebar-link-${path === "/" ? "home" : path.slice(1).replaceAll("/", "-")}`}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
                     ? "bg-[#e6f2e3] text-[#14553f]"
                     : "text-[#4d665b] hover:bg-white hover:text-[#14553f]"
                 }`}
               >
-                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span
+                  aria-hidden="true"
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border shadow-sm transition-colors ${
+                    isActive
+                      ? "border-[#bfdcba] bg-white text-[#14553f]"
+                      : "border-[#e3ebe1] bg-[#edf4ea] text-[#3b825b] group-hover:bg-white group-hover:text-[#14553f]"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
                 <span>{label}</span>
               </Link>
             );
