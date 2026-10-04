@@ -10,10 +10,12 @@ import {
   changePasswordSchema, bonusCodeSchema, exchangeCodeSchema,
   REFERRAL_TASKS, PRODUCT_TASK,
   businessSettingsFieldsSchema, platformBusinessSettingsSchema,
-  ELIGIBLE_COUNTRIES, productCategorySchema, type Deposit,
+  ELIGIBLE_COUNTRIES, productCategorySchema, createProductTermsSnapshot,
+  type Deposit, type Product, type ProductCategory,
 } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { getNextProductImage } from "@shared/product-images";
+import { getProductPurchaseBlockReason } from "@shared/product-purchase-policy";
 import {
   getDepositMinimumError,
   resolvePlatformBusinessSettings,
@@ -770,6 +772,7 @@ export async function registerRoutes(
   app.get("/api/products", requireAuth, asyncRoute(async (req, res) => {
     const products = await storage.getProducts();
     const userProducts = await storage.getUserProducts(req.session.userId!);
+    const activityLaunchVersion = await storage.getActivityLaunchVersion();
     
     const productCountMap = new Map<string, number>();
     userProducts.forEach(up => {
@@ -782,6 +785,20 @@ export async function registerRoutes(
       owned: productCountMap.has(p.id),
       ownedCount: productCountMap.get(p.id) || 0,
       userProduct: userProducts.find(up => up.productId === p.id),
+      purchaseBlockReason: getProductPurchaseBlockReason(
+        {
+          category: p.category as ProductCategory,
+          activityAvailableAt: p.activityAvailableAt,
+        },
+        userProducts.map((up) => ({
+          category: up.product.category as ProductCategory,
+          duration: up.product.duration,
+          cyclesCompleted: up.cyclesCompleted,
+          isActive: up.isActive,
+          activityLaunchVersion: up.activityLaunchVersion,
+        })),
+        activityLaunchVersion,
+      ),
     }));
     
     res.json(productsWithOwnership);
@@ -925,7 +942,24 @@ export async function registerRoutes(
             message: "Solde insuffisant. Le solde dépôt est utilisé en premier, puis le solde retrait.",
           });
         }
-        return res.status(404).json({ message: "Produit non trouvé" });
+        if (result.reason === "product_not_found") {
+          return res.status(404).json({ message: "Produit non trouvé" });
+        }
+        if (result.reason === "user_not_found") {
+          return res.status(404).json({ message: "Utilisateur non trouvé" });
+        }
+        const ruleMessages = {
+          activity_schedule_required: "La date d’ouverture de ce produit n’est pas encore définie.",
+          activity_not_open_yet: "Ce produit n’est pas encore disponible à l’achat.",
+          wellness_in_progress: "Terminez votre produit Bien-être en cours avant d’en acheter un autre.",
+          activity_already_purchased: "Vous avez déjà acheté un produit Activité lors de ce lancement.",
+        } as const;
+        if (result.reason in ruleMessages) {
+          return res.status(400).json({
+            message: ruleMessages[result.reason as keyof typeof ruleMessages],
+          });
+        }
+        return res.status(400).json({ message: "Cet achat n’est pas autorisé." });
       }
 
       res.json({
@@ -1939,6 +1973,7 @@ export async function registerRoutes(
     totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro").optional(),
     imageUrl: z.union([z.string().url("URL invalide"), z.literal("")]).nullable().optional(),
     category: productCategorySchema.optional(),
+    activityAvailableAt: z.string().datetime({ offset: true }).nullable().optional(),
     isActive: z.boolean().optional(),
   }).strict().refine((updates) => Object.keys(updates).length > 0, {
     message: "Aucune modification fournie",
@@ -1951,8 +1986,17 @@ export async function registerRoutes(
     duration: z.number().int().positive("La durée doit être supérieure à zéro"),
     totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro"),
     category: productCategorySchema,
+    activityAvailableAt: z.string().datetime({ offset: true }).nullable().optional(),
     isActive: z.boolean().default(true),
-  }).strict();
+  }).strict().superRefine((data, context) => {
+    if (data.category === "activities" && data.isActive && !data.activityAvailableAt) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La date et l’heure GMT d’ouverture sont requises pour un produit Activité.",
+        path: ["activityAvailableAt"],
+      });
+    }
+  });
 
   app.post("/api/admin/products", requireAdmin, async (req, res) => {
     try {
@@ -1966,7 +2010,16 @@ export async function registerRoutes(
       }
 
       const level = existingProducts.reduce((highest, product) => Math.max(highest, product.level), 0) + 1;
-      const createdProduct = await storage.createProduct({ ...input, level, imageUrl });
+      const { activityAvailableAt, ...productInput } = input;
+      const createdProduct = await storage.createProduct({
+        ...productInput,
+        level,
+        imageUrl,
+        activityAvailableAt:
+          input.category === "activities" && activityAvailableAt
+            ? new Date(activityAvailableAt)
+            : null,
+      });
       return res.status(201).json(createdProduct);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1985,9 +2038,25 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Produit non trouvé" });
       }
 
-      const normalizedUpdates = {
+      const nextCategory = updates.category ?? existingProduct.category;
+      const requestedActivityAvailableAt =
+        updates.activityAvailableAt === undefined
+          ? existingProduct.activityAvailableAt
+          : updates.activityAvailableAt
+            ? new Date(updates.activityAvailableAt)
+            : null;
+      const nextIsActive = updates.isActive ?? existingProduct.isActive;
+      if (nextCategory === "activities" && nextIsActive && !requestedActivityAvailableAt) {
+        return res.status(400).json({
+          message: "La date et l’heure GMT d’ouverture sont requises pour un produit Activité.",
+        });
+      }
+
+      const normalizedUpdates: Partial<Product> = {
         ...updates,
         ...(updates.imageUrl === "" ? { imageUrl: null } : {}),
+        activityAvailableAt:
+          nextCategory === "activities" ? requestedActivityAvailableAt : null,
       };
       if (updates.category && updates.category !== existingProduct.category && updates.imageUrl === undefined) {
         const imageUrl = getNextProductImage(
@@ -2005,7 +2074,6 @@ export async function registerRoutes(
 
       const product = await storage.updateProduct(req.params.id, normalizedUpdates);
       if (!product) return res.status(404).json({ message: "Produit non trouvé" });
-      await storage.deactivateCompletedProductInvestments(product.id, product.duration);
       res.json(product);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2332,6 +2400,8 @@ export async function registerRoutes(
         cyclesCompleted: 0,
         isActive: true,
         assignedByAdmin: true,
+        productSnapshot: createProductTermsSnapshot(product),
+        activityLaunchVersion: null,
       });
 
       await storage.updateUser(user.id, { hasProduct: true });

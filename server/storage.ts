@@ -3,15 +3,20 @@ import {
   deposits, withdrawals, earnings, claimedTasks, platformSettings, platformImages,
   bonusCodes, bonusCodeUsages, adminAppointments, paymentChannelAudit, platformSettingsAudit,
   supportMessages, supportAttachments, withdrawalProofs,
-  type User, type InsertUser, type Product, type UserProduct, type Wallet,
+  type User, type InsertUser, type Product, type ProductCategory, type UserProduct, type Wallet,
   type PaymentChannel, type Deposit, type Withdrawal, type Earning, type ClaimedTask,
   type PlatformSetting, type PlatformImage, type BonusCode, type BonusCodeUsage,
   type AdminAppointment, type PaymentChannelAudit, type PlatformSettingsAudit,
   type SupportMessage, type SupportAttachment, type WithdrawalProof,
-  VIP_PRODUCTS
+  type ProductTermsSnapshot, createProductTermsSnapshot, VIP_PRODUCTS
 } from "@shared/schema";
 import { db } from "./db";
 import { resolvePlatformBusinessSettings } from "./platform-settings";
+import {
+  ACTIVITY_LAUNCH_VERSION_SETTING_KEY,
+  INITIAL_ACTIVITY_LAUNCH_VERSION,
+  getProductPurchaseBlockReason,
+} from "@shared/product-purchase-policy";
 import { eq, and, asc, desc, inArray, sql, gte, lte, or, count, isNull, isNotNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -45,7 +50,14 @@ export type ProductPurchaseResult =
     }
   | {
       success: false;
-      reason: "user_not_found" | "product_not_found" | "insufficient_balance";
+      reason:
+        | "user_not_found"
+        | "product_not_found"
+        | "insufficient_balance"
+        | "activity_schedule_required"
+        | "activity_not_open_yet"
+        | "wellness_in_progress"
+        | "activity_already_purchased";
     };
 
 export type WithdrawalRequestResult =
@@ -62,6 +74,42 @@ function stripWithdrawalProofImages(proof: WithdrawalProof): WithdrawalProofReco
     ...record
   } = proof;
   return record;
+}
+
+function resolvePurchaseProduct(
+  product: Product | null,
+  snapshot: ProductTermsSnapshot | null,
+  productId: string,
+): Product | null {
+  if (!product && !snapshot) return null;
+
+  const current = product ?? {
+    id: productId,
+    level: snapshot?.level ?? 0,
+    name: snapshot?.name ?? "Produit retiré",
+    price: snapshot?.price ?? 0,
+    dailyReturn: snapshot?.dailyReturn ?? 0,
+    duration: snapshot?.duration ?? 0,
+    totalReturn: snapshot?.totalReturn ?? 0,
+    imageUrl: snapshot?.imageUrl ?? null,
+    category: snapshot?.category ?? "fixed",
+    isActive: false,
+    activityAvailableAt: null,
+  };
+
+  return snapshot ? { ...current, ...snapshot } : current;
+}
+
+function productUpdatesContainChanges(current: Product, updates: Partial<Product>): boolean {
+  return Object.entries(updates).some(([key, nextValue]) => {
+    const previousValue = current[key as keyof Product];
+    if (previousValue instanceof Date || nextValue instanceof Date) {
+      const previousTime = previousValue ? new Date(previousValue as Date).getTime() : null;
+      const nextTime = nextValue ? new Date(nextValue as Date).getTime() : null;
+      return previousTime !== nextTime;
+    }
+    return previousValue !== nextValue;
+  });
 }
 
 function generateReferralCode(): string {
@@ -101,9 +149,9 @@ export interface IStorage {
   getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductByLevel(level: number): Promise<Product | undefined>;
+  getActivityLaunchVersion(): Promise<number>;
   createProduct(product: Omit<Product, "id">): Promise<Product>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
-  deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void>;
   createProductPurchase(
     userId: string,
     productId: string,
@@ -377,10 +425,10 @@ export class DatabaseStorage implements IStorage {
       db.select({
         userId: userProducts.userId,
         productCount: count(userProducts.id),
-        totalInvestment: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+        totalInvestment: sql<number>`COALESCE(SUM(COALESCE((${userProducts.productSnapshot}->>'price')::integer, ${products.price})), 0)`,
       })
         .from(userProducts)
-        .innerJoin(products, eq(userProducts.productId, products.id))
+        .leftJoin(products, eq(userProducts.productId, products.id))
         .where(inArray(userProducts.userId, userIds))
         .groupBy(userProducts.userId),
       db.select({
@@ -393,13 +441,13 @@ export class DatabaseStorage implements IStorage {
       db.select({
         userId: userProducts.userId,
         id: userProducts.id,
-        name: products.name,
-        level: products.level,
+        name: sql<string>`COALESCE(${userProducts.productSnapshot}->>'name', ${products.name})`,
+        level: sql<number>`COALESCE((${userProducts.productSnapshot}->>'level')::integer, ${products.level})`,
         cyclesCompleted: userProducts.cyclesCompleted,
-        duration: products.duration,
+        duration: sql<number>`COALESCE((${userProducts.productSnapshot}->>'duration')::integer, ${products.duration})`,
       })
         .from(userProducts)
-        .innerJoin(products, eq(userProducts.productId, products.id))
+        .leftJoin(products, eq(userProducts.productId, products.id))
         .where(and(
           inArray(userProducts.userId, userIds),
           eq(userProducts.isActive, true),
@@ -472,52 +520,65 @@ export class DatabaseStorage implements IStorage {
     return product || undefined;
   }
 
+  async getActivityLaunchVersion(): Promise<number> {
+    const value = await this.getSetting(ACTIVITY_LAUNCH_VERSION_SETTING_KEY);
+    const parsed = Number.parseInt(value ?? "", 10);
+    return Number.isInteger(parsed) && parsed >= INITIAL_ACTIVITY_LAUNCH_VERSION
+      ? parsed
+      : INITIAL_ACTIVITY_LAUNCH_VERSION;
+  }
+
   async createProduct(product: Omit<Product, "id">): Promise<Product> {
-    const [created] = await db.insert(products).values(product).returning();
-    return created;
+    return db.transaction(async (tx) => {
+      const [created] = await tx.insert(products).values(product).returning();
+      if (created.category === "activities" && created.isActive) {
+        await tx.insert(platformSettings)
+          .values({
+            key: ACTIVITY_LAUNCH_VERSION_SETTING_KEY,
+            value: String(INITIAL_ACTIVITY_LAUNCH_VERSION + 1),
+          })
+          .onConflictDoUpdate({
+            target: platformSettings.key,
+            set: {
+              value: sql`(${platformSettings.value}::integer + 1)::text`,
+              updatedAt: new Date(),
+            },
+          });
+      }
+      return created;
+    });
   }
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> {
-    const [updated] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
-    return updated || undefined;
-  }
-
-  async deactivateCompletedProductInvestments(productId: string, duration: number): Promise<void> {
-    await db.transaction(async (tx) => {
-      const completed = await tx.select({
-        investment: userProducts,
-        product: products,
-      })
-        .from(userProducts)
-        .innerJoin(products, eq(userProducts.productId, products.id))
-        .where(and(
-          eq(userProducts.productId, productId),
-          eq(userProducts.isActive, true),
-          gte(userProducts.cyclesCompleted, duration),
-        ))
+    return db.transaction(async (tx) => {
+      const [current] = await tx.select().from(products)
+        .where(eq(products.id, id))
         .for("update");
+      if (!current) return undefined;
 
-      for (const { investment, product } of completed) {
-        const pending = investment.pendingReturns;
-        if (pending > 0) {
-          await tx.update(users).set({
-            withdrawalBalance: sql`${users.withdrawalBalance} + ${pending}`,
-            totalEarnings: sql`${users.totalEarnings} + ${pending}`,
-            todayEarnings: sql`${users.todayEarnings} + ${pending}`,
-          }).where(eq(users.id, investment.userId));
-          await tx.insert(earnings).values({
-            userId: investment.userId,
-            amount: pending,
-            type: "product_payout",
-            description: `Gains bloqués libérés — ${product.name}`,
-            sourceId: investment.id,
+      const [updated] = await tx.update(products)
+        .set(updates)
+        .where(eq(products.id, id))
+        .returning();
+      if (
+        updated &&
+        productUpdatesContainChanges(current, updates) &&
+        (current.category === "activities" || updated.category === "activities")
+      ) {
+        await tx.insert(platformSettings)
+          .values({
+            key: ACTIVITY_LAUNCH_VERSION_SETTING_KEY,
+            value: String(INITIAL_ACTIVITY_LAUNCH_VERSION + 1),
+          })
+          .onConflictDoUpdate({
+            target: platformSettings.key,
+            set: {
+              value: sql`(${platformSettings.value}::integer + 1)::text`,
+              updatedAt: new Date(),
+            },
           });
-        }
-        await tx.update(userProducts).set({
-          isActive: false,
-          pendingReturns: 0,
-        }).where(eq(userProducts.id, investment.id));
       }
+      return updated || undefined;
     });
   }
 
@@ -536,6 +597,54 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(products.id, productId), eq(products.isActive, true)))
         .for("update");
       if (!product) return { success: false, reason: "product_not_found" };
+
+      const [launchSetting] = await tx.select()
+        .from(platformSettings)
+        .where(eq(platformSettings.key, ACTIVITY_LAUNCH_VERSION_SETTING_KEY))
+        .for("update");
+      let currentActivityLaunchVersion = Number.parseInt(launchSetting?.value ?? "", 10);
+      if (
+        !Number.isInteger(currentActivityLaunchVersion) ||
+        currentActivityLaunchVersion < INITIAL_ACTIVITY_LAUNCH_VERSION
+      ) {
+        currentActivityLaunchVersion = INITIAL_ACTIVITY_LAUNCH_VERSION;
+        if (!launchSetting) {
+          await tx.insert(platformSettings)
+            .values({
+              key: ACTIVITY_LAUNCH_VERSION_SETTING_KEY,
+              value: String(INITIAL_ACTIVITY_LAUNCH_VERSION),
+            })
+            .onConflictDoNothing({ target: platformSettings.key });
+        }
+      }
+
+      const historyRows = await tx.select({
+        investment: userProducts,
+        product: products,
+      })
+        .from(userProducts)
+        .leftJoin(products, eq(userProducts.productId, products.id))
+        .where(eq(userProducts.userId, user.id));
+      const purchaseHistory = historyRows.map(({ investment, product: currentProduct }) => {
+        const terms = resolvePurchaseProduct(
+          currentProduct,
+          investment.productSnapshot,
+          investment.productId,
+        );
+        return {
+          category: (terms?.category ?? "fixed") as ProductCategory,
+          duration: terms?.duration ?? 0,
+          cyclesCompleted: investment.cyclesCompleted,
+          isActive: investment.isActive,
+          activityLaunchVersion: investment.activityLaunchVersion,
+        };
+      });
+      const blockReason = getProductPurchaseBlockReason(
+        product,
+        purchaseHistory,
+        currentActivityLaunchVersion,
+      );
+      if (blockReason) return { success: false, reason: blockReason };
 
       const available = user.depositBalance + user.withdrawalBalance;
       if (available < product.price) {
@@ -563,6 +672,9 @@ export class DatabaseStorage implements IStorage {
         cyclesCompleted: 0,
         isActive: true,
         assignedByAdmin: false,
+        productSnapshot: createProductTermsSnapshot(product),
+        activityLaunchVersion:
+          product.category === "activities" ? currentActivityLaunchVersion : null,
       }).returning();
 
       if (user.referrerId && !user.hasProduct) {
@@ -615,7 +727,7 @@ export class DatabaseStorage implements IStorage {
         product: products,
       })
         .from(userProducts)
-        .innerJoin(products, eq(userProducts.productId, products.id))
+        .leftJoin(products, eq(userProducts.productId, products.id))
         .where(and(
           eq(userProducts.id, userProductId),
           eq(userProducts.isActive, true),
@@ -624,7 +736,13 @@ export class DatabaseStorage implements IStorage {
         .for("update");
       if (!row) return 0;
 
-      const { investment, product } = row;
+      const { investment } = row;
+      const product = resolvePurchaseProduct(
+        row.product,
+        investment.productSnapshot,
+        investment.productId,
+      );
+      if (!product) return 0;
       if (investment.cyclesCompleted >= product.duration) return 0;
 
       const completedCycles = investment.cyclesCompleted + 1;
@@ -661,30 +779,29 @@ export class DatabaseStorage implements IStorage {
 
   async getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]> {
     const result = await db.select({
-      id: userProducts.id,
-      userId: userProducts.userId,
-      productId: userProducts.productId,
-      purchasedAt: userProducts.purchasedAt,
-      nextPayoutAt: userProducts.nextPayoutAt,
-      pendingReturns: userProducts.pendingReturns,
-      cyclesCompleted: userProducts.cyclesCompleted,
-      isActive: userProducts.isActive,
-      assignedByAdmin: userProducts.assignedByAdmin,
+      investment: userProducts,
       product: products,
     })
     .from(userProducts)
-    .innerJoin(products, eq(userProducts.productId, products.id))
+    .leftJoin(products, eq(userProducts.productId, products.id))
     .where(eq(userProducts.userId, userId));
     
-    return result;
+    return result.flatMap(({ investment, product }) => {
+      const resolvedProduct = resolvePurchaseProduct(
+        product,
+        investment.productSnapshot,
+        investment.productId,
+      );
+      return resolvedProduct ? [{ ...investment, product: resolvedProduct }] : [];
+    });
   }
 
   async getUserTotalInvestment(userId: string): Promise<number> {
     const result = await db.select({
-      total: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+      total: sql<number>`COALESCE(SUM(COALESCE((${userProducts.productSnapshot}->>'price')::integer, ${products.price})), 0)`,
     })
     .from(userProducts)
-    .innerJoin(products, eq(userProducts.productId, products.id))
+    .leftJoin(products, eq(userProducts.productId, products.id))
     .where(eq(userProducts.userId, userId));
     
     return Number(result[0]?.total || 0);
@@ -694,10 +811,10 @@ export class DatabaseStorage implements IStorage {
     if (userIds.length === 0) return new Map();
     const rows = await db.select({
       userId: userProducts.userId,
-      totalInvestment: sql<number>`COALESCE(SUM(${products.price}), 0)`,
+      totalInvestment: sql<number>`COALESCE(SUM(COALESCE((${userProducts.productSnapshot}->>'price')::integer, ${products.price})), 0)`,
     })
       .from(userProducts)
-      .innerJoin(products, eq(userProducts.productId, products.id))
+      .leftJoin(products, eq(userProducts.productId, products.id))
       .where(inArray(userProducts.userId, userIds))
       .groupBy(userProducts.userId);
 
@@ -722,24 +839,25 @@ export class DatabaseStorage implements IStorage {
 
   async getActiveUserProducts(): Promise<(UserProduct & { product: Product; user: User })[]> {
     const result = await db.select({
-      id: userProducts.id,
-      userId: userProducts.userId,
-      productId: userProducts.productId,
-      purchasedAt: userProducts.purchasedAt,
-      nextPayoutAt: userProducts.nextPayoutAt,
-      pendingReturns: userProducts.pendingReturns,
-      cyclesCompleted: userProducts.cyclesCompleted,
-      isActive: userProducts.isActive,
-      assignedByAdmin: userProducts.assignedByAdmin,
+      investment: userProducts,
       product: products,
       user: users,
     })
     .from(userProducts)
-    .innerJoin(products, eq(userProducts.productId, products.id))
+    .leftJoin(products, eq(userProducts.productId, products.id))
     .innerJoin(users, eq(userProducts.userId, users.id))
     .where(eq(userProducts.isActive, true));
     
-    return result;
+    return result.flatMap(({ investment, product, user }) => {
+      const resolvedProduct = resolvePurchaseProduct(
+        product,
+        investment.productSnapshot,
+        investment.productId,
+      );
+      return resolvedProduct
+        ? [{ ...investment, product: resolvedProduct, user }]
+        : [];
+    });
   }
 
   async getWallets(userId: string): Promise<Wallet[]> {
@@ -1414,6 +1532,7 @@ export class DatabaseStorage implements IStorage {
           imageUrl: null,
           category: "fixed",
           isActive: true,
+          activityAvailableAt: null,
         });
       }
     }

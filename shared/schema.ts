@@ -102,6 +102,17 @@ export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
   activities: "Activités",
 };
 
+export type ProductTermsSnapshot = {
+  name: string;
+  level: number;
+  price: number;
+  dailyReturn: number;
+  duration: number;
+  totalReturn: number;
+  category: ProductCategory;
+  imageUrl: string | null;
+};
+
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   fullName: text("full_name").notNull(),
@@ -148,8 +159,12 @@ export const products = pgTable("products", {
   duration: integer("duration").notNull().default(100),
   totalReturn: integer("total_return").notNull(),
   imageUrl: text("image_url"),
-  category: text("category").notNull().default("fixed"),
+  category: text("category").$type<ProductCategory>().notNull().default("fixed"),
   isActive: boolean("is_active").notNull().default(true),
+  activityAvailableAt: timestamp("activity_available_at", {
+    withTimezone: true,
+    mode: "date",
+  }),
 });
 
 export const productsRelations = relations(products, ({ many }) => ({
@@ -166,6 +181,8 @@ export const userProducts = pgTable("user_products", {
   cyclesCompleted: integer("cycles_completed").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   assignedByAdmin: boolean("assigned_by_admin").notNull().default(false),
+  productSnapshot: jsonb("product_snapshot").$type<ProductTermsSnapshot>(),
+  activityLaunchVersion: integer("activity_launch_version"),
 });
 
 export const userProductsRelations = relations(userProducts, ({ one }) => ({
@@ -485,6 +502,18 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type UserProduct = typeof userProducts.$inferSelect;
+export function createProductTermsSnapshot(product: Product): ProductTermsSnapshot {
+  return {
+    name: product.name,
+    level: product.level,
+    price: product.price,
+    dailyReturn: product.dailyReturn,
+    duration: product.duration,
+    totalReturn: product.totalReturn,
+    category: product.category as ProductCategory,
+    imageUrl: product.imageUrl,
+  };
+}
 export type Wallet = typeof wallets.$inferSelect;
 export type PaymentChannel = typeof paymentChannels.$inferSelect;
 export type Deposit = typeof deposits.$inferSelect;

@@ -30,10 +30,44 @@ const productFormSchema = z.object({
   duration: z.number().int().positive("La durée doit être supérieure à zéro"),
   totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro"),
   category: z.enum(PRODUCT_CATEGORIES),
+  activityAvailableAt: z.string(),
   isActive: z.boolean(),
+}).superRefine((data, context) => {
+  if (data.category === "activities" && data.isActive && !data.activityAvailableAt) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "La date et l’heure GMT d’ouverture sont requises.",
+      path: ["activityAvailableAt"],
+    });
+  }
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
+type ProductSaveData = Omit<ProductFormData, "activityAvailableAt"> & {
+  activityAvailableAt: string | null;
+};
+
+function toGmtDateTimeInput(value: Date | string | null | undefined): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
+}
+
+function fromGmtDateTimeInput(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(`${value}:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function formatGmtDateTime(value: Date | string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date invalide";
+  return `${new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(date)} GMT`;
+}
 
 function NumberField({
   name,
@@ -87,12 +121,14 @@ export default function AdminProductsPage() {
     defaultValues: {
       name: "",
       category: "wellness",
+      activityAvailableAt: "",
       isActive: true,
     },
   });
+  const selectedCategory = form.watch("category");
 
   const createMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
+    mutationFn: async (data: ProductSaveData) => {
       const response = await apiRequest("POST", "/api/admin/products", data);
       if (!response.ok) {
         const result = await response.json();
@@ -114,7 +150,7 @@ export default function AdminProductsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ productId, data }: { productId: string; data: ProductFormData }) => {
+    mutationFn: async ({ productId, data }: { productId: string; data: ProductSaveData }) => {
       const response = await apiRequest("PATCH", `/api/admin/products/${productId}`, data);
       if (!response.ok) {
         const result = await response.json();
@@ -172,6 +208,7 @@ export default function AdminProductsPage() {
       duration: product.duration,
       totalReturn: product.totalReturn,
       category: product.category as ProductCategory,
+      activityAvailableAt: toGmtDateTimeInput(product.activityAvailableAt),
       isActive: product.isActive,
     });
     setDialogOpen(true);
@@ -182,16 +219,24 @@ export default function AdminProductsPage() {
     form.reset({
       name: "",
       category: "wellness",
+      activityAvailableAt: "",
       isActive: true,
     });
     setDialogOpen(true);
   };
 
   const onSubmit = (data: ProductFormData) => {
+    const saveData: ProductSaveData = {
+      ...data,
+      activityAvailableAt:
+        data.category === "activities"
+          ? fromGmtDateTimeInput(data.activityAvailableAt)
+          : null,
+    };
     if (editingProduct) {
-      updateMutation.mutate({ productId: editingProduct.id, data });
+      updateMutation.mutate({ productId: editingProduct.id, data: saveData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(saveData);
     }
   };
 
@@ -214,8 +259,8 @@ export default function AdminProductsPage() {
             <CardContent className="flex items-start gap-3 p-4 text-sm">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <p>
-                Les modifications du rendement quotidien et de la durée s’appliquent immédiatement aux
-                investissements actifs. Le nouveau prix ne change pas les achats déjà payés.
+                Les conditions des achats déjà payés restent figées jusqu’à leur échéance. Modifier ou retirer
+                un produit Activité ouvre un nouveau lancement, sans effacer les investissements en cours.
               </p>
             </CardContent>
           </Card>
@@ -255,6 +300,13 @@ export default function AdminProductsPage() {
                       <p className="text-sm text-muted-foreground">
                         {product.duration} jours · Total annoncé {product.totalReturn.toLocaleString("fr-FR")} FCFA
                       </p>
+                      {product.category === "activities" && (
+                        <p className="text-sm text-muted-foreground">
+                          Ouverture GMT : {product.activityAvailableAt
+                            ? formatGmtDateTime(product.activityAvailableAt)
+                            : "à définir"}
+                        </p>
+                      )}
                     </div>
                     <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                       <Button
@@ -345,6 +397,33 @@ export default function AdminProductsPage() {
                     </FormItem>
                   )}
                 />
+                {selectedCategory === "activities" && (
+                  <FormField
+                    control={form.control}
+                    name="activityAvailableAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date et heure d’ouverture (GMT)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="datetime-local"
+                            step="60"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            data-testid="input-activity-available-at"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Le produit reste visible, mais ne peut pas être acheté avant cette date et cette heure GMT.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="isActive"

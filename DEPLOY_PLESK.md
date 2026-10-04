@@ -76,6 +76,17 @@ Avant de déployer le code qui utilise ces fonctions en production :
 
 Cette migration est additive. Elle conserve chaque valeur historique de `users.balance`, désormais traitée comme le solde dépôt, et initialise le nouveau solde retrait à zéro. Elle ajoute aussi la catégorie des produits, les gains en attente jusqu’à l’échéance et la table des preuves quotidiennes. N’exécutez pas `db:push:supabase` pour cette mise à jour et refusez tout plan qui propose de supprimer `public.session`. La migration de production n’a pas été exécutée pendant cette session.
 
+### Lancements Activité et conditions figées à l’achat
+
+Avant de déployer le code correspondant sur Plesk :
+
+1. Faites une sauvegarde PostgreSQL.
+2. Appliquez manuellement `migrations/20261004_product_purchase_rules.sql` à la base Supabase utilisée par Plesk.
+3. Vérifiez `products.activity_available_at`, `user_products.product_snapshot` et `user_products.activity_launch_version`. Vérifiez aussi que les achats existants liés aux produits ont reçu leur instantané.
+4. Déployez ensuite le code; ne lancez pas `db:push:supabase` et ne relancez pas la migration initiale.
+
+La migration copie les conditions actuelles des produits dans les achats existants sans modifier les soldes, l’état des investissements ni leurs paiements en attente. Elle attribue aussi le lancement initial aux achats Activité payés déjà liés à un produit, sans compter les produits attribués par un administrateur. Elle ajoute la date GMT d’ouverture et le compteur de lancement partagé. Elle doit être appliquée avant le nouveau code; `public.session` doit rester intacte. Cette migration de production n’a pas été exécutée depuis Replit.
+
 ## AshTech Pay — Direct API Mobile Money
 
 Avant d’activer un pays dans **Administration → Moyens de paiement**, appliquez une fois ces colonnes additives à la base PostgreSQL utilisée par Plesk :

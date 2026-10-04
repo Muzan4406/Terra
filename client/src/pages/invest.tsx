@@ -15,11 +15,23 @@ import {
   type ProductCategory,
   type UserProduct,
 } from "@shared/schema";
+import type { ProductPurchaseBlockReason } from "@shared/product-purchase-policy";
 
 interface ProductWithOwnership extends Product {
   owned: boolean;
   ownedCount: number;
   userProduct?: UserProduct;
+  purchaseBlockReason: ProductPurchaseBlockReason | null;
+}
+
+function formatGmtDateTime(value: Date | string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date indisponible";
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(date);
 }
 
 export default function InvestPage() {
@@ -36,6 +48,7 @@ export default function InvestPage() {
   } = useQuery<ProductWithOwnership[]>({
     queryKey: ["/api/products"],
     retry: 1,
+    refetchInterval: 15_000,
   });
 
   const purchaseMutation = useMutation({
@@ -198,15 +211,30 @@ export default function InvestPage() {
                     <p className="mt-2 text-[11px] text-gray-500">
                       Taux quotidien indicatif : {calculateProfitRate(product.dailyReturn, product.price)}%
                     </p>
+                    {product.category === "activities" && (
+                      <p className="mt-1 text-[11px] font-medium text-gray-600">
+                        {product.activityAvailableAt
+                          ? `Ouverture GMT : ${formatGmtDateTime(product.activityAvailableAt)}`
+                          : "Date d’ouverture à définir"}
+                      </p>
+                    )}
                     <Button
                       type="button"
                       className="mt-3 h-9 w-full"
-                      disabled={purchaseMutation.isPending}
+                      disabled={purchaseMutation.isPending || Boolean(product.purchaseBlockReason)}
                       onClick={() => purchaseMutation.mutate(product.id)}
                       data-testid={`button-buy-${product.level}`}
                     >
                       {purchaseMutation.isPending ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Traitement…</>
+                      ) : product.purchaseBlockReason === "activity_not_open_yet" ? (
+                        "Pas encore disponible"
+                      ) : product.purchaseBlockReason === "activity_schedule_required" ? (
+                        "Ouverture à définir"
+                      ) : product.purchaseBlockReason === "wellness_in_progress" ? (
+                        "Terminez Bien-être en cours"
+                      ) : product.purchaseBlockReason === "activity_already_purchased" ? (
+                        "Déjà acheté ce lancement"
                       ) : product.ownedCount > 0 ? (
                         "Acheter à nouveau"
                       ) : (

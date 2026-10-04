@@ -27,6 +27,10 @@ Terra is an investment platform for 4 French-speaking African countries: Burkina
 - **Withdrawal Hours**: 10h-17h
 - **Withdrawal Requirements**: User must have made a deposit AND purchased a VIP product
 - **Effective date**: Updated bonus, commission, minimum-withdrawal, and fee settings apply to future operations; existing balances, commissions, and withdrawal requests are not recalculated.
+- **Fixed products**: Repeat purchases are unlimited.
+- **Wellness products**: A user may buy another Wellness product only after the active one has completed.
+- **Activity products**: Each active Activity catalog change starts a new launch; a user may buy one Activity product per launch, even while an investment from an earlier launch is still active. Each product has a one-time GMT opening date/time; it remains visible but cannot be purchased before that time.
+- **Purchase terms**: Product terms are copied to each purchase. Editing or retiring a catalog product does not change or remove existing paid investments or their payout schedule.
 
 ## VIP Products
 | Level | Price | Daily Return | Total (100 days) |
