@@ -206,13 +206,19 @@ export default function AccountPage() {
 
           <section className="beko-shortcuts" aria-label="Actions rapides">
             <button type="button" className="beko-shortcut" onClick={() => navigate("/deposit")} data-testid="button-deposit">
-              <ArrowRight size={19} /><span>Déposer</span>
+              <span className="beko-shortcut-icon"><ArrowRight size={21} /></span>
+              <span className="beko-shortcut-copy"><strong>Déposer</strong><small>Ajouter des fonds</small></span>
+              <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
             <button type="button" className="beko-shortcut" onClick={() => navigate("/withdraw")} data-testid="button-withdraw">
-              <ArrowDownToLine size={19} /><span>Retirer</span>
+              <span className="beko-shortcut-icon"><ArrowDownToLine size={21} /></span>
+              <span className="beko-shortcut-copy"><strong>Retirer</strong><small>Demander un retrait</small></span>
+              <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
             <button type="button" className="beko-shortcut" onClick={() => navigate("/history")} data-testid="button-invoice">
-              <History size={19} /><span>Historique</span>
+              <span className="beko-shortcut-icon"><History size={21} /></span>
+              <span className="beko-shortcut-copy"><strong>Historique</strong><small>Voir mes opérations</small></span>
+              <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
           </section>
 

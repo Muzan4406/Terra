@@ -6,9 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   ArrowLeft,
+  ArrowRight,
   AlertCircle,
   CheckCircle2,
-  ChevronRight,
   Clock3,
   CreditCard,
   Info,
@@ -18,6 +18,7 @@ import {
 import { CountrySelect } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
+import "./beko-pages.css";
 import "./deposit-page.css";
 
 interface DepositOptions {
@@ -291,13 +292,13 @@ export default function DepositPage() {
       "Validez la demande sur votre téléphone. Votre solde de dépôt sera crédité après confirmation.";
 
   return (
-    <div className="deposit-page">
-      <div className="deposit-shell">
-        <header className="deposit-header">
+    <div className="beko-page beko-page--dark beko-page--deposit deposit-page">
+      <div className="beko-shell">
+        <header className="beko-topbar">
           <button
             type="button"
             onClick={() => navigate("/account")}
-            className="deposit-header-action"
+            className="beko-back"
             aria-label="Retour au compte"
           >
             <ArrowLeft size={19} aria-hidden="true" />
@@ -306,22 +307,22 @@ export default function DepositPage() {
           <button
             type="button"
             onClick={() => navigate("/history")}
-            className="deposit-header-action"
+            className="beko-back beko-deposit-history"
             aria-label="Voir l'historique"
           >
             <Clock3 size={18} aria-hidden="true" />
           </button>
         </header>
 
-        <main className={`deposit-content ${!automaticDeposit ? "has-action-dock" : ""}`}>
-          <section className="deposit-intro" aria-label="Créer un dépôt">
-            <p className="deposit-eyebrow">BEKO · PAIEMENT SÉCURISÉ</p>
+        <main className={`beko-content deposit-content ${!automaticDeposit ? "has-action-dock" : ""}`}>
+          <section className="beko-hero" aria-label="Créer un dépôt">
+            <p className="beko-eyebrow">BEKO · PAIEMENT SÉCURISÉ</p>
             <h2>Rechargez votre compte</h2>
             <p>Choisissez votre moyen de paiement et confirmez la demande depuis votre téléphone.</p>
           </section>
 
           {automaticDeposit ? (
-            <section className="deposit-status-card" aria-live="polite">
+            <section className="beko-panel deposit-status-card" aria-live="polite">
               <div className="deposit-status-head">
                 <span className={`deposit-status-symbol ${
                   automaticStatus === "approved" ? "is-success" : automaticStatus === "rejected" ? "is-error" : ""
@@ -424,11 +425,11 @@ export default function DepositPage() {
             </section>
           ) : (
             <>
-              <div className="deposit-section-heading">
+              <div className="beko-section-heading">
                 <h2>Montant du dépôt</h2>
                 <span>Minimum {depositMinimum.toLocaleString("fr-FR")} FCFA</span>
               </div>
-              <section className="deposit-amount-card" aria-label="Montant à déposer">
+              <section className="beko-panel deposit-amount-card" aria-label="Montant à déposer">
                 <div className="deposit-amount-entry">
                   <span className="deposit-currency">{isAshtechMode ? depositOptions.currency : "FCFA"}</span>
                   <input
@@ -449,11 +450,11 @@ export default function DepositPage() {
                 </div>
               </section>
 
-              <div className="deposit-section-heading">
+              <div className="beko-section-heading">
                 <h2>Informations de paiement</h2>
                 <span>Étape 1 sur 2</span>
               </div>
-              <section className="deposit-form-card">
+              <section className="beko-panel deposit-form-card">
                 {!isAshtechMode && (
                   <div className="deposit-field">
                     <label htmlFor="deposit-account-name">Nom du compte de paiement</label>
@@ -516,14 +517,14 @@ export default function DepositPage() {
               )}
 
               {depositOptions?.mode === "ashtech" && (
-                <div className="deposit-mode-note">
+                <div className="beko-notice deposit-mode-note">
                   Paiement automatique AshTech Pay. Validez la demande sur votre téléphone; votre solde de dépôt sera crédité après confirmation.
                 </div>
               )}
 
               {depositOptions?.mode === "manual" && (
                 <section>
-                  <div className="deposit-section-heading">
+                  <div className="beko-section-heading">
                     <h2>Canal de paiement</h2>
                     <span>{activeChannels.length} disponible{activeChannels.length === 1 ? "" : "s"}</span>
                   </div>
@@ -561,7 +562,7 @@ export default function DepositPage() {
                 Consulter mes opérations
               </button>
 
-              <div className="deposit-guidance">
+              <div className="beko-panel deposit-guidance">
                 <p><Info size={14} aria-hidden="true" />Minimum de dépôt : {depositMinimum.toLocaleString("fr-FR")} FCFA.</p>
                 {isAshtechMode ? (
                   <p><ShieldCheck size={14} aria-hidden="true" />Ne relancez pas un dépôt automatique tant qu'une demande est en attente.</p>
@@ -577,34 +578,42 @@ export default function DepositPage() {
         </main>
       </div>
       {!automaticDeposit && (
-        <div className="deposit-action-dock">
-          <div className="deposit-action-dock-inner">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={
-                depositMutation.isPending ||
-                optionsLoading ||
-                Boolean(optionsError) ||
-                !country ||
-                !depositOptions
-              }
-              className="deposit-submit"
-              data-testid="button-confirm"
-            >
-              {depositMutation.isPending ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-                  Traitement...
-                </>
-              ) : (
-                <>
-                  <ChevronRight size={18} aria-hidden="true" />
-                  {isAshtechMode ? "Lancer le paiement" : "Confirmer le dépôt"}
-                </>
-              )}
-            </button>
+        <div className="beko-withdraw-dock">
+          <div className="beko-withdraw-summary" aria-live="polite">
+            <div>
+              <span>Montant du dépôt</span>
+              <strong>{amount ? `${Number(amount).toLocaleString("fr-FR")} FCFA` : "À renseigner"}</strong>
+            </div>
+            <div>
+              <span>Crédité sur</span>
+              <strong>Solde dépôt</strong>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={
+              depositMutation.isPending ||
+              optionsLoading ||
+              Boolean(optionsError) ||
+              !country ||
+              !depositOptions
+            }
+            className="beko-primary-button"
+            data-testid="button-confirm"
+          >
+            {depositMutation.isPending ? (
+              <>
+                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                Traitement...
+              </>
+            ) : (
+              <>
+                <ArrowRight size={18} aria-hidden="true" />
+                {isAshtechMode ? "Lancer le paiement" : "Confirmer le dépôt"}
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>

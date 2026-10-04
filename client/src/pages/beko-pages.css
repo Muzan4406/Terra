@@ -296,37 +296,67 @@
 
 .beko-shortcuts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .55rem;
+  grid-template-columns: 1fr;
+  gap: .7rem;
 }
 
 .beko-shortcut {
   display: flex;
-  min-height: 4.5rem;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: .4rem;
-  padding: .65rem;
-  border: 1px solid rgba(224, 238, 216, .27);
-  border-radius: 1rem;
-  color: #f6fff0;
-  background: rgba(255, 255, 255, .1);
+  min-height: 4.6rem;
+  align-items: center;
+  gap: .85rem;
+  padding: .8rem .95rem;
+  border: 1px solid #cfdfc9;
+  border-radius: 1.15rem;
+  color: var(--beko-ink);
+  background: linear-gradient(110deg, #fbfff8, #edf6e8);
+  box-shadow: 0 7px 17px rgba(24, 69, 46, .06);
   text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .beko-shortcut:hover {
-  background: rgba(255, 255, 255, .18);
+  transform: translateY(-1px);
+  border-color: #9dc5a2;
+  box-shadow: 0 10px 21px rgba(24, 69, 46, .1);
 }
 
-.beko-shortcut span {
-  font-size: .73rem;
-  font-weight: 700;
+.beko-shortcut-icon {
+  display: grid;
+  width: 2.85rem;
+  height: 2.85rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: .95rem;
+  color: #f5fff0;
+  background: linear-gradient(145deg, #087653, #0b8b62);
+}
+
+.beko-shortcut-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.beko-shortcut-copy strong,
+.beko-shortcut-copy small {
+  display: block;
+}
+
+.beko-shortcut-copy strong {
+  font-size: .98rem;
+  font-weight: 850;
   line-height: 1.2;
 }
 
-.beko-shortcut svg {
-  color: var(--beko-lime);
+.beko-shortcut-copy small {
+  margin-top: .2rem;
+  color: var(--beko-muted);
+  font-size: .75rem;
+}
+
+.beko-shortcut-arrow {
+  flex: 0 0 auto;
+  color: #719781;
 }
 
 .beko-profile-id {
@@ -921,8 +951,7 @@
 
 @media (max-width: 380px) {
   .beko-content { padding-inline: .75rem; }
-  .beko-shortcut { padding: .55rem; }
-  .beko-shortcut span { font-size: .67rem; }
+  .beko-shortcut { padding: .7rem .8rem; }
   .beko-record-head { gap: .4rem; padding-inline: .7rem; }
   .beko-record-amount { font-size: .82rem; }
 }
@@ -1212,19 +1241,23 @@
   animation: none;
 }
 
-.beko-page--withdraw {
+.beko-page--withdraw,
+.beko-page--deposit {
   padding-bottom: 0;
 }
 
-.beko-page--withdraw .beko-shell {
+.beko-page--withdraw .beko-shell,
+.beko-page--deposit .beko-shell {
   padding-bottom: calc(9.7rem + env(safe-area-inset-bottom));
 }
 
-.beko-page--withdraw .beko-content {
+.beko-page--withdraw .beko-content,
+.beko-page--deposit .beko-content {
   padding-bottom: 1.25rem;
 }
 
-.beko-page--withdraw .beko-withdraw-dock {
+.beko-page--withdraw .beko-withdraw-dock,
+.beko-page--deposit .beko-withdraw-dock {
   position: fixed;
   z-index: 60;
   right: 0;
@@ -1275,4 +1308,176 @@
   .beko-page--dark .beko-level-stat strong {
     font-size: .62rem;
   }
+}
+
+.beko-deposit-history {
+  flex: 0 0 auto;
+}
+
+.beko-page--deposit .deposit-form-card,
+.beko-page--deposit .deposit-guidance {
+  border-color: rgba(119, 145, 189, .23);
+  background: #1b315a;
+  box-shadow: 0 9px 25px rgba(3, 9, 23, .2);
+}
+
+.beko-product-card {
+  display: grid;
+  gap: .9rem;
+  padding: 1rem;
+}
+
+.beko-product-card-head {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.beko-product-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .28rem .55rem;
+  border-radius: 99px;
+  color: #9be5c3;
+  background: rgba(75, 188, 137, .14);
+  font-size: .62rem;
+  font-weight: 850;
+}
+
+.beko-product-status.is-completed {
+  color: #d8dfeb;
+  background: rgba(255, 255, 255, .1);
+}
+
+.beko-product-days {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: .9rem 1rem;
+  border: 1px solid rgba(255, 180, 112, .28);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at 95% 20%, rgba(255, 167, 97, .17), transparent 8rem),
+    linear-gradient(125deg, #192b54, #263f70);
+}
+
+.beko-product-days span:first-child {
+  display: block;
+  color: #bdc9df;
+  font-size: .73rem;
+  font-weight: 700;
+}
+
+.beko-product-days strong {
+  display: block;
+  margin-top: .1rem;
+  color: #fff7ed;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -.06em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-product-days-icon {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  place-items: center;
+  border-radius: .95rem;
+  color: #ffd08b;
+  background: rgba(240, 144, 89, .18);
+}
+
+.beko-product-stat {
+  min-width: 0;
+  padding: .75rem;
+  border: 1px solid rgba(119, 145, 189, .17);
+  border-radius: .95rem;
+  background: rgba(255, 255, 255, .045);
+}
+
+.beko-product-stat span {
+  display: block;
+  color: #aebbd4;
+  font-size: .64rem;
+}
+
+.beko-product-stat strong {
+  display: block;
+  margin-top: .25rem;
+  overflow-wrap: anywhere;
+  color: #f5f4f0;
+  font-size: .77rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-product-progress {
+  display: grid;
+  gap: .55rem;
+  color: #b4bfd7;
+  font-size: .7rem;
+}
+
+.beko-product-progress strong {
+  color: #f5f4f0;
+  font-size: .7rem;
+}
+
+.beko-product-progress-track {
+  height: .52rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .12);
+}
+
+.beko-product-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f08b58, #ffbd74);
+  transition: width 250ms ease;
+}
+
+.beko-product-progress p {
+  margin: 0;
+  color: #aebbd4;
+  font-size: .68rem;
+}
+
+.beko-product-dates {
+  display: grid;
+  gap: .45rem;
+  padding-top: .75rem;
+  border-top: 1px solid rgba(119, 145, 189, .2);
+  color: #aebbd4;
+  font-size: .68rem;
+}
+
+.beko-product-dates span {
+  display: flex;
+  align-items: flex-start;
+  gap: .45rem;
+}
+
+.beko-product-dates svg {
+  flex: 0 0 auto;
+  color: #ffbd72;
+}
+
+.beko-product-admin-note {
+  justify-self: start;
+  padding: .3rem .55rem;
+  border-radius: 99px;
+  color: #d7e5ff;
+  background: rgba(115, 153, 223, .15);
+  font-size: .63rem;
+  font-weight: 750;
+}
+
+.beko-product-card.is-completed {
+  opacity: .86;
 }

@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Building2, Users, Globe, Award, Heart, Wallet } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function AboutPage() {
   const [, navigate] = useLocation();
@@ -18,6 +19,7 @@ export default function AboutPage() {
 
         <div className="p-4 space-y-4">
           <div className="text-center py-6">
+            <BrandLogo className="mx-auto mb-4 h-24 w-24 rounded-2xl object-contain" alt="Logo Beko" />
             <h2 className="text-xl font-semibold text-foreground">Votre espace financier</h2>
             <p className="text-muted-foreground">Un espace pour consulter et gérer votre compte</p>
           </div>

@@ -23,6 +23,8 @@ import ChangePasswordPage from "@/pages/change-password";
 import ExchangeCodePage from "@/pages/exchange-code";
 import MyProductsPage from "@/pages/my-products";
 import WithdrawalProofsPage from "@/pages/withdrawal-proofs";
+import TeamPage from "@/pages/team";
+import TeamLevelPage from "@/pages/team-level";
 import AdminDashboard from "@/pages/admin/index";
 import AdminDepositsPage from "@/pages/admin/deposits";
 import AdminWithdrawalsPage from "@/pages/admin/withdrawals";
@@ -174,14 +176,14 @@ function Router() {
           <InvestPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/team">
-        <ProtectedRoute>
-          <Redirect to="/withdrawal-proofs" />
-        </ProtectedRoute>
-      </Route>
       <Route path="/team/level/:level">
         <ProtectedRoute>
-          <Redirect to="/withdrawal-proofs" />
+          <TeamLevelPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/team">
+        <ProtectedRoute>
+          <TeamPage />
         </ProtectedRoute>
       </Route>
       <Route path="/account">
