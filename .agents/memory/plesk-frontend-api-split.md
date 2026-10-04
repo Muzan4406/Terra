@@ -32,3 +32,9 @@ The shared `package-lock.json` must use public canonical npm tarball URLs for Pl
 **Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.
 
 **How to apply:** Keep lockfile tarball URLs on `https://registry.npmjs.org/` with package versions and integrity hashes unchanged, so normal installs work both inside and outside Replit.
+
+For Plesk setup questions, derive and give the exact Application Root, Document Root, and startup-file paths from the current project; keep Application Root distinct from Document Root.
+
+**Why:** The user corrected generic Plesk guidance because the project code and Plesk layout provided exact paths.
+
+**How to apply:** Check the production entry file and the server's static build path before recommending Plesk paths.
