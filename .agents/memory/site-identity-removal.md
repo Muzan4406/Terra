@@ -11,6 +11,12 @@ When redesigning a page, replace its previous visual presentation completely; do
 
 **How to apply:** Replace old layouts and styling rather than layering over them. Keep requested Beko identity on the pages the user names, use user-supplied Beko icons instead of Signa Group assets, and preserve user-uploaded evidence in support and proof workflows.
 
+When the user provides visual references for authentication, apply them to both the login and registration pages; changing another shared surface such as navigation is not a substitute.
+
+**Why:** The user corrected a prior interpretation that updated navigation but left the login and registration pages untouched.
+
+**How to apply:** Check `/login` and `/register` when implementing authentication references, while keeping the Beko identity.
+
 For app navigation, remove the five-button bottom navigation from all app pages. Keep the hamburger sidebar available throughout signed-in user and admin pages.
 
 **Why:** The user corrected the earlier dashboard-only interpretation and requested the sidebar throughout the app.
