@@ -73,7 +73,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="px-6 pt-4 pb-2 max-w-md mx-auto w-full text-center">
-        <BrandLogo className="mx-auto mb-1 h-24 w-24 object-contain" />
+        <div className="mx-auto mb-1 h-24 w-24 isolate bg-background">
+          <BrandLogo className="h-full w-full object-contain mix-blend-multiply" />
+        </div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Créer un compte</h1>
         <p className="mt-2 text-sm text-gray-500">Quelques informations pour ouvrir votre espace personnel</p>
       </div>

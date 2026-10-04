@@ -54,7 +54,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="px-6 pt-6 pb-2 max-w-md mx-auto w-full text-center">
-        <BrandLogo className="mx-auto mb-2 h-28 w-28 object-contain" />
+        <div className="mx-auto mb-2 h-28 w-28 isolate bg-background">
+          <BrandLogo className="h-full w-full object-contain mix-blend-multiply" />
+        </div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Connexion</h1>
         <p className="mt-2 text-sm text-gray-500">Accédez à votre espace personnel</p>
       </div>
