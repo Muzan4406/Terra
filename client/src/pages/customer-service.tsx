@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, ArrowUpRight, Headphones, Radio } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { SiTelegram } from "react-icons/si";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
@@ -23,14 +23,12 @@ export default function CustomerServicePage() {
       title: "Chaîne Telegram",
       description: "Suivez les annonces et informations officielles de Beko.",
       href: getTelegramUrl(settings?.telegramGroup),
-      icon: Radio,
       testId: "link-beko-telegram-channel",
     },
     {
       title: "Assistance Telegram",
       description: "Ouvrir Telegram pour contacter notre équipe d’assistance.",
       href: getTelegramUrl(settings?.customerService),
-      icon: Headphones,
       testId: "link-beko-telegram-support",
     },
   ];
@@ -70,16 +68,15 @@ export default function CustomerServicePage() {
 
             {isLoading ? (
               <div className="grid gap-3" aria-label="Chargement des liens Telegram">
-                <Skeleton className="h-[5.5rem] rounded-2xl" />
-                <Skeleton className="h-[5.5rem] rounded-2xl" />
+                <Skeleton className="h-28 rounded-2xl" />
+                <Skeleton className="h-28 rounded-2xl" />
               </div>
             ) : (
               contactLinks.map((link) => {
-                const Icon = link.icon;
                 const content = (
                   <>
-                    <span className="beko-action-icon h-12 w-12 rounded-2xl">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    <span className="beko-telegram-brand" aria-hidden="true">
+                      <SiTelegram />
                     </span>
                     <span className="beko-action-copy">
                       <strong>{link.title}</strong>
@@ -97,7 +94,7 @@ export default function CustomerServicePage() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="beko-action min-h-[5.5rem] rounded-2xl px-3 py-3"
+                    className="beko-action beko-telegram-link min-h-28 rounded-2xl px-4 py-4"
                     data-testid={link.testId}
                   >
                     {content}
@@ -105,7 +102,7 @@ export default function CustomerServicePage() {
                 ) : (
                   <div
                     key={link.title}
-                    className="beko-action min-h-[5.5rem] cursor-not-allowed rounded-2xl px-3 py-3 opacity-70"
+                    className="beko-action beko-telegram-link min-h-28 cursor-not-allowed rounded-2xl px-4 py-4 opacity-70"
                     aria-disabled="true"
                     data-testid={`${link.testId}-unavailable`}
                   >

@@ -67,7 +67,6 @@ export default function HomePage() {
 
         <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(8rem+env(safe-area-inset-bottom))]">
           <section className="home-welcome" aria-label="Bienvenue">
-            <p className="text-[15px] font-semibold leading-tight text-[#183e32]">Votre espace Beko est prêt</p>
             <h2 className="mt-0.5 text-[25px] font-bold leading-[1.15] tracking-[-0.045em] text-[#14553f]">
               Bienvenue, {user.fullName.split(" ")[0]} !
             </h2>

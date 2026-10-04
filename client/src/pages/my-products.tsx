@@ -7,7 +7,8 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Crown,
+  LockKeyhole,
+  Package,
   PackageCheck,
   TrendingUp,
 } from "lucide-react";
@@ -18,7 +19,6 @@ interface UserProduct {
   id: string;
   productId: string;
   purchasedAt: string;
-  nextPayoutAt: string;
   pendingReturns: number;
   cyclesCompleted: number;
   isActive: boolean;
@@ -37,7 +37,7 @@ interface UserProduct {
 const formatMoney = (amount: number) =>
   Number(amount || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 
-function formatDate(value: string) {
+function formatDate(value: string | Date) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? "Date indisponible"
@@ -46,6 +46,13 @@ function formatDate(value: string) {
         month: "long",
         year: "numeric",
       });
+}
+
+function getCycleEndDate(purchasedAt: string, durationDays: number) {
+  const purchaseDate = new Date(purchasedAt);
+  if (Number.isNaN(purchaseDate.getTime())) return "Date indisponible";
+  const cycleEnd = new Date(purchaseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  return formatDate(cycleEnd);
 }
 
 export default function MyProductsPage() {
@@ -66,7 +73,7 @@ export default function MyProductsPage() {
   if (!user) return null;
 
   return (
-    <div className="beko-page beko-page--dark beko-page--my-products">
+    <div className="beko-page beko-page--my-products">
       <div className="beko-shell">
         <header className="beko-topbar">
           <Link href="/account" className="beko-back" aria-label="Retour au compte" data-testid="button-back">
@@ -80,15 +87,15 @@ export default function MyProductsPage() {
           <section className="beko-hero">
             <p className="beko-eyebrow">Votre portefeuille Beko</p>
             <h2>Suivez vos produits.</h2>
-            <p>Retrouvez les détails, la progression et les prochaines étapes de chaque investissement.</p>
+            <p>Consultez vos produits et leurs gains bloqués. Les gains sont crédités au solde de retrait uniquement à la fin du cycle défini par l’administration.</p>
           </section>
 
           <div className="beko-content">
             {isLoading ? (
               <div className="grid gap-3" role="status" aria-label="Chargement des investissements">
-                <Skeleton className="h-12 w-full rounded-2xl bg-white/10" />
-                <Skeleton className="h-64 w-full rounded-3xl bg-white/10" />
-                <Skeleton className="h-64 w-full rounded-3xl bg-white/10" />
+                <Skeleton className="h-12 w-full rounded-2xl bg-emerald-100" />
+                <Skeleton className="h-64 w-full rounded-3xl bg-emerald-100" />
+                <Skeleton className="h-64 w-full rounded-3xl bg-emerald-100" />
               </div>
             ) : isError ? (
               <div className="beko-alert is-danger" role="alert">
@@ -113,7 +120,6 @@ export default function MyProductsPage() {
                         Math.max(0, Number(investment.cyclesCompleted) || 0),
                       );
                       const daysRemaining = Math.max(0, duration - cyclesCompleted);
-                      const progressPercent = Math.min(100, (cyclesCompleted / duration) * 100);
 
                       return (
                         <article
@@ -122,13 +128,13 @@ export default function MyProductsPage() {
                           data-testid={`card-product-${investment.id}`}
                         >
                           <div className="beko-product-card-head">
-                            <span className="beko-action-icon h-11 w-11"><Crown size={20} /></span>
+                            <span className="beko-action-icon h-11 w-11"><Package size={20} /></span>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="m-0 truncate text-base font-extrabold">{investment.product.name}</h3>
                                 <span className="beko-product-status"><TrendingUp size={12} /> Actif</span>
                               </div>
-                              <p className="mt-1 text-xs text-[#b4bfd7]">Produit niveau {investment.product.level}</p>
+                              <p className="mt-1 text-xs text-[#668078]">Produit niveau {investment.product.level}</p>
                             </div>
                           </div>
 
@@ -146,44 +152,29 @@ export default function MyProductsPage() {
                               <strong>{formatMoney(investment.product.price)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
-                              <span>Gain quotidien</span>
+                              <span>Gain quotidien bloqué</span>
                               <strong>+{formatMoney(investment.product.dailyReturn)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
-                              <span>Gains en attente</span>
+                              <span>Gains bloqués</span>
                               <strong data-testid="text-cumulative-revenue">{formatMoney(investment.pendingReturns)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
-                              <span>Gain total prévu</span>
+                              <span>Total à maturité</span>
                               <strong>{formatMoney(investment.product.totalReturn)} FCFA</strong>
                             </div>
                           </div>
 
-                          <section className="beko-product-progress" aria-label="Progression du cycle">
-                            <div className="flex items-center justify-between gap-2">
-                              <span>Progression</span>
-                              <strong>{cyclesCompleted} / {duration} jours</strong>
-                            </div>
-                            <div
-                              className="beko-product-progress-track"
-                              role="progressbar"
-                              aria-valuemin={0}
-                              aria-valuemax={duration}
-                              aria-valuenow={cyclesCompleted}
-                              aria-label={`${cyclesCompleted} jours sur ${duration}`}
-                            >
-                              <span style={{ width: `${progressPercent}%` }} />
-                            </div>
-                            <p>
-                              {daysRemaining > 0
-                                ? `${daysRemaining} jour${daysRemaining === 1 ? "" : "s"} avant la fin du cycle.`
-                                : "Cycle arrivé à son terme; le paiement final est en cours."}
-                            </p>
-                          </section>
+                          <div className="beko-product-lock-note">
+                            <LockKeyhole size={18} aria-hidden="true" />
+                            <span>
+                              Les gains restent bloqués. À la fin du cycle de {duration} jours défini par l’administration, le montant cumulé sera crédité uniquement au solde de retrait.
+                            </span>
+                          </div>
 
                           <div className="beko-product-dates">
                             <span><CalendarDays size={14} /> Acheté le {formatDate(investment.purchasedAt)}</span>
-                            <span><Clock3 size={14} /> Prochain paiement : {formatDate(investment.nextPayoutAt)}</span>
+                            <span><Clock3 size={14} /> Fin du cycle prévue : {getCycleEndDate(investment.purchasedAt, duration)}</span>
                           </div>
                           {investment.assignedByAdmin && (
                             <span className="beko-product-admin-note">Produit attribué par l’administration</span>
@@ -213,7 +204,7 @@ export default function MyProductsPage() {
                               <h3 className="m-0 truncate text-base font-extrabold">{investment.product.name}</h3>
                               <span className="beko-product-status is-completed"><CheckCircle2 size={12} /> Terminé</span>
                             </div>
-                            <p className="mt-1 text-xs text-[#b4bfd7]">Produit niveau {investment.product.level}</p>
+                            <p className="mt-1 text-xs text-[#668078]">Produit niveau {investment.product.level}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -237,9 +228,9 @@ export default function MyProductsPage() {
               </>
             ) : (
               <div className="beko-panel grid justify-items-center gap-3 px-6 py-9 text-center">
-                <span className="beko-action-icon h-12 w-12"><Crown size={22} /></span>
+                <span className="beko-action-icon h-12 w-12"><Package size={22} /></span>
                 <strong className="text-sm">Aucun investissement pour le moment</strong>
-                <p className="m-0 text-xs text-[#b4bfd7]">Vos produits actifs et terminés apparaîtront dans cette liste.</p>
+                <p className="m-0 text-xs text-[#668078]">Vos produits actifs et terminés apparaîtront dans cette liste.</p>
                 <Link href="/invest" className="beko-primary-button mt-1 max-w-xs no-underline" data-testid="button-invest">
                   Découvrir les produits
                 </Link>

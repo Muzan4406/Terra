@@ -189,6 +189,38 @@
   background: #e6f3d8;
 }
 
+.beko-telegram-link {
+  min-height: 7rem;
+  gap: 1rem;
+  background: linear-gradient(115deg, #fbfff8, #f0f8ed);
+}
+
+.beko-telegram-link .beko-action-copy strong {
+  font-size: 1rem;
+}
+
+.beko-telegram-link .beko-action-copy small {
+  margin-top: .35rem;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.beko-telegram-brand {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 1.1rem;
+  color: #229ed9;
+  background: #e4f4fc;
+}
+
+.beko-telegram-brand svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
 .beko-action-copy {
   min-width: 0;
   flex: 1;
@@ -1339,15 +1371,15 @@
   gap: .25rem;
   padding: .28rem .55rem;
   border-radius: 99px;
-  color: #9be5c3;
-  background: rgba(75, 188, 137, .14);
+  color: #087653;
+  background: #e4f4e5;
   font-size: .62rem;
   font-weight: 850;
 }
 
 .beko-product-status.is-completed {
-  color: #d8dfeb;
-  background: rgba(255, 255, 255, .1);
+  color: #587064;
+  background: #edf2ed;
 }
 
 .beko-product-days {
@@ -1356,16 +1388,14 @@
   justify-content: space-between;
   gap: .8rem;
   padding: .9rem 1rem;
-  border: 1px solid rgba(255, 180, 112, .28);
+  border: 1px solid #d5e8d1;
   border-radius: 1.15rem;
-  background:
-    radial-gradient(circle at 95% 20%, rgba(255, 167, 97, .17), transparent 8rem),
-    linear-gradient(125deg, #192b54, #263f70);
+  background: linear-gradient(125deg, #f5fff0, #e7f3df);
 }
 
 .beko-product-days span:first-child {
   display: block;
-  color: #bdc9df;
+  color: #668078;
   font-size: .73rem;
   font-weight: 700;
 }
@@ -1373,7 +1403,7 @@
 .beko-product-days strong {
   display: block;
   margin-top: .1rem;
-  color: #fff7ed;
+  color: #14392f;
   font-size: 2rem;
   font-weight: 900;
   letter-spacing: -.06em;
@@ -1387,21 +1417,21 @@
   height: 2.8rem;
   place-items: center;
   border-radius: .95rem;
-  color: #ffd08b;
-  background: rgba(240, 144, 89, .18);
+  color: #087c59;
+  background: #dff0d8;
 }
 
 .beko-product-stat {
   min-width: 0;
   padding: .75rem;
-  border: 1px solid rgba(119, 145, 189, .17);
+  border: 1px solid #dce9d9;
   border-radius: .95rem;
-  background: rgba(255, 255, 255, .045);
+  background: #f8fcf5;
 }
 
 .beko-product-stat span {
   display: block;
-  color: #aebbd4;
+  color: #668078;
   font-size: .64rem;
 }
 
@@ -1409,51 +1439,37 @@
   display: block;
   margin-top: .25rem;
   overflow-wrap: anywhere;
-  color: #f5f4f0;
+  color: #14392f;
   font-size: .77rem;
   font-weight: 850;
   font-variant-numeric: tabular-nums;
 }
 
-.beko-product-progress {
-  display: grid;
-  gap: .55rem;
-  color: #b4bfd7;
-  font-size: .7rem;
+.beko-product-lock-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .8rem .85rem;
+  border: 1px solid #d7e9d3;
+  border-radius: .95rem;
+  color: #426559;
+  background: #f1f8eb;
+  font-size: .72rem;
+  line-height: 1.5;
 }
 
-.beko-product-progress strong {
-  color: #f5f4f0;
-  font-size: .7rem;
-}
-
-.beko-product-progress-track {
-  height: .52rem;
-  overflow: hidden;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, .12);
-}
-
-.beko-product-progress-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #f08b58, #ffbd74);
-  transition: width 250ms ease;
-}
-
-.beko-product-progress p {
-  margin: 0;
-  color: #aebbd4;
-  font-size: .68rem;
+.beko-product-lock-note svg {
+  flex: 0 0 auto;
+  margin-top: .05rem;
+  color: #087653;
 }
 
 .beko-product-dates {
   display: grid;
   gap: .45rem;
   padding-top: .75rem;
-  border-top: 1px solid rgba(119, 145, 189, .2);
-  color: #aebbd4;
+  border-top: 1px solid #dce9d9;
+  color: #668078;
   font-size: .68rem;
 }
 
@@ -1465,15 +1481,15 @@
 
 .beko-product-dates svg {
   flex: 0 0 auto;
-  color: #ffbd72;
+  color: #087c59;
 }
 
 .beko-product-admin-note {
   justify-self: start;
   padding: .3rem .55rem;
   border-radius: 99px;
-  color: #d7e5ff;
-  background: rgba(115, 153, 223, .15);
+  color: #315d80;
+  background: #e7f2fa;
   font-size: .63rem;
   font-weight: 750;
 }
