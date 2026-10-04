@@ -18,9 +18,7 @@ import HistoryPage from "@/pages/history";
 import AboutPage from "@/pages/about";
 import RulesPage from "@/pages/rules";
 import CustomerServicePage from "@/pages/customer-service";
-import CustomerServiceChatPage from "@/pages/customer-service-chat";
 import ChangePasswordPage from "@/pages/change-password";
-import ExchangeCodePage from "@/pages/exchange-code";
 import MyProductsPage from "@/pages/my-products";
 import WithdrawalProofsPage from "@/pages/withdrawal-proofs";
 import TeamPage from "@/pages/team";
@@ -35,7 +33,6 @@ import AdminProductsPage from "@/pages/admin/products";
 import AdminSettingsPage from "@/pages/admin/settings";
 import AdminBonusCodesPage from "@/pages/admin/bonus-codes";
 import AdminUserTeamPage from "@/pages/admin/user-team";
-import AdminSupportPage from "@/pages/admin/support";
 import { Loader2 } from "lucide-react";
 
 function AuthUnavailable({
@@ -228,7 +225,7 @@ function Router() {
       </Route>
       <Route path="/customer-service/chat">
         <ProtectedRoute>
-          <CustomerServiceChatPage />
+          <Redirect to="/customer-service" />
         </ProtectedRoute>
       </Route>
       <Route path="/change-password">
@@ -238,7 +235,7 @@ function Router() {
       </Route>
       <Route path="/exchange-code">
         <ProtectedRoute>
-          <ExchangeCodePage />
+          <Redirect to="/account" />
         </ProtectedRoute>
       </Route>
       <Route path="/my-products">
@@ -259,7 +256,7 @@ function Router() {
       </Route>
       <Route path="/admin/support">
         <AdminRoute>
-          <AdminSupportPage />
+          <Redirect to="/admin" />
         </AdminRoute>
       </Route>
       <Route path="/admin/deposits">

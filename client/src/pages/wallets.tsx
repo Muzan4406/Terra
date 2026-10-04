@@ -5,18 +5,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
 import { walletSchema } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CountrySelect, getCountryFlag } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
+import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Plus, CreditCard, Trash2, Loader2 } from "lucide-react";
 import type { z } from "zod";
 import type { Wallet } from "@shared/schema";
+import "./beko-pages.css";
 
 type WalletFormData = z.infer<typeof walletSchema>;
 
@@ -95,165 +96,183 @@ export default function WalletsPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto">
-        <header className="flex items-center gap-4 p-4 bg-card border-b border-card-border">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/account")}>
+    <div className="beko-page">
+      <div className="beko-shell">
+        <header className="beko-topbar">
+          <button
+            type="button"
+            className="beko-back"
+            onClick={() => navigate("/account")}
+            aria-label="Retour au compte"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold">Mes portefeuilles de paiement</h1>
+          </button>
+          <span className="beko-brand">BEKO</span>
+          <h1>Mes portefeuilles</h1>
+          <span className="beko-balance-mark" aria-hidden="true">
+            <CreditCard size={19} />
+          </span>
         </header>
 
-        <div className="p-4 space-y-4">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full gap-2" data-testid="button-add-wallet">
-                <Plus className="h-4 w-4" />
-                Ajouter un portefeuille
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Nouveau portefeuille</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="accountName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom du compte</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Nom complet" data-testid="input-wallet-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <main className="beko-content">
+          <section className="beko-hero beko-fade-in">
+            <p className="beko-eyebrow">Moyens de réception</p>
+            <h2>Vos retraits, en toute simplicité.</h2>
+            <p>Enregistrez vos comptes Mobile Money pour les retrouver lors de vos demandes de retrait.</p>
+          </section>
 
-                  <FormField
-                    control={form.control}
-                    name="accountNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Numéro de compte</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Numéro de téléphone" data-testid="input-wallet-number" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pays</FormLabel>
-                        <FormControl>
-                          <CountrySelect value={field.value} onValueChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Moyen de paiement</FormLabel>
-                        <FormControl>
-                          <PaymentMethodSelect
-                            country={watchCountry}
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={createMutation.isPending}
-                    data-testid="button-save-wallet"
-                  >
-                    {createMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Enregistrement...
-                      </>
-                    ) : (
-                      "Enregistrer"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4 h-20" />
-                </Card>
-              ))}
+          <section className="grid gap-3" aria-label="Portefeuilles de retrait">
+            <div className="beko-section-heading">
+              <h2>Mes portefeuilles</h2>
+              <span>{wallets?.length || 0} enregistré(s)</span>
             </div>
-          ) : wallets?.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Aucun portefeuille pour le moment</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Ajoutez un portefeuille pour effectuer des retraits
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="beko-primary-button" data-testid="button-add-wallet">
+                  <Plus className="h-4 w-4" />
+                  Ajouter un portefeuille
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[1.35rem] border-[#d8e8d8] bg-[#fcfff9] sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-[#14392f]">Nouveau portefeuille</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="accountName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#14392f]">Nom du compte</FormLabel>
+                          <FormControl>
+                            <Input className="beko-input" {...field} placeholder="Nom complet" data-testid="input-wallet-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="accountNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#14392f]">Numéro de compte</FormLabel>
+                          <FormControl>
+                            <Input className="beko-input" {...field} placeholder="Numéro de téléphone" data-testid="input-wallet-number" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#14392f]">Pays</FormLabel>
+                          <FormControl>
+                            <CountrySelect value={field.value} onValueChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#14392f]">Moyen de paiement</FormLabel>
+                          <FormControl>
+                            <PaymentMethodSelect
+                              country={watchCountry}
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="submit"
+                      className="beko-primary-button"
+                      disabled={createMutation.isPending}
+                      data-testid="button-save-wallet"
+                    >
+                      {createMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        "Enregistrer"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+
+            {isLoading ? (
+              <div className="grid gap-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="beko-panel h-24 animate-pulse" />
+                ))}
+              </div>
+            ) : wallets?.length === 0 ? (
+              <div className="beko-panel grid justify-items-center p-8 text-center">
+                <span className="beko-action-icon mb-3 h-14 w-14 rounded-2xl">
+                  <CreditCard className="h-7 w-7" />
+                </span>
+                <p className="font-bold text-[#14392f]">Aucun portefeuille enregistré</p>
+                <p className="mt-1 max-w-xs text-sm text-[#668078]">
+                  Ajoutez un compte de réception pour faciliter vos retraits.
                 </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {wallets?.map((wallet) => (
-                <Card key={wallet.id} className="hover-elevate">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <CreditCard className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{wallet.accountName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {wallet.paymentMethod} - {wallet.accountNumber}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {getCountryFlag(wallet.country)} {wallet.country}
-                          </p>
-                        </div>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {wallets?.map((wallet) => (
+                  <article key={wallet.id} className="beko-panel p-3">
+                    <div className="flex items-center gap-3">
+                      <span className="beko-action-icon h-12 w-12 rounded-2xl">
+                        <CreditCard className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-bold text-[#14392f]">{wallet.accountName}</p>
+                        <p className="truncate text-sm text-[#527268]">
+                          {wallet.paymentMethod} · {wallet.accountNumber}
+                        </p>
+                        <p className="mt-1 text-xs text-[#668078]">
+                          {getCountryFlag(wallet.country)} {wallet.country}
+                        </p>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:bg-destructive/10"
+                        className="shrink-0 text-[#a94a3d] hover:bg-[#fff0e9] hover:text-[#8c4237]"
                         onClick={() => deleteMutation.mutate(wallet.id)}
                         disabled={deleteMutation.isPending}
+                        aria-label={`Supprimer le portefeuille ${wallet.accountName}`}
                         data-testid={`button-delete-${wallet.id}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </main>
       </div>
+      <BottomNav />
     </div>
   );
 }

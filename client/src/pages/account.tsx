@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
@@ -18,19 +17,11 @@ import {
   History,
   LockKeyhole,
   LogOut,
-  MessageCircle,
   Package,
-  RefreshCw,
   ShieldCheck,
   WalletCards,
 } from "lucide-react";
 import "./beko-pages.css";
-
-interface PlatformSettings {
-  customerService?: string | null;
-  officialChannel?: string | null;
-  discussionGroup?: string | null;
-}
 
 const formatMoney = (amount: number) =>
   Number(amount || 0).toLocaleString("fr-FR", {
@@ -43,15 +34,6 @@ export default function AccountPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [loggingOut, setLoggingOut] = useState(false);
-
-  const { data: supportUnreadCount = 0 } = useQuery<number>({
-    queryKey: ["/api/support/unread-count"],
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-  });
-  const { data: settings } = useQuery<PlatformSettings>({
-    queryKey: ["/api/settings/public"],
-  });
 
   const copyReferralCode = async () => {
     if (!user) return;
@@ -127,15 +109,8 @@ export default function AccountPage() {
     {
       icon: Headphones,
       title: "Service client",
-      detail: supportUnreadCount > 0 ? `${supportUnreadCount} nouveau(x) message(s)` : "Nous sommes là pour vous aider",
-      action: () => navigate("/customer-service/chat"),
-      unread: supportUnreadCount,
-    },
-    {
-      icon: RefreshCw,
-      title: "Utiliser un code bonus",
-      detail: "Échanger un code de récompense",
-      action: () => navigate("/exchange-code"),
+      detail: "Chaîne et assistance sur Telegram",
+      action: () => navigate("/customer-service"),
     },
     {
       icon: LockKeyhole,
@@ -144,23 +119,6 @@ export default function AccountPage() {
       action: () => navigate("/change-password"),
     },
   ];
-
-  const communityLinks = [
-    { title: "Service client", value: settings?.customerService, icon: MessageCircle },
-    { title: "Canal officiel", value: settings?.officialChannel, icon: ShieldCheck },
-    { title: "Groupe de discussion", value: settings?.discussionGroup, icon: MessageCircle },
-  ].filter((item) => Boolean(item.value));
-
-  const openCommunityLink = (value: string) => {
-    if (/^https?:\/\//i.test(value)) {
-      window.open(value, "_blank", "noopener,noreferrer");
-    } else {
-      void navigator.clipboard.writeText(value).then(
-        () => toast({ title: "Coordonnée copiée", description: value }),
-        () => toast({ title: "Coordonnée", description: value }),
-      );
-    }
-  };
 
   return (
     <div className="beko-page">
@@ -236,32 +194,10 @@ export default function AccountPage() {
                   <strong>{item.title}</strong>
                   <small>{item.detail}</small>
                 </span>
-                {item.unread ? (
-                  <span className="rounded-full bg-[#e2f2d9] px-2 py-1 text-[.65rem] font-extrabold text-[#236548]">{item.unread}</span>
-                ) : null}
                 <ChevronRight className="beko-arrow" size={18} />
               </button>
             ))}
           </section>
-
-          {communityLinks.length > 0 && (
-            <section className="grid gap-2" aria-label="Communauté Beko">
-              <div className="beko-section-heading">
-                <h2>Rester en contact</h2>
-                <span>Canaux officiels</span>
-              </div>
-              {communityLinks.map((item) => (
-                <button key={item.title} type="button" className="beko-action" onClick={() => openCommunityLink(item.value!)}>
-                  <span className="beko-action-icon"><item.icon size={18} /></span>
-                  <span className="beko-action-copy">
-                    <strong>{item.title}</strong>
-                    <small>{item.value}</small>
-                  </span>
-                  <ArrowRight className="beko-arrow" size={17} />
-                </button>
-              ))}
-            </section>
-          )}
 
           {user.isAdmin && (
             <button type="button" className="beko-action" onClick={() => navigate("/admin")} data-testid="button-admin">

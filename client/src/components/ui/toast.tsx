@@ -14,22 +14,23 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex max-h-screen flex-col p-2 max-w-[280px]",
+      "fixed bottom-24 left-1/2 z-[100] flex max-h-[calc(100dvh-8rem)] w-[calc(100vw-2rem)] max-w-[24rem] -translate-x-1/2 flex-col gap-2 p-0 sm:left-auto sm:right-6 sm:translate-x-0",
       className
     )}
+    style={{ bottom: "calc(6rem + env(safe-area-inset-bottom))" }}
     {...props}
   />
 ))
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-lg border p-3 pr-6 shadow-md transition-all text-sm data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-start justify-between gap-3 overflow-hidden rounded-2xl border px-4 py-3 pr-11 text-sm shadow-[0_14px_35px_rgba(18,50,38,.18)] backdrop-blur-xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-bottom-full",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "border-[#cce2d4] bg-[#fbfff9]/95 text-[#173c30]",
         destructive:
-          "destructive group border-blue-500 bg-blue-500 text-white",
+          "destructive group border-red-200 bg-[#a43f38] text-white",
       },
     },
     defaultVariants: {
@@ -92,7 +93,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold", className)}
+    className={cn("text-sm font-bold tracking-[-.01em]", className)}
     {...props}
   />
 ))

@@ -1,70 +1,123 @@
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, ChevronRight, Headphones } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Headphones, Radio } from "lucide-react";
+import { SiTelegram } from "react-icons/si";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BottomNav } from "@/components/bottom-nav";
+import { getTelegramUrl } from "@/lib/telegram-url";
+import "./beko-pages.css";
+
+interface PlatformSettings {
+  customerService?: string | null;
+  telegramGroup?: string | null;
+}
 
 export default function CustomerServicePage() {
   const [, navigate] = useLocation();
+  const { data: settings, isLoading } = useQuery<PlatformSettings>({
+    queryKey: ["/api/settings/public"],
+  });
+
+  const contactLinks = [
+    {
+      title: "Chaîne Telegram",
+      description: "Suivez les annonces et informations officielles de Beko.",
+      href: getTelegramUrl(settings?.telegramGroup),
+      icon: Radio,
+      testId: "link-beko-telegram-channel",
+    },
+    {
+      title: "Assistance Telegram",
+      description: "Ouvrir Telegram pour contacter notre équipe d’assistance.",
+      href: getTelegramUrl(settings?.customerService),
+      icon: Headphones,
+      testId: "link-beko-telegram-support",
+    },
+  ];
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-md mx-auto">
-        <header className="flex items-center gap-4 border-b border-border/70 bg-card/75 px-4 py-4 backdrop-blur-lg">
-          <button 
+    <div className="beko-page">
+      <div className="beko-shell">
+        <header className="beko-topbar">
+          <button
+            type="button"
+            className="beko-back"
             onClick={() => navigate("/account")}
-            className="text-foreground hover:text-primary"
+            aria-label="Retour au compte"
             data-testid="button-back"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center pr-5">
-            Service client
-          </h1>
+          <span className="beko-brand">BEKO</span>
+          <h1>Service client</h1>
+          <span className="beko-balance-mark" aria-hidden="true">
+            <SiTelegram className="h-5 w-5" />
+          </span>
         </header>
 
-        <div className="relative px-4 pt-8 pb-4">
-          <div 
-            className="absolute top-0 left-0 right-0 h-64 bg-card/75"
-            style={{
-              borderRadius: '0 0 50% 50% / 0 0 100px 100px',
-            }}
-          />
+        <main className="beko-content">
+          <section className="beko-hero beko-fade-in">
+            <p className="beko-eyebrow">Contact officiel</p>
+            <h2>Choisissez votre lien Telegram.</h2>
+            <p>Retrouvez les annonces de Beko ou contactez l’assistance dans Telegram. La messagerie intégrée à l’application n’est pas utilisée.</p>
+          </section>
 
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full border-4 border-card shadow-lg bg-accent/45 flex items-center justify-center">
-                <Headphones className="h-12 w-12 text-primary" aria-hidden="true" />
-              </div>
-              <div className="absolute -right-1 top-4 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full font-medium">
-                AIDE
-              </div>
+          <section className="grid gap-3" aria-label="Liens Telegram">
+            <div className="beko-section-heading">
+              <h2>Nous contacter</h2>
+              <span>Telegram</span>
             </div>
 
-            <h2 className="text-2xl font-semibold text-primary mb-3">Comment pouvons-nous vous aider ?</h2>
-            <p className="text-center text-gray-600 text-sm leading-relaxed px-4 mb-8">
-              Écrivez directement à notre équipe.<br />
-              Nous vous répondrons dans cette conversation.
-            </p>
-          </div>
-        </div>
+            {isLoading ? (
+              <div className="grid gap-3" aria-label="Chargement des liens Telegram">
+                <Skeleton className="h-[5.5rem] rounded-2xl" />
+                <Skeleton className="h-[5.5rem] rounded-2xl" />
+              </div>
+            ) : (
+              contactLinks.map((link) => {
+                const Icon = link.icon;
+                const content = (
+                  <>
+                    <span className="beko-action-icon h-12 w-12 rounded-2xl">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="beko-action-copy">
+                      <strong>{link.title}</strong>
+                      <small>{link.href ? link.description : "Lien Telegram non configuré pour le moment."}</small>
+                    </span>
+                    {link.href ? (
+                      <ArrowUpRight className="beko-arrow h-5 w-5" aria-hidden="true" />
+                    ) : null}
+                  </>
+                );
 
-        <div className="px-4 pb-3">
-          <button
-            type="button"
-            onClick={() => navigate("/customer-service/chat")}
-            className="flex min-h-[76px] w-full items-center gap-3 rounded-2xl bg-[#174f3d] p-4 text-left text-white shadow-md transition-colors hover:bg-[#103f30]"
-            data-testid="button-open-support-chat"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15">
-              <Headphones className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold">Discuter avec le service client</span>
-              <span className="mt-0.5 block text-xs text-white/75">Échange direct et sécurisé avec l’équipe support</span>
-            </span>
-            <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
-          </button>
-        </div>
-
+                return link.href ? (
+                  <a
+                    key={link.title}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="beko-action min-h-[5.5rem] rounded-2xl px-3 py-3"
+                    data-testid={link.testId}
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <div
+                    key={link.title}
+                    className="beko-action min-h-[5.5rem] cursor-not-allowed rounded-2xl px-3 py-3 opacity-70"
+                    aria-disabled="true"
+                    data-testid={`${link.testId}-unavailable`}
+                  >
+                    {content}
+                  </div>
+                );
+              })
+            )}
+          </section>
+        </main>
       </div>
+      <BottomNav />
     </div>
   );
 }

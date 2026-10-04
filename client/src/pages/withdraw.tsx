@@ -164,7 +164,7 @@ export default function WithdrawPage() {
               <div className="beko-alert is-danger">
                 <strong>Retraits temporairement bloqués</strong>
                 Contactez le service client pour obtenir de l’aide.
-                <button type="button" className="beko-inline-link mt-2 block" onClick={() => navigate("/customer-service/chat")}>Contacter le service client</button>
+                <button type="button" className="beko-inline-link mt-2 block" onClick={() => navigate("/customer-service")}>Contacter le service client</button>
               </div>
             )}
             {!isWithinHours && !user.withdrawalBlocked && user.hasProduct && (

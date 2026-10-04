@@ -2,27 +2,45 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
-import { WhatsAppPopup } from "@/components/whatsapp-popup";
-import { useCallback, useState } from "react";
+import { TelegramChannelPopup } from "@/components/telegram-channel-popup";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
+import { getTelegramUrl } from "@/lib/telegram-url";
+import refrigeratorImage from "@assets/Screenshot_20261003-112959.ChatGPT~2_1791093850642.jpg";
+import coffeeMachineImage from "@assets/Screenshot_20261003-113315.ChatGPT~2_1791093850375.jpg";
 
 interface PlatformSettings {
-  customerService: string;
-  officialChannel: string;
-  telegramGroup: string;
+  telegramGroup?: string | null;
 }
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(true);
+  const [showTelegramInvite, setShowTelegramInvite] = useState(false);
 
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
   });
 
-  const handleCloseWhatsAppPopup = useCallback(() => {
-    setShowWhatsAppPopup(false);
-  }, []);
+  useEffect(() => {
+    if (!user) return;
+    try {
+      setShowTelegramInvite(sessionStorage.getItem(`beko:telegram-invite:${user.id}`) !== "dismissed");
+    } catch {
+      setShowTelegramInvite(true);
+    }
+  }, [user?.id]);
+
+  const telegramChannelUrl = getTelegramUrl(settings?.telegramGroup);
+
+  const handleCloseTelegramInvite = () => {
+    setShowTelegramInvite(false);
+    if (!user) return;
+    try {
+      sessionStorage.setItem(`beko:telegram-invite:${user.id}`, "dismissed");
+    } catch {
+      // The invitation can still be dismissed for this page view.
+    }
+  };
 
   const formatNumber = (num: number) => num.toLocaleString("fr-FR");
 
@@ -49,11 +67,34 @@ export default function HomePage() {
 
         <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(8rem+env(safe-area-inset-bottom))]">
           <section className="home-welcome" aria-label="Bienvenue">
-            <p className="text-[15px] font-semibold leading-tight text-[#183e32]">Bonjour,</p>
+            <p className="text-[15px] font-semibold leading-tight text-[#183e32]">Votre espace Beko est prêt</p>
             <h2 className="mt-0.5 text-[25px] font-bold leading-[1.15] tracking-[-0.045em] text-[#14553f]">
-              {user.fullName.split(" ")[0]}
+              Bienvenue, {user.fullName.split(" ")[0]} !
             </h2>
-            <p className="mt-1.5 text-sm text-[#687a70]">Votre activité et vos soldes</p>
+            <p className="mt-1.5 text-sm text-[#687a70]">Suivez vos soldes et vos produits en toute simplicité.</p>
+          </section>
+
+          <section className="home-appliance-section" aria-labelledby="home-appliances-title">
+            <div className="home-appliance-heading">
+              <h2 id="home-appliances-title">Le confort de la maison</h2>
+              <span>Inspirations Beko</span>
+            </div>
+            <div className="home-appliance-grid">
+              <article className="home-appliance-card">
+                <img src={refrigeratorImage} alt="Réfrigérateur moderne dans une cuisine lumineuse" />
+                <div className="home-appliance-copy">
+                  <strong>Réfrigérateurs</strong>
+                  <span>Fraîcheur au quotidien</span>
+                </div>
+              </article>
+              <article className="home-appliance-card">
+                <img src={coffeeMachineImage} alt="Machine à café moderne posée sur un plan de cuisine" />
+                <div className="home-appliance-copy">
+                  <strong>Machines à café</strong>
+                  <span>Les petits plaisirs du matin</span>
+                </div>
+              </article>
+            </div>
           </section>
 
           <section
@@ -91,11 +132,10 @@ export default function HomePage() {
 
       <BottomNav />
 
-      <WhatsAppPopup
-        isOpen={showWhatsAppPopup && (!!settings?.officialChannel || !!settings?.telegramGroup)}
-        onClose={handleCloseWhatsAppPopup}
-        whatsappLink={settings?.officialChannel || ""}
-        telegramGroupLink={settings?.telegramGroup || ""}
+      <TelegramChannelPopup
+        isOpen={showTelegramInvite && !!telegramChannelUrl}
+        onClose={handleCloseTelegramInvite}
+        telegramLink={telegramChannelUrl || ""}
       />
     </div>
   );

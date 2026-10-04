@@ -100,10 +100,10 @@ interface SettingsAuditEntry {
 }
 
 const settingLabels: Record<string, string> = {
-  customerService: "Service client",
+  customerService: "Support Telegram",
   officialChannel: "Chaîne WhatsApp officielle",
   discussionGroup: "Ancien groupe de discussion",
-  telegramGroup: "Groupe de discussion Telegram",
+  telegramGroup: "Chaîne Telegram officielle",
   referralLevel1Percentage: "Commission de niveau 1",
   referralLevel2Percentage: "Commission de niveau 2",
   referralLevel3Percentage: "Commission de niveau 3",
@@ -213,16 +213,19 @@ export default function AdminSettingsPage() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <MessageCircle className="h-4 w-4 text-primary" />
-                            Service client
+                              Support Telegram
                           </FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://wa.me/..."
+                              placeholder="https://t.me/nomdusupport"
                               data-testid="input-customer-service"
                             />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-muted-foreground">
+                            Ce lien ouvre l’assistance Telegram depuis la page Service client.
+                          </p>
                         </FormItem>
                       )}
                     />
@@ -234,12 +237,12 @@ export default function AdminSettingsPage() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Radio className="h-4 w-4 text-primary" />
-                            Chaîne WhatsApp officielle
+                              Chaîne WhatsApp historique
                           </FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
-                              placeholder="https://whatsapp.com/channel/..."
+                              placeholder="Lien historique, non affiché dans l’accueil"
                               data-testid="input-official-channel"
                             />
                           </FormControl>
@@ -255,7 +258,7 @@ export default function AdminSettingsPage() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Send className="h-4 w-4 text-[#229ED9]" />
-                            Groupe de discussion Telegram
+                            Chaîne Telegram officielle
                           </FormLabel>
                           <FormControl>
                             <Input 
@@ -266,7 +269,7 @@ export default function AdminSettingsPage() {
                           </FormControl>
                           <FormMessage />
                           <p className="text-xs text-muted-foreground">
-                            Ce lien s’affiche dans la fenêtre d’accueil avec la chaîne WhatsApp.
+                            Ce lien est proposé dans la fenêtre d’accueil et sur la page Service client.
                           </p>
                         </FormItem>
                       )}
