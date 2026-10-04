@@ -184,11 +184,11 @@ export default function AccountPage() {
             </div>
           </section>
 
-          <section className="beko-balance-card" aria-label="Soldes et revenus">
+          <section className="beko-balance-card" aria-label="Soldes du compte">
             <div className="beko-balance-top">
               <div>
-                <p>Votre espace financier</p>
-                <strong>Soldes et revenus</strong>
+                <p>Vos soldes disponibles</p>
+                <strong>Compte Beko</strong>
               </div>
               <span className="beko-balance-mark"><WalletCards size={21} /></span>
             </div>
@@ -200,14 +200,6 @@ export default function AccountPage() {
               <div className="beko-balance-cell" data-testid="text-withdrawal-balance">
                 <span>Solde retrait</span>
                 <strong>{formatMoney(user.withdrawalBalance)} FCFA</strong>
-              </div>
-              <div className="beko-balance-cell" data-testid="text-total-earnings">
-                <span>Revenus cumulés</span>
-                <strong>{formatMoney(user.totalEarnings)} FCFA</strong>
-              </div>
-              <div className="beko-balance-cell" data-testid="text-today-earnings">
-                <span>Revenu du jour</span>
-                <strong>{formatMoney(user.todayEarnings)} FCFA</strong>
               </div>
             </div>
           </section>

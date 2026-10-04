@@ -141,7 +141,7 @@ export default function DepositPage() {
           description: "Suivez les instructions du canal de paiement, puis consultez votre historique.",
         });
         refetchUser();
-        navigate("/");
+        navigate("/account");
         return;
       }
 
@@ -296,9 +296,9 @@ export default function DepositPage() {
         <header className="deposit-header">
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/account")}
             className="deposit-header-action"
-            aria-label="Retour à l'accueil"
+            aria-label="Retour au compte"
           >
             <ArrowLeft size={19} aria-hidden="true" />
           </button>
@@ -398,8 +398,8 @@ export default function DepositPage() {
               )}
 
               {automaticStatus === "approved" && (
-                <button type="button" onClick={() => navigate("/")} className="deposit-status-action primary">
-                  Retour à l'accueil
+                <button type="button" onClick={() => navigate("/account")} className="deposit-status-action primary">
+                  Retour au compte
                 </button>
               )}
               {automaticStatus === "rejected" && (

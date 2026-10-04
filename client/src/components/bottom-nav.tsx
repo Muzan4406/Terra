@@ -1,11 +1,11 @@
 import { useLocation, Link } from "wouter";
-import { ClipboardList, Home, TrendingUp, User, Users } from "lucide-react";
+import { ClipboardList, FileCheck2, Home, TrendingUp, User } from "lucide-react";
 
 const navItems = [
   { path: "/", icon: Home, label: "Accueil" },
   { path: "/tasks", icon: ClipboardList, label: "Tâches" },
   { path: "/invest", icon: TrendingUp, label: "Investir" },
-  { path: "/team", icon: Users, label: "Équipe" },
+  { path: "/withdrawal-proofs", icon: FileCheck2, label: "Preuves" },
   { path: "/account", icon: User, label: "Compte" },
 ];
 

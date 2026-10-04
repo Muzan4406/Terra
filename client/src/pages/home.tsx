@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { WhatsAppPopup } from "@/components/whatsapp-popup";
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
-import { useLocation } from "wouter";
 import { useCallback, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 
@@ -16,7 +14,6 @@ interface PlatformSettings {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [, navigate] = useLocation();
   const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(true);
 
   const { data: settings } = useQuery<PlatformSettings>({
@@ -36,23 +33,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  const services = [
-    {
-      icon: ArrowDownToLine,
-      label: "Dépôt",
-      description: "Ajouter des fonds au solde dépôt",
-      path: "/deposit",
-      testId: "button-recharge",
-    },
-    {
-      icon: ArrowUpFromLine,
-      label: "Retrait",
-      description: "Retirer depuis le solde retrait",
-      path: "/withdraw",
-      testId: "button-withdraw",
-    },
-  ];
 
   return (
     <div className="site-page fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f3f2e9]">
@@ -104,55 +84,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/20 pt-3.5">
-                <div className="min-w-0">
-                  <p className="text-[11px] leading-tight text-white/70">Revenus cumulés</p>
-                  <p className="mt-1 truncate text-[15px] font-semibold tabular-nums" data-testid="text-earnings">
-                    {formatNumber(user.totalEarnings)} F
-                  </p>
-                </div>
-                <div className="min-w-0 border-l border-white/20 pl-4">
-                  <p className="text-[11px] leading-tight text-white/70">Revenus du jour</p>
-                  <p className="mt-1 truncate text-[15px] font-semibold tabular-nums">
-                    {formatNumber(user.todayEarnings)} F
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="home-services mt-7" aria-labelledby="home-services-heading">
-            <div className="mb-3.5 flex items-end justify-between">
-              <div>
-                <h2 id="home-services-heading" className="mt-0.5 text-[19px] font-bold tracking-[-0.035em] text-[#183e32]">
-                  Actions rapides
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {services.map((service) => (
-                <button
-                  key={service.testId}
-                  type="button"
-                  onClick={() => navigate(service.path)}
-                  data-testid={service.testId}
-                  className="home-service-tile group min-w-0 rounded-[1.15rem] border p-3.5 text-left transition-transform active:scale-[0.98]"
-                >
-                  <span className="home-service-image-wrap flex h-[4.15rem] w-[4.15rem] items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <service.icon className="h-7 w-7" aria-hidden="true" />
-                  </span>
-                  <span className="mt-3 flex items-center justify-between gap-1">
-                    <span className="text-[16px] font-bold leading-tight tracking-[-0.025em] text-[#183e32]">
-                      {service.label}
-                    </span>
-                    <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#315e4d]" aria-hidden="true" />
-                  </span>
-                  <span className="mt-1.5 block text-[11px] leading-[1.4] text-[#687a70]">
-                    {service.description}
-                  </span>
-                </button>
-              ))}
             </div>
           </section>
         </main>

@@ -10,8 +10,6 @@ import RegisterPage from "@/pages/auth/register";
 import HomePage from "@/pages/home";
 import TasksPage from "@/pages/tasks";
 import InvestPage from "@/pages/invest";
-import TeamPage from "@/pages/team";
-import TeamLevelPage from "@/pages/team-level";
 import AccountPage from "@/pages/account";
 import DepositPage from "@/pages/deposit";
 import WithdrawPage from "@/pages/withdraw";
@@ -178,12 +176,12 @@ function Router() {
       </Route>
       <Route path="/team">
         <ProtectedRoute>
-          <TeamPage />
+          <Redirect to="/withdrawal-proofs" />
         </ProtectedRoute>
       </Route>
       <Route path="/team/level/:level">
         <ProtectedRoute>
-          <TeamLevelPage />
+          <Redirect to="/withdrawal-proofs" />
         </ProtectedRoute>
       </Route>
       <Route path="/account">
