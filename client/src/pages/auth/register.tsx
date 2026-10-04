@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import type { z } from "zod";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -69,7 +70,8 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="px-6 pt-8 pb-2 max-w-md mx-auto w-full text-center">
+      <div className="px-6 pt-4 pb-2 max-w-md mx-auto w-full text-center">
+        <BrandLogo className="mx-auto mb-1 h-24 w-24 object-contain" />
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Créer un compte</h1>
         <p className="mt-2 text-sm text-gray-500">Quelques informations pour ouvrir votre espace personnel</p>
       </div>

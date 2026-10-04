@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import type { z } from "zod";
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -50,7 +51,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="px-6 pt-10 pb-2 max-w-md mx-auto w-full text-center">
+      <div className="px-6 pt-6 pb-2 max-w-md mx-auto w-full text-center">
+        <BrandLogo className="mx-auto mb-2 h-28 w-28 object-contain" />
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Connexion</h1>
         <p className="mt-2 text-sm text-gray-500">Accédez à votre espace personnel</p>
       </div>

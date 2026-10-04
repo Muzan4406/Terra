@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Edit, Loader2, Package, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Package, AlertTriangle, Archive, RotateCcw, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   type Product,
   type ProductCategory,
 } from "@shared/schema";
+import { getProductImageMap } from "@shared/product-images";
 
 const productFormSchema = z.object({
   name: z.string().trim().min(1, "Le nom du produit est requis"),
@@ -55,8 +56,8 @@ function NumberField({
               type="number"
               min={1}
               step={1}
-              value={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.valueAsNumber)}
+              value={Number.isFinite(field.value) ? field.value : ""}
+              onChange={(event) => field.onChange(event.currentTarget.value === "" ? undefined : event.currentTarget.valueAsNumber)}
               onBlur={field.onBlur}
               name={field.name}
               ref={field.ref}
@@ -85,12 +86,30 @@ export default function AdminProductsPage() {
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
-      price: 1,
-      dailyReturn: 1,
-      duration: 1,
-      totalReturn: 1,
-      category: "fixed",
+      category: "wellness",
       isActive: true,
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: ProductFormData) => {
+      const response = await apiRequest("POST", "/api/admin/products", data);
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || "La création du produit a échoué");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Produit créé" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/all"] });
+      setDialogOpen(false);
+      setEditingProduct(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
 
@@ -117,6 +136,28 @@ export default function AdminProductsPage() {
     },
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ productId, isActive }: { productId: string; isActive: boolean }) => {
+      const response = await apiRequest("PATCH", `/api/admin/products/${productId}`, { isActive });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || "Le statut du produit n’a pas pu être modifié");
+      }
+      return response.json();
+    },
+    onSuccess: (_product, variables) => {
+      toast({ title: variables.isActive ? "Produit réactivé" : "Produit retiré du catalogue" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/all"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const productImageMap = getProductImageMap(products ?? []);
+
   if (!user?.isAdmin) {
     navigate("/");
     return null;
@@ -136,19 +177,36 @@ export default function AdminProductsPage() {
     setDialogOpen(true);
   };
 
+  const openCreateForm = () => {
+    setEditingProduct(null);
+    form.reset({
+      name: "",
+      category: "wellness",
+      isActive: true,
+    });
+    setDialogOpen(true);
+  };
+
   const onSubmit = (data: ProductFormData) => {
-    if (!editingProduct) return;
-    updateMutation.mutate({ productId: editingProduct.id, data });
+    if (editingProduct) {
+      updateMutation.mutate({ productId: editingProduct.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        <header className="flex items-center gap-4 p-4 bg-card border-b border-card-border">
+        <header className="flex items-center gap-2 p-4 bg-card border-b border-card-border">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} aria-label="Retour">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold">Catalogue des produits</h1>
+          <h1 className="flex-1 text-lg font-bold sm:text-xl">Catalogue des produits</h1>
+          <Button onClick={openCreateForm} data-testid="button-create-product">
+            <Plus className="mr-1 h-4 w-4" />
+            Ajouter
+          </Button>
         </header>
 
         <div className="p-4 space-y-4">
@@ -168,10 +226,19 @@ export default function AdminProductsPage() {
             </div>
           ) : products?.length ? (
             <div className="space-y-3">
-              {products.map((product) => (
+              {products.map((product) => {
+                const imageUrl = productImageMap.get(product.id);
+                return (
                 <Card key={product.id}>
-                  <CardContent className="flex items-center justify-between gap-3 p-4">
-                    <div className="min-w-0 space-y-1">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={product.name} className="h-full w-full object-contain" loading="lazy" />
+                      ) : (
+                        <Package className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold">{product.name}</span>
                         <Badge variant="outline">Niveau {product.level}</Badge>
@@ -189,12 +256,25 @@ export default function AdminProductsPage() {
                         {product.duration} jours · Total annoncé {product.totalReturn.toLocaleString("fr-FR")} FCFA
                       </p>
                     </div>
-                    <Button variant="outline" size="icon" onClick={() => openEditor(product)} aria-label={`Modifier ${product.name}`} data-testid={`edit-product-${product.id}`}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={statusMutation.isPending}
+                        onClick={() => statusMutation.mutate({ productId: product.id, isActive: !product.isActive })}
+                        aria-label={product.isActive ? `Retirer ${product.name} du catalogue` : `Réactiver ${product.name}`}
+                      >
+                        {product.isActive ? <Archive className="mr-1 h-4 w-4" /> : <RotateCcw className="mr-1 h-4 w-4" />}
+                        {product.isActive ? "Retirer" : "Réactiver"}
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => openEditor(product)} aria-label={`Modifier ${product.name}`} data-testid={`edit-product-${product.id}`}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <Card>
@@ -215,8 +295,13 @@ export default function AdminProductsPage() {
         >
           <DialogContent className="max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Modifier {editingProduct?.name || "le produit"}</DialogTitle>
+              <DialogTitle>{editingProduct ? `Modifier ${editingProduct.name}` : "Créer un produit"}</DialogTitle>
             </DialogHeader>
+            {!editingProduct && (
+              <p className="text-sm text-muted-foreground">
+                La prochaine photo disponible de la catégorie sera attribuée automatiquement.
+              </p>
+            )}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -275,10 +360,15 @@ export default function AdminProductsPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={updateMutation.isPending} data-testid="button-save-product">
-                  {updateMutation.isPending ? (
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={updateMutation.isPending || createMutation.isPending}
+                  data-testid="button-save-product"
+                >
+                  {updateMutation.isPending || createMutation.isPending ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enregistrement…</>
-                  ) : "Enregistrer les modifications"}
+                  ) : editingProduct ? "Enregistrer les modifications" : "Créer le produit"}
                 </Button>
               </form>
             </Form>

@@ -13,6 +13,7 @@ import {
   ELIGIBLE_COUNTRIES, productCategorySchema, type Deposit,
 } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
+import { getNextProductImage } from "@shared/product-images";
 import {
   getDepositMinimumError,
   resolvePlatformBusinessSettings,
@@ -1877,17 +1878,67 @@ export async function registerRoutes(
     message: "Aucune modification fournie",
   });
 
+  const productCreateSchema = z.object({
+    name: z.string().trim().min(1, "Le nom du produit est requis"),
+    price: z.number().int().positive("Le prix doit être supérieur à zéro"),
+    dailyReturn: z.number().int().positive("Le rendement doit être supérieur à zéro"),
+    duration: z.number().int().positive("La durée doit être supérieure à zéro"),
+    totalReturn: z.number().int().positive("Le rendement total doit être supérieur à zéro"),
+    category: productCategorySchema,
+    isActive: z.boolean().default(true),
+  }).strict();
+
+  app.post("/api/admin/products", requireAdmin, async (req, res) => {
+    try {
+      const input = productCreateSchema.parse(req.body);
+      const existingProducts = await storage.getAllProducts();
+      const imageUrl = getNextProductImage(existingProducts, input.category);
+      if (!imageUrl) {
+        return res.status(409).json({
+          message: "Toutes les photos fournies pour cette catégorie sont déjà attribuées.",
+        });
+      }
+
+      const level = existingProducts.reduce((highest, product) => Math.max(highest, product.level), 0) + 1;
+      const createdProduct = await storage.createProduct({ ...input, level, imageUrl });
+      return res.status(201).json(createdProduct);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Données invalides" });
+      }
+      console.error("Product creation error:", error);
+      return res.status(500).json({ message: "Erreur serveur lors de la création du produit" });
+    }
+  });
+
   app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
     try {
       const updates = productUpdateSchema.parse(req.body);
+      const existingProduct = await storage.getProduct(req.params.id);
+      if (!existingProduct) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+
       const normalizedUpdates = {
         ...updates,
         ...(updates.imageUrl === "" ? { imageUrl: null } : {}),
       };
-      const product = await storage.updateProduct(req.params.id, normalizedUpdates);
-      if (!product) {
-        return res.status(404).json({ message: "Produit non trouvé" });
+      if (updates.category && updates.category !== existingProduct.category && updates.imageUrl === undefined) {
+        const imageUrl = getNextProductImage(
+          await storage.getAllProducts(),
+          updates.category,
+          existingProduct.id,
+        );
+        if (!imageUrl) {
+          return res.status(409).json({
+            message: "Toutes les photos fournies pour cette catégorie sont déjà attribuées.",
+          });
+        }
+        normalizedUpdates.imageUrl = imageUrl;
       }
+
+      const product = await storage.updateProduct(req.params.id, normalizedUpdates);
+      if (!product) return res.status(404).json({ message: "Produit non trouvé" });
       await storage.deactivateCompletedProductInvestments(product.id, product.duration);
       res.json(product);
     } catch (error) {

@@ -6,6 +6,7 @@ import { WhatsAppPopup } from "@/components/whatsapp-popup";
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { useCallback, useState } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 interface PlatformSettings {
   customerService: string;
@@ -57,7 +58,13 @@ export default function HomePage() {
     <div className="site-page fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f3f2e9]">
       <div className="home-shell mx-auto flex h-full max-w-md flex-col overflow-hidden">
         <header className="home-header flex shrink-0 items-center justify-between px-5">
-          <h1 className="text-sm font-bold uppercase tracking-[0.12em] text-primary">Espace financier</h1>
+          <div className="flex items-center gap-2.5">
+            <BrandLogo className="h-11 w-11 rounded-lg object-contain" alt="" />
+            <div>
+              <h1 className="text-sm font-bold uppercase tracking-[0.12em] text-primary">Beko</h1>
+              <p className="text-[11px] text-muted-foreground">Espace financier</p>
+            </div>
+          </div>
         </header>
 
         <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(8rem+env(safe-area-inset-bottom))]">
