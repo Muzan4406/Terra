@@ -1,4 +1,4 @@
-- [Site identity removal](site-identity-removal.md) — do not reintroduce the former name, logo, or decorative images; preserve user-submitted support and proof screenshots.
+- [Site identity and page rebuilds](site-identity-removal.md) — replace old page presentations completely and keep former branding out; preserve user-submitted support and proof screenshots.
 - [Separated account balances](separated-account-balances.md) — keep legacy funds in the deposit balance; withdrawals and matured or approved credits use the withdrawal balance.
 - [Support message ordering](support-message-ordering.md) — use per-call timestamps so same-transaction acknowledgements sort after user messages.
 - [Support read receipts](support-read-receipts.md) — only mark inbound messages actually returned to the open thread as read.

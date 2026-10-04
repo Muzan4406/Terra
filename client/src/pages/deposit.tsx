@@ -4,11 +4,21 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Loader2, CreditCard, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import { BottomNav } from "@/components/bottom-nav";
+import {
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  CreditCard,
+  Info,
+  Loader2,
+  ShieldCheck,
+} from "lucide-react";
 import { CountrySelect } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
+import "./deposit-page.css";
 
 interface DepositOptions {
   mode: "manual" | "ashtech";
@@ -66,6 +76,7 @@ export default function DepositPage() {
     data: depositOptions,
     isLoading: optionsLoading,
     error: optionsError,
+    refetch: refetchOptions,
   } = useQuery<DepositOptions>({
     queryKey: ["/api/deposit-options", country],
     enabled: Boolean(country),
@@ -82,7 +93,11 @@ export default function DepositPage() {
     ? depositOptions.channels?.filter((channel) => channel.isActive) ?? []
     : [];
 
-  const { data: depositStatus, isError: statusError } = useQuery<DepositStatus>({
+  const {
+    data: depositStatus,
+    isError: statusError,
+    refetch: refetchStatus,
+  } = useQuery<DepositStatus>({
     queryKey: ["/api/deposits", automaticDeposit?.depositId, "status"],
     enabled: Boolean(automaticDeposit?.depositId && !automaticDeposit.otpRequired),
     queryFn: async () => {
@@ -146,10 +161,10 @@ export default function DepositPage() {
       }
     },
     onError: (error: Error) => {
-      toast({ 
-        title: "Erreur", 
+      toast({
+        title: "Erreur",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive",
       });
     },
   });
@@ -200,7 +215,7 @@ export default function DepositPage() {
       void refetchUser();
       toast({
         title: "Dépôt confirmé",
-        description: "Votre solde a été crédité.",
+        description: "Votre solde de dépôt a été crédité.",
       });
     } else {
       toast({
@@ -214,51 +229,31 @@ export default function DepositPage() {
   const handleSubmit = () => {
     const amountNum = parseInt(amount) || 0;
     if (amountNum < depositMinimum) {
-      toast({ 
-        title: "Erreur", 
+      toast({
+        title: "Erreur",
         description: `Le montant minimum est de ${depositMinimum.toLocaleString("fr-FR")} FCFA`,
-        variant: "destructive" 
+        variant: "destructive",
       });
       return;
     }
     if (!isAshtechMode && !accountName.trim()) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez entrer votre nom",
-        variant: "destructive" 
-      });
+      toast({ title: "Erreur", description: "Veuillez entrer votre nom", variant: "destructive" });
       return;
     }
     if (!accountNumber.trim()) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez entrer votre numéro de paiement",
-        variant: "destructive" 
-      });
+      toast({ title: "Erreur", description: "Veuillez entrer votre numéro de paiement", variant: "destructive" });
       return;
     }
     if (!country) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez sélectionner votre pays",
-        variant: "destructive" 
-      });
+      toast({ title: "Erreur", description: "Veuillez sélectionner votre pays", variant: "destructive" });
       return;
     }
     if (!paymentMethod) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez sélectionner un moyen de paiement",
-        variant: "destructive" 
-      });
+      toast({ title: "Erreur", description: "Veuillez sélectionner un moyen de paiement", variant: "destructive" });
       return;
     }
     if (!isAshtechMode && !selectedChannelId) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez sélectionner un canal de recharge",
-        variant: "destructive" 
-      });
+      toast({ title: "Erreur", description: "Veuillez sélectionner un canal de recharge", variant: "destructive" });
       return;
     }
     if (automaticDeposit?.depositId && depositStatus?.status === "pending") {
@@ -273,61 +268,84 @@ export default function DepositPage() {
   };
 
   if (!user) return null;
+
   const handleCountryChange = (value: string) => {
     setCountry(value);
     setPaymentMethod("");
     setSelectedChannelId("");
   };
   const automaticStatus = depositStatus?.status ?? "pending";
+  const verificationPending = Boolean(depositStatus?.verificationPending);
+  const statusHeading = automaticStatus === "approved"
+    ? "Dépôt confirmé"
+    : automaticStatus === "rejected"
+      ? "Paiement non confirmé"
+      : verificationPending
+        ? "Vérification en cours"
+        : automaticDeposit?.otpRequired
+          ? "Confirmation opérateur requise"
+          : "Paiement en attente";
+  const statusCopy = verificationPending
+    ? "Le résultat doit être vérifié par le support. Ne lancez pas un second paiement."
+    : automaticDeposit?.message ||
+      "Validez la demande sur votre téléphone. Votre solde de dépôt sera crédité après confirmation.";
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
-      <div className="max-w-md mx-auto">
-        <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/")} className="text-gray-600">
-              <ArrowLeft className="h-6 w-6" />
-            </button>
-            <h1 className="text-xl font-bold text-gray-800">Dépôt</h1>
-          </div>
-          <button onClick={() => navigate("/history")} className="text-gray-600">
-            <Clock className="h-6 w-6" />
+    <div className="deposit-page">
+      <div className="deposit-shell">
+        <header className="deposit-header">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="deposit-header-action"
+            aria-label="Retour à l'accueil"
+          >
+            <ArrowLeft size={19} aria-hidden="true" />
+          </button>
+          <h1>Nouveau dépôt</h1>
+          <button
+            type="button"
+            onClick={() => navigate("/history")}
+            className="deposit-header-action"
+            aria-label="Voir l'historique"
+          >
+            <Clock3 size={18} aria-hidden="true" />
           </button>
         </header>
 
-        <div className="p-4 space-y-6">
+        <main className={`deposit-content ${!automaticDeposit ? "has-action-dock" : ""}`}>
+          <section className="deposit-intro" aria-label="Créer un dépôt">
+            <p className="deposit-eyebrow">BEKO · PAIEMENT SÉCURISÉ</p>
+            <h2>Rechargez votre compte</h2>
+            <p>Choisissez votre moyen de paiement et confirmez la demande depuis votre téléphone.</p>
+          </section>
+
           {automaticDeposit ? (
-            <section className="space-y-4 rounded-xl border bg-white p-5" aria-live="polite">
-              <div className="flex items-start gap-3">
-                {automaticStatus === "approved" ? (
-                  <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-600" />
-                ) : automaticStatus === "rejected" ? (
-                  <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-600" />
-                ) : (
-                  <Loader2 className="mt-0.5 h-6 w-6 shrink-0 animate-spin text-blue-600" />
-                )}
+            <section className="deposit-status-card" aria-live="polite">
+              <div className="deposit-status-head">
+                <span className={`deposit-status-symbol ${
+                  automaticStatus === "approved" ? "is-success" : automaticStatus === "rejected" ? "is-error" : ""
+                }`}>
+                  {automaticStatus === "approved"
+                    ? <CheckCircle2 size={22} aria-hidden="true" />
+                    : automaticStatus === "rejected"
+                      ? <AlertCircle size={22} aria-hidden="true" />
+                      : <Loader2 size={22} className="animate-spin" aria-hidden="true" />}
+                </span>
                 <div>
-                  <h2 className="font-bold text-gray-900">
-                    {automaticStatus === "approved"
-                      ? "Dépôt confirmé"
-                      : automaticStatus === "rejected"
-                        ? "Paiement non confirmé"
-                        : automaticDeposit.otpRequired
-                          ? "Confirmation opérateur requise"
-                          : "Paiement en attente"}
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {depositStatus?.verificationPending
-                      ? "Le résultat doit être vérifié par le support. Ne lancez pas un second paiement."
-                      : automaticDeposit.message || "Validez la demande sur votre téléphone. Votre solde sera crédité après confirmation."}
-                  </p>
+                  <h2>{statusHeading}</h2>
+                  <p>{statusCopy}</p>
+                  {automaticStatus === "pending" && !verificationPending && !automaticDeposit.otpRequired && (
+                    <p className="deposit-live-note">Vérification automatique active · actualisation toutes les 5 secondes</p>
+                  )}
                 </div>
               </div>
 
               {automaticDeposit.ussdCode && (
-                <p className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
-                  Code à composer : <strong>{automaticDeposit.ussdCode}</strong>
-                </p>
+                <div className="deposit-ussd">
+                  Code à composer
+                  <strong>{automaticDeposit.ussdCode}</strong>
+                </div>
               )}
 
               {automaticDeposit.waveUrl && (
@@ -335,17 +353,15 @@ export default function DepositPage() {
                   href={automaticDeposit.waveUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-lg bg-blue-600 p-3 text-center font-semibold text-white hover:bg-blue-700"
+                  className="deposit-wave-link"
                 >
                   Ouvrir le paiement Wave
                 </a>
               )}
 
               {automaticDeposit.otpRequired && automaticStatus === "pending" && (
-                <div className="space-y-2">
-                  <label htmlFor="ashtech-otp" className="text-sm font-medium text-gray-700">
-                    Code OTP reçu de votre opérateur
-                  </label>
+                <div className="deposit-otp">
+                  <label htmlFor="ashtech-otp">Code OTP reçu de votre opérateur</label>
                   <input
                     id="ashtech-otp"
                     type="text"
@@ -353,111 +369,126 @@ export default function DepositPage() {
                     autoComplete="one-time-code"
                     value={otp}
                     onChange={(event) => setOtp(event.target.value)}
-                    className="w-full rounded-lg border border-gray-200 p-3 text-gray-900 outline-none focus:border-blue-500"
+                    className="deposit-control"
                     maxLength={12}
                   />
                   <button
+                    type="button"
                     onClick={() => otpMutation.mutate()}
                     disabled={!otp.trim() || otpMutation.isPending}
-                    className="flex w-full items-center justify-center rounded-lg bg-blue-600 p-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="deposit-status-action primary"
                   >
-                    {otpMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {otpMutation.isPending && <Loader2 size={15} className="mr-2 inline animate-spin" />}
                     Confirmer le code
                   </button>
                 </div>
               )}
 
               {statusError && automaticStatus === "pending" && (
-                <p className="text-sm text-amber-700">
-                  La vérification est temporairement indisponible. Le paiement reste en attente; réessayez dans un instant.
-                </p>
+                <div className="deposit-options-message deposit-error-box" role="alert">
+                  <AlertCircle size={16} aria-hidden="true" />
+                  <span>La vérification est temporairement indisponible. Le paiement reste en attente; réessayez dans un instant.</span>
+                </div>
+              )}
+
+              {statusError && automaticStatus === "pending" && (
+                <button type="button" onClick={() => void refetchStatus()} className="deposit-status-action">
+                  Réessayer la vérification
+                </button>
               )}
 
               {automaticStatus === "approved" && (
-                <button
-                  onClick={() => navigate("/")}
-                  className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white"
-                >
+                <button type="button" onClick={() => navigate("/")} className="deposit-status-action primary">
                   Retour à l'accueil
                 </button>
               )}
               {automaticStatus === "rejected" && (
                 <button
+                  type="button"
                   onClick={() => {
                     setAutomaticDeposit(null);
                     setOtp("");
                     setPaymentMethod("");
                     setSelectedChannelId("");
                   }}
-                  className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white"
+                  className="deposit-status-action primary"
                 >
                   Nouvelle demande
                 </button>
               )}
-              <button
-                onClick={() => navigate("/history")}
-                className="w-full text-sm text-blue-600 hover:underline"
-              >
-                Consulter l'historique
-              </button>
+              <div className="deposit-status-links">
+                <button type="button" onClick={() => navigate("/history")}>
+                  Consulter l'historique
+                </button>
+              </div>
             </section>
           ) : (
             <>
-              <div>
-                <p className="mb-2 text-sm text-gray-500">Montant du dépôt</p>
-                <div className="flex items-baseline gap-2 border-b border-gray-300 pb-2">
-                  <span className="text-xl font-bold text-blue-600">
-                    {isAshtechMode ? depositOptions.currency : "FCFA"}
-                  </span>
+              <div className="deposit-section-heading">
+                <h2>Montant du dépôt</h2>
+                <span>Minimum {depositMinimum.toLocaleString("fr-FR")} FCFA</span>
+              </div>
+              <section className="deposit-amount-card" aria-label="Montant à déposer">
+                <div className="deposit-amount-entry">
+                  <span className="deposit-currency">{isAshtechMode ? depositOptions.currency : "FCFA"}</span>
                   <input
                     type="number"
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
-                    placeholder={String(depositMinimum)}
-                    className="w-full border-none bg-transparent text-3xl font-bold text-gray-800 outline-none"
+                    placeholder="0"
+                    className="deposit-amount-input"
                     min={depositMinimum}
                     step={1}
+                    aria-label="Montant du dépôt"
                     data-testid="input-amount"
                   />
                 </div>
-              </div>
+                <div className="deposit-amount-meta">
+                  <span>Le montant sera ajouté à votre solde de dépôt</span>
+                  <span>{isAshtechMode ? depositOptions.currency : "FCFA"}</span>
+                </div>
+              </section>
 
-              <div className="space-y-4 rounded-xl bg-white p-4">
+              <div className="deposit-section-heading">
+                <h2>Informations de paiement</h2>
+                <span>Étape 1 sur 2</span>
+              </div>
+              <section className="deposit-form-card">
                 {!isAshtechMode && (
-                  <div>
-                    <label className="mb-1 block text-sm text-gray-500">Nom du compte de paiement</label>
+                  <div className="deposit-field">
+                    <label htmlFor="deposit-account-name">Nom du compte de paiement</label>
                     <input
+                      id="deposit-account-name"
                       type="text"
                       value={accountName}
                       onChange={(event) => setAccountName(event.target.value)}
-                      placeholder="Entrez votre nom complet"
-                      className="w-full rounded-lg border border-gray-200 p-3 text-gray-800 outline-none focus:border-blue-500"
+                      placeholder="Votre nom complet"
+                      className="deposit-control"
                       data-testid="input-account-name"
                     />
                   </div>
                 )}
-
-                <div>
-                  <label className="mb-1 block text-sm text-gray-500">
+                <div className="deposit-field">
+                  <label htmlFor="deposit-account-number">
                     {isAshtechMode ? "Numéro Mobile Money" : "Numéro de paiement"}
                   </label>
                   <input
+                    id="deposit-account-number"
                     type="tel"
+                    inputMode="tel"
                     value={accountNumber}
                     onChange={(event) => setAccountNumber(event.target.value)}
-                    placeholder="Entrez votre numéro de téléphone"
-                    className="w-full rounded-lg border border-gray-200 p-3 text-gray-800 outline-none focus:border-blue-500"
+                    placeholder="Votre numéro de téléphone"
+                    className="deposit-control"
                     data-testid="input-account-number"
                   />
                 </div>
-
-                <div>
-                  <label className="mb-1 block text-sm text-gray-500">Pays</label>
+                <div className="deposit-field">
+                  <label htmlFor="deposit-country">Pays</label>
                   <CountrySelect value={country} onValueChange={handleCountryChange} />
                 </div>
-
-                <div>
-                  <label className="mb-1 block text-sm text-gray-500">Moyen de paiement</label>
+                <div className="deposit-field">
+                  <label htmlFor="deposit-method">Moyen de paiement</label>
                   <PaymentMethodSelect
                     country={country}
                     value={paymentMethod}
@@ -466,114 +497,116 @@ export default function DepositPage() {
                     disabled={optionsLoading || Boolean(optionsError)}
                   />
                 </div>
-              </div>
+              </section>
 
-              {optionsLoading && country && (
-                <p className="flex items-center gap-2 text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+              {country && optionsLoading && (
+                <div className="deposit-options-message" role="status">
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                   Chargement des moyens de paiement...
-                </p>
+                </div>
               )}
               {optionsError && (
-                <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                  {optionsError instanceof Error ? optionsError.message : "Moyens de paiement indisponibles."}
-                </p>
-              )}
-
-              {depositOptions?.mode === "ashtech" && (
-                <p className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                  Paiement automatique AshTech Pay. Validez la demande sur votre téléphone; votre solde sera crédité après confirmation du paiement.
-                </p>
-              )}
-
-              {depositOptions?.mode === "manual" && (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">Choisissez un canal de paiement</p>
-                  {activeChannels.length ? activeChannels.map((channel) => (
-                    <button
-                      key={channel.id}
-                      onClick={() => setSelectedChannelId(channel.id)}
-                      className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                        selectedChannelId === channel.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 bg-white"
-                      }`}
-                      data-testid={`channel-${channel.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                          <CreditCard className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <span className="font-medium text-gray-800">{channel.name}</span>
-                      </div>
-                      <span className={`rounded px-3 py-1 text-xs font-bold ${
-                        channel.isApi
-                          ? "bg-blue-500 text-white"
-                          : "border border-red-300 bg-red-100 text-red-600"
-                      }`}>
-                        {channel.isApi ? "AUTOMATIQUE" : "SEMI-AUTOMATIQUE"}
-                      </span>
-                    </button>
-                  )) : (
-                    <p className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                      Aucun canal de paiement n'est configuré.
-                    </p>
-                  )}
+                <div className="deposit-options-message deposit-error-box" role="alert">
+                  <AlertCircle size={16} aria-hidden="true" />
+                  <span>{optionsError instanceof Error ? optionsError.message : "Moyens de paiement indisponibles."}</span>
+                  <button type="button" onClick={() => void refetchOptions()} className="deposit-status-action">
+                    Réessayer
+                  </button>
                 </div>
               )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={
-                  depositMutation.isPending ||
-                  optionsLoading ||
-                  Boolean(optionsError) ||
-                  !country ||
-                  !depositOptions ||
-                  (isAshtechMode && Boolean(automaticDeposit))
-                }
-                className="flex w-full items-center justify-center rounded-full bg-blue-500 py-4 text-lg font-bold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                data-testid="button-confirm"
-              >
-                {depositMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Traitement...
-                  </>
-                ) : isAshtechMode ? (
-                  "Lancer le paiement"
-                ) : (
-                  "Confirmer"
-                )}
+              {depositOptions?.mode === "ashtech" && (
+                <div className="deposit-mode-note">
+                  Paiement automatique AshTech Pay. Validez la demande sur votre téléphone; votre solde de dépôt sera crédité après confirmation.
+                </div>
+              )}
+
+              {depositOptions?.mode === "manual" && (
+                <section>
+                  <div className="deposit-section-heading">
+                    <h2>Canal de paiement</h2>
+                    <span>{activeChannels.length} disponible{activeChannels.length === 1 ? "" : "s"}</span>
+                  </div>
+                  {activeChannels.length ? (
+                    <div className="deposit-channels">
+                      {activeChannels.map((channel) => (
+                        <button
+                          key={channel.id}
+                          type="button"
+                          onClick={() => setSelectedChannelId(channel.id)}
+                          className={`deposit-channel ${selectedChannelId === channel.id ? "is-selected" : ""}`}
+                          aria-pressed={selectedChannelId === channel.id}
+                          data-testid={`channel-${channel.id}`}
+                        >
+                          <span className="deposit-channel-main">
+                            <span className="deposit-channel-icon"><CreditCard size={18} aria-hidden="true" /></span>
+                            <span className="deposit-channel-name">{channel.name}</span>
+                          </span>
+                          <span className="deposit-channel-tag">
+                            {channel.isApi ? "AUTOMATIQUE" : "ASSISTÉ"}
+                          </span>
+                          {selectedChannelId === channel.id && <CheckCircle2 size={16} aria-label="Sélectionné" />}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="deposit-options-message">
+                      Aucun canal de paiement n'est configuré pour le moment.
+                    </div>
+                  )}
+                </section>
+              )}
+
+              <button type="button" onClick={() => navigate("/history")} className="deposit-history-link">
+                Consulter mes opérations
               </button>
 
-              <div className="text-center">
-                <button
-                  onClick={() => navigate("/history")}
-                  className="text-sm text-blue-500 hover:underline"
-                >
-                  Consultez vos opérations dans l'historique.
-                </button>
-              </div>
-
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>Le montant minimum du dépôt est de {depositMinimum.toLocaleString("fr-FR")} FCFA.</p>
+              <div className="deposit-guidance">
+                <p><Info size={14} aria-hidden="true" />Minimum de dépôt : {depositMinimum.toLocaleString("fr-FR")} FCFA.</p>
                 {isAshtechMode ? (
-                  <p>Ne relancez pas un dépôt automatique lorsqu'une confirmation est en attente.</p>
+                  <p><ShieldCheck size={14} aria-hidden="true" />Ne relancez pas un dépôt automatique tant qu'une demande est en attente.</p>
                 ) : (
                   <>
-                    <p>Le montant du transfert doit correspondre à la demande créée.</p>
-                    <p>Le compte de portefeuille saisi doit être celui du compte de paiement réel.</p>
-                    <p>Les dépôts par lien peuvent nécessiter un traitement manuel par le service client.</p>
+                    <p><ShieldCheck size={14} aria-hidden="true" />Le montant du transfert doit correspondre à la demande créée.</p>
+                    <p><ShieldCheck size={14} aria-hidden="true" />Utilisez le numéro du compte de paiement réel. Certains paiements par lien nécessitent un traitement du service client.</p>
                   </>
                 )}
               </div>
             </>
           )}
-        </div>
+        </main>
       </div>
-
-      <BottomNav />
+      {!automaticDeposit && (
+        <div className="deposit-action-dock">
+          <div className="deposit-action-dock-inner">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                depositMutation.isPending ||
+                optionsLoading ||
+                Boolean(optionsError) ||
+                !country ||
+                !depositOptions
+              }
+              className="deposit-submit"
+              data-testid="button-confirm"
+            >
+              {depositMutation.isPending ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                  Traitement...
+                </>
+              ) : (
+                <>
+                  <ChevronRight size={18} aria-hidden="true" />
+                  {isAshtechMode ? "Lancer le paiement" : "Confirmer le dépôt"}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
