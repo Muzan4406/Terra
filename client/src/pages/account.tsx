@@ -5,6 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCountryDialCode } from "@/components/country-select";
 import { BekoUtilityIcon, type BekoUtilityIconName } from "@/components/beko-icons";
 import { useToast } from "@/hooks/use-toast";
+import aboutIcon from "@assets/images_(33)_1791122614367.jpeg";
+import productsIcon from "@assets/images_(12)_1791122614400.png";
+import passwordIcon from "@assets/10772639_1791122614312.png";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -89,12 +92,14 @@ export default function AccountPage() {
     },
     {
       icon: Package,
+      customImage: productsIcon,
       title: "Mes produits",
       detail: "Consulter vos produits actifs",
       action: () => navigate("/my-products"),
     },
     {
       icon: BadgeInfo,
+      customImage: aboutIcon,
       title: "À propos de Beko",
       detail: "En savoir plus sur nos services",
       action: () => navigate("/about"),
@@ -115,6 +120,7 @@ export default function AccountPage() {
     },
     {
       icon: LockKeyhole,
+      customImage: passwordIcon,
       title: "Modifier le mot de passe",
       detail: "Sécuriser l’accès à votre compte",
       action: () => navigate("/change-password"),
@@ -190,7 +196,14 @@ export default function AccountPage() {
                 className={`beko-action border-0 bg-transparent shadow-none ${index ? "border-t border-[#e3eee0]" : ""}`}
                 data-testid={`menu-${item.title === "Lier / gérer un portefeuille de retrait" ? "wallets" : item.title === "Service client" ? "support" : item.title === "Mes produits" ? "products" : item.title === "À propos de Beko" ? "about" : item.title === "Preuves de retrait" ? "withdrawal-proofs" : item.title === "Utiliser un code bonus" ? "exchange" : "password"}`}
               >
-                {item.image ? (
+                {item.customImage ? (
+                  <img
+                    src={item.customImage}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-[2.45rem] w-[2.45rem] shrink-0 rounded-[.85rem] bg-white object-contain"
+                  />
+                ) : item.image ? (
                   <BekoUtilityIcon name={item.image} className="h-[2.45rem] w-[2.45rem] rounded-[.85rem]" />
                 ) : (
                   <span className="beko-action-icon"><item.icon size={19} /></span>

@@ -7,6 +7,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getTelegramUrl } from "@/lib/telegram-url";
 import refrigeratorImage from "@assets/Screenshot_20261003-112959.ChatGPT~2_1791093850642.jpg";
 import coffeeMachineImage from "@assets/Screenshot_20261003-113315.ChatGPT~2_1791093850375.jpg";
+import blenderImage from "@assets/Screenshot_20261003-113248.ChatGPT~2_1791122691899.jpg";
 
 interface PlatformSettings {
   telegramGroup?: string | null;
@@ -125,6 +126,13 @@ export default function HomePage() {
 
             </div>
           </section>
+          <article className="home-appliance-card home-appliance-card--featured" aria-label="Blender Beko">
+            <img src={blenderImage} alt="Blender posé dans une cuisine lumineuse avec des boissons préparées" />
+            <div className="home-appliance-copy">
+              <strong>Blenders et mixeurs</strong>
+              <span>Des recettes maison au quotidien</span>
+            </div>
+          </article>
         </main>
       </div>
 
