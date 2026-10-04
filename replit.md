@@ -120,8 +120,9 @@ The system runs a background job every 60 seconds that:
 
 ## Development Commands
 - `npm run dev` - Start development server
-- `npm run db:push` - Push schema changes to database
+- `npm run db:push` - Unfiltered schema push; do not run while the runtime-managed `public.session` table exists. Use the filtered command below instead.
 
 ## Running on Replit
-- For a new or empty development database, run `npm run db:push` once to create the tables from `shared/schema.ts`.
+- The session store creates `public.session` at startup, but this table is not in `shared/schema.ts`. To create or update app tables without risking that session table, run:
+  `npx drizzle-kit push --dialect postgresql --schema ./shared/schema.ts --url "$DATABASE_URL" --tablesFilter='users,products,user_products,wallets,payment_channels,deposits,withdrawals,earnings,withdrawal_proofs,claimed_tasks,platform_settings,platform_settings_audit,platform_images,bonus_codes,bonus_code_usages,admin_appointments,payment_channel_audit,support_messages,support_attachments'`
 - Start the app with `npm run dev` (the configured `Start application` workflow). It serves the Express API and Vite frontend on port 5000.

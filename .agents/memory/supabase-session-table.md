@@ -3,8 +3,8 @@ name: Supabase schema pushes and sessions
 description: Preserve the PostgreSQL session table when applying Drizzle schema changes to Supabase.
 ---
 
-The current Drizzle push against Supabase treats `public.session` as an extra table because `connect-pg-simple` creates it at runtime and it is not in the Drizzle schema. The generated plan may propose dropping it.
+Drizzle does not manage `public.session`, which is created by `connect-pg-simple` at runtime. An unfiltered push can treat it as an extra table and propose dropping it, including on the Replit development database.
 
-**Why:** Approving that drop would delete persistent login sessions and log users out.
+**Why:** Dropping the table deletes persistent login sessions and logs users out.
 
-**How to apply:** Cancel any push that proposes dropping `public.session`. For narrowly scoped additive changes, apply and verify only the authorized DDL; before future broad pushes, configure and verify a way to exclude the session table.
+**How to apply:** Preview schema changes before applying them. Use an explicit table filter that excludes `session`, and cancel any plan that proposes dropping it. When using Drizzle push options, this CLI rejects combining `--config` with other push flags; pass the dialect, schema, and database URL directly instead.
