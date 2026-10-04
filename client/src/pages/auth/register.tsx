@@ -14,9 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, LockKeyhole, Share2, UserRound } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { CountryFlagIcon } from "@/components/beko-icons";
+import { AuthFieldIcon } from "@/components/auth-field-icon";
 import type { z } from "zod";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -87,13 +88,18 @@ export default function RegisterPage() {
                 <FormItem>
                   <p className="text-sm text-gray-600 mb-2">Nom complet</p>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Votre nom complet"
-                      autoComplete="name"
-                      className="h-12 border-gray-200 rounded-xl bg-white"
-                      data-testid="input-fullname"
-                    />
+                    <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-[#dce8db] bg-[#f3f8f2] p-1.5 transition-colors focus-within:border-[#a8c9ad] focus-within:ring-2 focus-within:ring-[#dcebdd]">
+                      <AuthFieldIcon icon={UserRound} />
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Votre nom complet"
+                          autoComplete="name"
+                          className="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+                          data-testid="input-fullname"
+                        />
+                      </FormControl>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -107,13 +113,14 @@ export default function RegisterPage() {
                 <FormItem>
                   <p className="text-sm text-gray-600 mb-2">Numéro de téléphone</p>
                   <FormControl>
-                    <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-white">
+                    <div className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-[#dce8db] bg-[#f3f8f2] p-1.5 transition-colors focus-within:border-[#a8c9ad] focus-within:ring-2 focus-within:ring-[#dcebdd]">
+                      <AuthFieldIcon icon={UserRound} />
                       <FormField
                         control={form.control}
                         name="country"
                         render={({ field: countryField }) => (
                           <Select value={countryField.value} onValueChange={countryField.onChange}>
-                            <SelectTrigger className="w-24 border-0 border-r border-gray-200 rounded-none bg-transparent focus:ring-0 h-12">
+                            <SelectTrigger className="h-11 w-24 shrink-0 rounded-lg border-0 border-r border-[#dce8db] bg-transparent px-1.5 focus:ring-0">
                               <SelectValue>
                                 {selectedCountry ? (
                                   <span className="flex items-center gap-1.5">
@@ -137,14 +144,16 @@ export default function RegisterPage() {
                           </Select>
                         )}
                       />
-                      <Input
-                        {...field}
-                        type="tel"
-                        autoComplete="tel"
-                        placeholder="Votre numéro de téléphone"
-                        className="flex-1 border-0 h-12 focus-visible:ring-0 bg-transparent"
-                        data-testid="input-phone"
-                      />
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="tel"
+                          autoComplete="tel"
+                          placeholder="Votre numéro de téléphone"
+                          className="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+                          data-testid="input-phone"
+                        />
+                      </FormControl>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -159,14 +168,19 @@ export default function RegisterPage() {
                 <FormItem>
                   <p className="text-sm text-gray-600 mb-2">Choisissez un mot de passe</p>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="6 caractères minimum"
-                      className="h-12 border-gray-200 rounded-xl bg-white"
-                      data-testid="input-password"
-                    />
+                    <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-[#dce8db] bg-[#f3f8f2] p-1.5 transition-colors focus-within:border-[#a8c9ad] focus-within:ring-2 focus-within:ring-[#dcebdd]">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="6 caractères minimum"
+                          className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
+                          data-testid="input-password"
+                        />
+                      </FormControl>
+                      <AuthFieldIcon icon={LockKeyhole} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,12 +194,17 @@ export default function RegisterPage() {
                 <FormItem>
                   <p className="text-sm text-gray-600 mb-2">Code d'invitation (optionnel)</p>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Code de parrainage"
-                      className="h-12 border-gray-200 rounded-xl bg-white"
-                      data-testid="input-invitation"
-                    />
+                    <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-[#dce8db] bg-[#f3f8f2] p-1.5 transition-colors focus-within:border-[#a8c9ad] focus-within:ring-2 focus-within:ring-[#dcebdd]">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Code de parrainage"
+                          className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
+                          data-testid="input-invitation"
+                        />
+                      </FormControl>
+                      <AuthFieldIcon icon={Share2} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
