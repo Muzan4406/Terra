@@ -41,6 +41,9 @@ import connectPgSimple from "connect-pg-simple";
 import multer from "multer";
 
 const SessionStore = connectPgSimple(session);
+const ELIGIBLE_COUNTRY_CODES = new Set<string>(
+  ELIGIBLE_COUNTRIES.map((country) => country.code),
+);
 const adminSettingsPatchSchema = z.object({
   customerService: z.string().url("URL invalide").or(z.literal("")).optional(),
   officialChannel: z.string().url("URL invalide").or(z.literal("")).optional(),
@@ -49,6 +52,15 @@ const adminSettingsPatchSchema = z.object({
   ...businessSettingsFieldsSchema.partial().shape,
 });
 const ASHTECH_COUNTRIES_SETTING = "ashtechEnabledCountries";
+
+function isEligibleCountryCode(countryCode: string): boolean {
+  return ELIGIBLE_COUNTRY_CODES.has(countryCode.trim().toUpperCase());
+}
+
+function rejectSession(req: Request, res: Response) {
+  req.session.destroy(() => undefined);
+  return res.status(401).json({ message: "Non authentifié" });
+}
 
 function asNonEmptyString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -461,14 +473,30 @@ function getSupportUploads(req: Request, res: Response): SupportAttachmentUpload
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    country?: string;
   }
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.userId) {
+  const userId = req.session.userId;
+  if (!userId) {
     return res.status(401).json({ message: "Non authentifié" });
   }
-  next();
+
+  if (req.session.country) {
+    if (!isEligibleCountryCode(req.session.country)) {
+      return rejectSession(req, res);
+    }
+    return next();
+  }
+
+  void storage.getUser(userId).then((user) => {
+    if (!user || !isEligibleCountryCode(user.country)) {
+      return rejectSession(req, res);
+    }
+    req.session.country = user.country.trim().toUpperCase();
+    next();
+  }).catch(next);
 }
 
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -476,6 +504,10 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: "Non authentifié" });
   }
   const user = await storage.getUser(req.session.userId);
+  if (!user || !isEligibleCountryCode(user.country)) {
+    return rejectSession(req, res);
+  }
+  req.session.country = user.country.trim().toUpperCase();
   if (!user?.isAdmin) {
     return res.status(403).json({ message: "Accès refusé" });
   }
@@ -487,6 +519,10 @@ async function requireSuperAdmin(req: Request, res: Response, next: NextFunction
     return res.status(401).json({ message: "Non authentifié" });
   }
   const user = await storage.getUser(req.session.userId);
+  if (!user || !isEligibleCountryCode(user.country)) {
+    return rejectSession(req, res);
+  }
+  req.session.country = user.country.trim().toUpperCase();
   if (!user?.isSuperAdmin) {
     return res.status(403).json({ message: "Seul l'administrateur principal peut modifier ces paramètres" });
   }
@@ -631,8 +667,12 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
+      const countryCode = data.country.trim().toUpperCase();
+      if (!isEligibleCountryCode(countryCode)) {
+        return res.status(400).json({ message: "Ce pays n'est pas pris en charge." });
+      }
       
-      const existingUser = await storage.getUserByPhone(data.phone, data.country);
+      const existingUser = await storage.getUserByPhone(data.phone, countryCode);
       if (existingUser) {
         return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé" });
       }
@@ -649,12 +689,13 @@ export async function registerRoutes(
       const user = await storage.createUser({
         fullName: data.fullName,
         phone: data.phone,
-        country: data.country,
+        country: countryCode,
         password: data.password,
         referrerId,
       });
 
       req.session.userId = user.id;
+      req.session.country = user.country;
       await saveSession(req);
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
@@ -670,9 +711,13 @@ export async function registerRoutes(
     let loginStage = "VALIDATE";
     try {
       const data = loginSchema.parse(req.body);
+      const countryCode = data.country.trim().toUpperCase();
+      if (!isEligibleCountryCode(countryCode)) {
+        return res.status(401).json({ message: "Identifiants incorrects" });
+      }
 
       loginStage = "LOOKUP_USER";
-      const user = await storage.getUserByPhone(data.phone, data.country);
+      const user = await storage.getUserByPhone(data.phone, countryCode);
       if (!user) {
         return res.status(401).json({ message: "Identifiants incorrects" });
       }
@@ -689,6 +734,7 @@ export async function registerRoutes(
 
       loginStage = "SAVE_SESSION";
       req.session.userId = user.id;
+      req.session.country = user.country;
       await saveSession(req);
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
@@ -714,9 +760,10 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Non authentifié" });
     }
     const user = await storage.getUser(req.session.userId);
-    if (!user) {
-      return res.status(401).json({ message: "Utilisateur non trouvé" });
+    if (!user || !isEligibleCountryCode(user.country)) {
+      return rejectSession(req, res);
     }
+    req.session.country = user.country.trim().toUpperCase();
     res.json({ user: { ...user, password: undefined } });
   }));
 
@@ -890,9 +937,14 @@ export async function registerRoutes(
   app.post("/api/wallets", requireAuth, async (req, res) => {
     try {
       const data = walletSchema.parse(req.body);
+      const countryCode = data.country.trim().toUpperCase();
+      if (!isEligibleCountryCode(countryCode)) {
+        return res.status(400).json({ message: "Ce pays n'est pas pris en charge." });
+      }
       const wallet = await storage.createWallet({
         userId: req.session.userId!,
         ...data,
+        country: countryCode,
         isDefault: true,
       });
       res.json(wallet);
@@ -1046,6 +1098,10 @@ export async function registerRoutes(
 
   app.post("/api/deposits", requireAuth, asyncRoute(async (req, res) => {
     const data = depositSchema.parse(req.body);
+    const countryCode = data.country.trim().toUpperCase();
+    if (!isEligibleCountryCode(countryCode)) {
+      return res.status(400).json({ message: "Ce pays n'est pas pris en charge." });
+    }
     const { depositMinimum } = resolvePlatformBusinessSettings(
       await storage.getAllSettings(),
     );
@@ -1054,7 +1110,6 @@ export async function registerRoutes(
       return res.status(400).json({ message: minimumError });
     }
     const userId = req.session.userId!;
-    const countryCode = data.country.trim().toUpperCase();
     const enabledCountryCodes = parseEnabledAshtechCountries(
       await storage.getSetting(ASHTECH_COUNTRIES_SETTING),
     );

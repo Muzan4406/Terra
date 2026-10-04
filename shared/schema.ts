@@ -8,7 +8,6 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 });
 
 export const ELIGIBLE_COUNTRIES = [
-  { code: "CM", name: "Cameroun", flag: "CM", dialCode: "237", gmtOffsetHours: 1 },
   { code: "BF", name: "Burkina Faso", flag: "BF", dialCode: "226", gmtOffsetHours: 0 },
   { code: "TG", name: "Togo", flag: "TG", dialCode: "228", gmtOffsetHours: 0 },
   { code: "BJ", name: "Bénin", flag: "BJ", dialCode: "229", gmtOffsetHours: 1 },
@@ -19,7 +18,6 @@ export const PAYMENT_METHODS_BY_COUNTRY: Record<string, string[]> = {
   TG: ["Moov Money", "Mixx by Yas"],
   CI: ["Wave", "MTN", "Orange Money", "Moov Money"],
   BJ: ["Celtis", "Moov Money", "MTN", "Momo"],
-  CM: ["Orange Money", "MTN"],
   BF: ["Orange Money", "Moov Money"],
 };
 

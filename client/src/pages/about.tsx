@@ -70,7 +70,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold">Présence en Afrique</h3>
                   <p className="text-sm text-muted-foreground">
-                    La plateforme est accessible au Cameroun, au Burkina Faso, au Togo, au Bénin et en Côte d'Ivoire.
+                    La plateforme est accessible au Burkina Faso, au Togo, au Bénin et en Côte d'Ivoire.
                   </p>
                 </div>
               </div>

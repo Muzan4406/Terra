@@ -1,7 +1,7 @@
 # Terra - Investment Platform
 
 ## Project Overview
-Terra is an investment platform for 5 French-speaking African countries: Cameroun, Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can access VIP products, track account activity, and use a 3-level referral system.
+Terra is an investment platform for 4 French-speaking African countries: Burkina Faso, Togo, Bénin, and Côte d'Ivoire. Users can access VIP products, track account activity, and use a 3-level referral system.
 
 ## Tech Stack
 - **Frontend**: React with TypeScript, Vite, TailwindCSS, shadcn/ui components
@@ -107,7 +107,6 @@ Terra is an investment platform for 5 French-speaking African countries: Camerou
 - **Togo**: Moov Money, Mixx by Yas
 - **Côte d'Ivoire**: Wave, MTN, Orange Money, Moov Money
 - **Bénin**: Celtis, Moov Money, MTN, Momo
-- **Cameroun**: Orange Money, MTN
 - **Burkina Faso**: Orange Money, Moov Money
 
 ## Daily Payouts
