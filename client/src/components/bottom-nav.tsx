@@ -1,12 +1,15 @@
 import { useLocation, Link } from "wouter";
 import { ClipboardCheck, Home, TrendingUp, UsersRound, User } from "lucide-react";
+import walletImage from "@assets/images_(27)_1791106022965.jpeg";
+import receiptImage from "@assets/images_(29)_1791106022925.jpeg";
+import bankImage from "@assets/pngtree-bank-money-finance-icon-symbolizing-secure-transaction_1791106023203.png";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/withdrawal-proofs", icon: ClipboardCheck, label: "Preuves de retrait" },
-  { path: "/invest", icon: TrendingUp, label: "Investir" },
-  { path: "/team", icon: UsersRound, label: "Équipe" },
-  { path: "/account", icon: User, label: "Compte" },
+  { path: "/", icon: Home, image: null, label: "Accueil" },
+  { path: "/withdrawal-proofs", icon: ClipboardCheck, image: receiptImage, label: "Preuves de retrait" },
+  { path: "/invest", icon: TrendingUp, image: bankImage, label: "Investir" },
+  { path: "/team", icon: UsersRound, image: null, label: "Équipe" },
+  { path: "/account", icon: User, image: walletImage, label: "Compte" },
 ];
 
 export function BottomNav() {
@@ -28,10 +31,19 @@ export function BottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <item.icon
-                className={`h-6 w-6 ${isActive ? "opacity-100" : "opacity-70"} ${isActive && item.path === "/" ? "fill-primary" : ""}`}
-                aria-hidden="true"
-              />
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt=""
+                  aria-hidden="true"
+                  className={`h-7 w-7 shrink-0 object-contain transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}
+                />
+              ) : (
+                <item.icon
+                  className={`h-6 w-6 ${isActive ? "opacity-100" : "opacity-70"} ${isActive && item.path === "/" ? "fill-primary" : ""}`}
+                  aria-hidden="true"
+                />
+              )}
               <span className={`max-w-[4.5rem] whitespace-normal text-center text-xs font-bold leading-tight ${isActive ? "text-primary" : ""}`}>{item.label}</span>
             </Link>
           );

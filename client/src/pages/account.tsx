@@ -8,7 +8,7 @@ import { BekoUtilityIcon, type BekoUtilityIconName } from "@/components/beko-ico
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowDownToLine,
-  ArrowRight,
+  ArrowUpFromLine,
   BadgeInfo,
   Check,
   ChevronRight,
@@ -166,17 +166,17 @@ export default function AccountPage() {
           </section>
 
           <section className="beko-shortcuts" aria-label="Actions rapides">
-            <button type="button" className="beko-shortcut" onClick={() => navigate("/deposit")} data-testid="button-deposit">
-              <span className="beko-shortcut-icon"><ArrowRight size={21} /></span>
+            <button type="button" className="beko-shortcut beko-shortcut--action" onClick={() => navigate("/deposit")} data-testid="button-deposit">
+              <span className="beko-shortcut-icon"><ArrowDownToLine size={21} /></span>
               <span className="beko-shortcut-copy"><strong>Déposer</strong><small>Ajouter des fonds</small></span>
               <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
-            <button type="button" className="beko-shortcut" onClick={() => navigate("/withdraw")} data-testid="button-withdraw">
-              <span className="beko-shortcut-icon"><ArrowDownToLine size={21} /></span>
+            <button type="button" className="beko-shortcut beko-shortcut--action" onClick={() => navigate("/withdraw")} data-testid="button-withdraw">
+              <span className="beko-shortcut-icon"><ArrowUpFromLine size={21} /></span>
               <span className="beko-shortcut-copy"><strong>Retirer</strong><small>Demander un retrait</small></span>
               <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
-            <button type="button" className="beko-shortcut" onClick={() => navigate("/history")} data-testid="button-invoice">
+            <button type="button" className="beko-shortcut beko-shortcut--wide" onClick={() => navigate("/history")} data-testid="button-invoice">
               <BekoUtilityIcon name="receipt" className="h-[2.85rem] w-[2.85rem] rounded-[.95rem]" />
               <span className="beko-shortcut-copy"><strong>Historique</strong><small>Voir mes opérations</small></span>
               <ChevronRight className="beko-shortcut-arrow" size={20} />
