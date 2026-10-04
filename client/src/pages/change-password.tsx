@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { BottomNav } from "@/components/bottom-nav";
 import "./beko-pages.css";
 
 const changePasswordSchema = z.object({
@@ -245,7 +244,6 @@ export default function ChangePasswordPage() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

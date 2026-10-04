@@ -11,8 +11,14 @@ When redesigning a page, replace its previous visual presentation completely; do
 
 **How to apply:** Replace old layouts and styling rather than layering over them. Keep requested Beko identity on the pages the user names, use user-supplied Beko icons instead of Signa Group assets, and preserve user-uploaded evidence in support and proof workflows.
 
-For app navigation, keep the left-sidebar trigger available throughout the signed-in user pages and keep the five-button bottom navigation off the dashboard.
+For app navigation, remove the five-button bottom navigation from all app pages. Keep the hamburger sidebar available throughout signed-in user and admin pages.
 
-**Why:** The user explicitly requested these navigation placements.
+**Why:** The user corrected the earlier dashboard-only interpretation and requested the sidebar throughout the app.
 
-**How to apply:** When updating dashboard navigation or signed-in page headers, keep the sidebar trigger consistent and do not restore the five dashboard buttons.
+**How to apply:** Do not restore the bottom navigation on any page; preserve the sidebar trigger across signed-in user and admin routes.
+
+The withdrawal-proof page is a public feed for signed-in users: show only administrator-approved proofs, with the user's name, both submitted images, and the gain assigned by the administrator. Keep proof submission on a separate page opened by a “Publier ma preuve” action; admins review, approve or reject proofs, and set the gain.
+
+**Why:** The user explicitly described this public proof and administration workflow.
+
+**How to apply:** Never expose pending or rejected proofs in the public feed. Keep review and gain assignment in the admin panel and maintain the two-image submission flow.

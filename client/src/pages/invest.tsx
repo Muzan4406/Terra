@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Loader2, Package } from "lucide-react";
@@ -81,20 +80,19 @@ export default function InvestPage() {
 
   if (!user || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-md mx-auto p-4 space-y-4">
           <Skeleton className="h-8 w-64 mx-auto" />
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-44 w-full rounded-xl" />
           ))}
         </div>
-        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto">
         <header className="flex items-center justify-center gap-3 bg-white px-4 py-4">
           <BrandLogo className="h-12 w-12 rounded-lg object-contain" alt="" />
@@ -224,7 +222,6 @@ export default function InvestPage() {
         </div>
       </div>
 
-      <BottomNav />
     </div>
   );
 }

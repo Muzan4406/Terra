@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileCheck2, Loader2, Upload, Clock3 } from "lucide-react";
-import { BottomNav } from "@/components/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -111,15 +110,15 @@ export default function WithdrawalProofsPage() {
   };
 
   return (
-    <div className="site-page min-h-screen bg-background pb-24">
+    <div className="site-page min-h-screen bg-background">
       <main className="mx-auto w-full max-w-2xl space-y-5 px-4 py-5 sm:px-6">
         <header className="flex items-center gap-3">
-          <Link href="/account" className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Retour au compte">
+          <Link href="/withdrawal-proofs" className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Retour aux preuves de retrait">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Vérification quotidienne</p>
-            <h1 className="text-2xl font-bold">Preuves de retrait</h1>
+            <h1 className="text-2xl font-bold">Publier ma preuve</h1>
           </div>
         </header>
 
@@ -238,7 +237,6 @@ export default function WithdrawalProofsPage() {
           )}
         </section>
       </main>
-      <BottomNav />
     </div>
   );
 }

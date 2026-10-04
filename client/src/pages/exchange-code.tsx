@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { BottomNav } from "@/components/bottom-nav";
 
 const exchangeCodeSchema = z.object({
   code: z.string().min(1, "Veuillez saisir le code cadeau"),
@@ -81,7 +80,7 @@ export default function ExchangeCodePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-4 p-4 border-b bg-white">
@@ -171,7 +170,6 @@ export default function ExchangeCodePage() {
           </div>
         </div>
       </div>
-      <BottomNav />
     </div>
   );
 }

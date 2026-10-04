@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { BottomNav } from "@/components/bottom-nav";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 import { ArrowRight, Copy, UsersRound } from "lucide-react";
 import { Link } from "wouter";
@@ -175,7 +174,6 @@ export default function TeamPage() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

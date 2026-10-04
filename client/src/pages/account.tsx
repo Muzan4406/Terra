@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import { getCountryDialCode } from "@/components/country-select";
 import { BekoUtilityIcon, type BekoUtilityIconName } from "@/components/beko-icons";
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +75,6 @@ export default function AccountPage() {
           <Skeleton className="h-20 w-full rounded-2xl" />
           <Skeleton className="h-64 w-full rounded-3xl" />
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -226,7 +224,6 @@ export default function AccountPage() {
           </button>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

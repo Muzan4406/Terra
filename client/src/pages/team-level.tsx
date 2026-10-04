@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { BottomNav } from "@/components/bottom-nav";
 import { ArrowLeft, CalendarDays, CircleCheck, UserRound, UsersRound } from "lucide-react";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 import "./beko-pages.css";
@@ -115,7 +114,6 @@ export default function TeamLevelPage() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

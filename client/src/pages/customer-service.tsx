@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { SiTelegram } from "react-icons/si";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import { getTelegramUrl } from "@/lib/telegram-url";
 import "./beko-pages.css";
 
@@ -114,7 +113,6 @@ export default function CustomerServicePage() {
           </section>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

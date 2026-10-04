@@ -74,6 +74,7 @@ export default function AdminWithdrawalProofsPage() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawal-proofs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/withdrawal-proofs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/withdrawal-proofs/public"] });
     },
     onError: (error: Error) => {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });

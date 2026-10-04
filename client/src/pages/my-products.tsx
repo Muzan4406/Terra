@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import {
   ArrowLeft,
   CalendarDays,
@@ -239,7 +238,6 @@ export default function MyProductsPage() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

@@ -812,6 +812,17 @@ export async function registerRoutes(
     });
   }));
 
+  app.get("/api/withdrawal-proofs/public", requireAuth, asyncRoute(async (_req, res) => {
+    const approvedProofs = await storage.getWithdrawalProofs("approved");
+    res.json(approvedProofs.map((proof) => ({
+      id: proof.id,
+      fullName: proof.user.fullName,
+      submittedDay: proof.submittedDay,
+      commission: proof.commission,
+      createdAt: proof.createdAt,
+    })));
+  }));
+
   app.post(
     "/api/withdrawal-proofs",
     requireAuth,
@@ -867,7 +878,7 @@ export async function registerRoutes(
       if (!proof) return res.status(404).json({ message: "Preuve introuvable" });
 
       const viewer = await storage.getUser(req.session.userId!);
-      if (proof.userId !== req.session.userId && !viewer?.isAdmin) {
+      if (proof.status !== "approved" && proof.userId !== req.session.userId && !viewer?.isAdmin) {
         return res.status(403).json({ message: "Accès refusé" });
       }
       if (req.params.kind !== "website" && req.params.kind !== "sms") {

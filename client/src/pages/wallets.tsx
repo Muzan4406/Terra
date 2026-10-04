@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CountryFlagIcon, CountrySelect, getCountryName } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
 import { PaymentMethodPngIcon } from "@/components/beko-icons";
-import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Plus, CreditCard, Trash2, Loader2 } from "lucide-react";
@@ -272,7 +271,6 @@ export default function WalletsPage() {
           </section>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

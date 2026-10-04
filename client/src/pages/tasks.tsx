@@ -1,7 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { REFERRAL_TASKS, PRODUCT_TASK } from "@shared/schema";
@@ -49,7 +48,7 @@ export default function TasksPage() {
 
   if (!user || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 pb-24">
+      <div className="min-h-screen bg-gray-100">
         <div className="max-w-md mx-auto">
           <Skeleton className="h-48 w-full" />
           <div className="p-4 space-y-4">
@@ -58,7 +57,6 @@ export default function TasksPage() {
             <Skeleton className="h-32 w-full" />
           </div>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -92,7 +90,7 @@ export default function TasksPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-md mx-auto">
         <div className="bg-white px-4 py-6 border-b border-gray-200">
           <h1 className="text-xl font-bold text-gray-800">Défis et récompenses</h1>
@@ -171,7 +169,6 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <BottomNav />
     </div>
   );
 }

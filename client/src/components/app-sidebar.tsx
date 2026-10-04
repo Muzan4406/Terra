@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/lib/auth";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -7,6 +8,7 @@ import {
   Clock3,
   Home,
   Menu,
+  ShieldCheck,
   TrendingUp,
   User,
   UsersRound,
@@ -36,8 +38,16 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ triggerClassName = "" }: AppSidebarProps) {
+  const { user } = useAuth();
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const visibleMenuItems = user?.isAdmin
+    ? [
+        ...menuItems,
+        { path: "/admin", label: "Administration", icon: ShieldCheck },
+        { path: "/admin/withdrawal-proofs", label: "Gérer les preuves", icon: ClipboardCheck },
+      ]
+    : menuItems;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -67,9 +77,10 @@ export function AppSidebar({ triggerClassName = "" }: AppSidebarProps) {
           </div>
         </div>
         <nav aria-label="Menu latéral" className="grid gap-1 p-3">
-          {menuItems.map(({ path, label, icon: Icon }) => {
+          {visibleMenuItems.map(({ path, label, icon: Icon }) => {
             const isActive =
-              location === path || (path === "/team" && location.startsWith("/team/"));
+              location === path ||
+              (path === "/team" && location.startsWith("/team/"));
 
             return (
               <Link

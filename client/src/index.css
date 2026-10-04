@@ -902,6 +902,10 @@ body {
   left: max(.75rem, calc((100vw - 34rem) / 2 + .75rem));
 }
 
+.admin-app-sidebar-trigger {
+  left: max(.75rem, calc((100vw - 72rem) / 2 + .75rem));
+}
+
 .protected-app-shell header {
   padding-left: 4.25rem !important;
 }

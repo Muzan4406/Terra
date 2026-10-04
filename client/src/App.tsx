@@ -21,7 +21,8 @@ import RulesPage from "@/pages/rules";
 import CustomerServicePage from "@/pages/customer-service";
 import ChangePasswordPage from "@/pages/change-password";
 import MyProductsPage from "@/pages/my-products";
-import WithdrawalProofsPage from "@/pages/withdrawal-proofs";
+import WithdrawalProofSubmitPage from "@/pages/withdrawal-proofs";
+import WithdrawalProofsPage from "@/pages/withdrawal-proof-feed";
 import TeamPage from "@/pages/team";
 import TeamLevelPage from "@/pages/team-level";
 import AdminDashboard from "@/pages/admin/index";
@@ -147,7 +148,12 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Redirect to="/" />;
   }
 
-  return <>{children}</>;
+  return (
+    <div className="protected-app-shell admin-app-shell">
+      <AppSidebar triggerClassName="protected-app-sidebar-trigger admin-app-sidebar-trigger" />
+      {children}
+    </div>
+  );
 }
 
 function Router() {
@@ -247,6 +253,11 @@ function Router() {
       <Route path="/my-products">
         <ProtectedRoute>
           <MyProductsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/withdrawal-proofs/submit">
+        <ProtectedRoute>
+          <WithdrawalProofSubmitPage />
         </ProtectedRoute>
       </Route>
       <Route path="/withdrawal-proofs">

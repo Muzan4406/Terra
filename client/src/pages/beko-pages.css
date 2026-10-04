@@ -9,7 +9,6 @@
   --beko-line: #d8e8d8;
   --beko-coral: #ef795d;
   min-height: 100dvh;
-  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
   color: var(--beko-ink);
   background:
     radial-gradient(ellipse at 90% 5%, rgba(201, 238, 141, .38), transparent 30rem),

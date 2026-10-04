@@ -3,7 +3,6 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -266,7 +265,6 @@ export default function HistoryPage() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }
