@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Loader2, CreditCard, ChevronRight } from "lucide-react";
-import { BottomNav } from "@/components/bottom-nav";
+import { ArrowLeft, ArrowRight, Check, Clock3, CreditCard, Loader2, WalletCards } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Wallet as WalletType } from "@shared/schema";
+import "./beko-pages.css";
 
 interface PublicFinancialSettings {
   withdrawalMinimum: number;
@@ -17,12 +18,16 @@ interface PublicFinancialSettings {
   withdrawalEndHourGmt: number;
 }
 
+const formatMoney = (amount: number) =>
+  Number(amount || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+
 export default function WithdrawPage() {
   const { user, refetchUser } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [amount, setAmount] = useState<string>("");
-  const [selectedWalletId, setSelectedWalletId] = useState<string>("");
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState("");
+  const [selectedWalletId, setSelectedWalletId] = useState("");
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -30,82 +35,59 @@ export default function WithdrawPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const { data: wallets } = useQuery<WalletType[]>({
-    queryKey: ["/api/wallets"],
-  });
-  const { data: platformSettings } = useQuery<PublicFinancialSettings>({
+  const {
+    data: wallets,
+    isLoading: walletsLoading,
+    isError: walletsError,
+    refetch: refetchWallets,
+  } = useQuery<WalletType[]>({ queryKey: ["/api/wallets"], enabled: !!user });
+  const {
+    data: platformSettings,
+    isLoading: settingsLoading,
+    isError: settingsError,
+    refetch: refetchSettings,
+  } = useQuery<PublicFinancialSettings>({
     queryKey: ["/api/settings/public"],
-    refetchInterval: 5000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
+    enabled: !!user,
   });
 
-  const amountNum = parseInt(amount) || 0;
-  const withdrawalMinimum =
-    platformSettings?.withdrawalMinimum ?? DEFAULT_BUSINESS_SETTINGS.withdrawalMinimum;
-  const withdrawalFeePercentage =
-    platformSettings?.withdrawalFeePercentage ??
-    DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
-  const feeRate = withdrawalFeePercentage / 100;
-  const feeAmount = Math.round(amountNum * feeRate);
-  const netAmount = amountNum - feeAmount;
+  const amountNum = Number.parseInt(amount, 10) || 0;
+  const withdrawalMinimum = platformSettings?.withdrawalMinimum ?? DEFAULT_BUSINESS_SETTINGS.withdrawalMinimum;
+  const withdrawalFeePercentage = platformSettings?.withdrawalFeePercentage ?? DEFAULT_BUSINESS_SETTINGS.withdrawalFeePercentage;
+  const feeAmount = Math.round(amountNum * (withdrawalFeePercentage / 100));
+  const netAmount = Math.max(0, amountNum - feeAmount);
 
   const withdrawMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/withdrawals", {
+      const response = await apiRequest("POST", "/api/withdrawals", {
         amount: amountNum,
         walletId: selectedWalletId,
       });
-      if (!res.ok) {
-        const resData = await res.json();
-        throw new Error(resData.message);
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { message?: string } | null;
+        throw new Error(data?.message || "Votre demande de retrait n’a pas pu être envoyée.");
       }
-      return res.json();
+      return response.json();
     },
-    onSuccess: () => {
-      toast({ 
-        title: "Demande de retrait envoyée", 
-        description: "Votre demande sera traitée sous peu." 
+    onSuccess: async () => {
+      toast({
+        title: "Demande de retrait envoyée",
+        description: "Votre demande sera traitée sous peu.",
       });
-      refetchUser();
+      await refetchUser();
+      await queryClient.invalidateQueries({ queryKey: ["/api/transactions/history"] });
       navigate("/");
     },
     onError: (error: Error) => {
-      toast({ 
-        title: "Erreur", 
+      toast({
+        title: "Erreur",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive",
       });
     },
   });
-
-  const handleSubmit = () => {
-    if (amountNum < withdrawalMinimum) {
-      toast({ 
-        title: "Erreur", 
-        description: `Le montant minimum est de ${withdrawalMinimum.toLocaleString("fr-FR")} FCFA`,
-        variant: "destructive" 
-      });
-      return;
-    }
-    if (!selectedWalletId) {
-      toast({ 
-        title: "Erreur", 
-        description: "Veuillez sélectionner un compte bancaire",
-        variant: "destructive" 
-      });
-      return;
-    }
-    if (amountNum > (user?.withdrawalBalance || 0)) {
-      toast({ 
-        title: "Erreur", 
-        description: "Solde insuffisant",
-        variant: "destructive" 
-      });
-      return;
-    }
-    withdrawMutation.mutate();
-  };
 
   if (!user) return null;
 
@@ -116,148 +98,196 @@ export default function WithdrawPage() {
   const withdrawalHours = getWithdrawalHoursForCountry(user.country, withdrawalHoursGmt);
   const isWithinHours = isWithdrawalWindowOpen(currentTime, withdrawalHoursGmt);
   const canWithdraw = user.hasProduct && !user.withdrawalBlocked && isWithinHours;
+  const selectedWallet = wallets?.find((wallet) => wallet.id === selectedWalletId);
+  const walletReady = Boolean(selectedWallet && wallets?.some((wallet) => wallet.id === selectedWalletId));
 
-  const selectedWallet = wallets?.find(w => w.id === selectedWalletId);
+  const handleSubmit = () => {
+    if (amountNum < withdrawalMinimum) {
+      toast({
+        title: "Montant minimum non atteint",
+        description: `Le montant minimum est de ${formatMoney(withdrawalMinimum)} FCFA.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!walletReady) {
+      toast({
+        title: "Choisissez un portefeuille",
+        description: "Sélectionnez le compte sur lequel recevoir votre retrait.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (amountNum > user.withdrawalBalance) {
+      toast({
+        title: "Solde insuffisant",
+        description: "Le montant demandé dépasse votre solde disponible pour retrait.",
+        variant: "destructive",
+      });
+      return;
+    }
+    withdrawMutation.mutate();
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
-      <div className="max-w-md mx-auto">
-        <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <button onClick={() => navigate("/")} className="text-gray-600">
-            <ArrowLeft className="h-6 w-6" />
+    <div className="beko-page beko-page--dark beko-page--withdraw">
+      <div className="beko-shell">
+        <header className="beko-topbar">
+          <button type="button" className="beko-back" onClick={() => navigate("/account")} aria-label="Retour au compte">
+            <ArrowLeft size={19} />
           </button>
-          <h1 className="text-xl font-bold text-blue-600">Demander un retrait</h1>
-          <div className="w-6"></div>
+          <h1>Demander un retrait</h1>
+          <span className="beko-brand">BEKO</span>
         </header>
 
-        <div className="bg-blue-500 p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
-              <CreditCard className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">
-                FCFA {user.withdrawalBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-blue-100">Solde du compte</p>
-            </div>
-          </div>
-        </div>
+        <main>
+          <section className="beko-hero">
+            <p className="beko-eyebrow">Retrait vers votre portefeuille</p>
+            <h2>Recevez vos revenus.</h2>
+            <p>Choisissez votre moyen de réception et le montant à retirer.</p>
+          </section>
+          <div className="beko-content">
+            <section className="beko-withdraw-balance">
+              <span>Disponible pour retrait</span>
+              <strong>{formatMoney(user.withdrawalBalance)} FCFA</strong>
+              <span>Votre solde dépôt reste séparé de ce montant.</span>
+            </section>
 
-        <div className="p-4 space-y-6">
-          {!user.hasProduct && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <p className="text-amber-700 font-medium">Produit VIP requis</p>
-              <p className="text-sm text-amber-600">Vous devez acheter un produit VIP pour débloquer les retraits.</p>
-            </div>
-          )}
-
-          {user.withdrawalBlocked && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-700 font-medium">Retrait bloqué</p>
-              <p className="text-sm text-red-600">Contactez le service client.</p>
-            </div>
-          )}
-
-          <button
-            onClick={() => navigate("/wallets")}
-            className="w-full flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200"
-            data-testid="button-select-wallet"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-gray-600" />
+            {!user.hasProduct && (
+              <div className="beko-alert">
+                <strong>Produit requis</strong>
+                Un produit actif est nécessaire pour débloquer les retraits.
+                <button type="button" className="beko-inline-link mt-2 block" onClick={() => navigate("/my-products")}>Voir mes produits</button>
               </div>
-              <span className="text-blue-600 font-medium">
-                {selectedWallet 
-                  ? `${selectedWallet.paymentMethod} - ${selectedWallet.accountNumber}`
-                  : "Choisir un portefeuille"
-                }
-              </span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </button>
-
-          {wallets && wallets.length > 0 && !selectedWalletId && (
-            <div className="space-y-2">
-              {wallets.map((wallet) => (
-                <button
-                  key={wallet.id}
-                  onClick={() => setSelectedWalletId(wallet.id)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                    selectedWalletId === wallet.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 bg-white"
-                  }`}
-                  data-testid={`wallet-${wallet.id}`}
-                >
-                  <CreditCard className="h-5 w-5 text-gray-500" />
-                  <span className="text-gray-700">{wallet.paymentMethod} - {wallet.accountNumber}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {wallets && wallets.length > 0 && selectedWalletId && (
-            <button
-              onClick={() => setSelectedWalletId("")}
-              className="text-blue-500 text-sm"
-            >
-              Changer de compte
-            </button>
-          )}
-
-          <div>
-            <p className="text-blue-600 font-medium mb-2">Montant du retrait</p>
-            <div className="flex items-center border-b border-gray-300 pb-2">
-              <span className="text-blue-600 font-medium mr-2">FCFA</span>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Saisissez le montant"
-                className="flex-1 text-gray-800 bg-transparent outline-none"
-                min={withdrawalMinimum}
-                data-testid="input-amount"
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-sm">
-              <span className="text-blue-600">
-                Montant net estimé : FCFA {netAmount > 0 ? netAmount.toFixed(2) : "0.00"}
-              </span>
-              <span className="text-gray-500">Frais : {withdrawalFeePercentage}%</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={!canWithdraw || !wallets?.length || !platformSettings || withdrawMutation.isPending}
-            className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            data-testid="button-submit"
-          >
-            {withdrawMutation.isPending ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Traitement...
-              </>
-            ) : (
-              "Envoyer la demande"
             )}
-          </button>
+            {user.withdrawalBlocked && (
+              <div className="beko-alert is-danger">
+                <strong>Retraits temporairement bloqués</strong>
+                Contactez le service client pour obtenir de l’aide.
+                <button type="button" className="beko-inline-link mt-2 block" onClick={() => navigate("/customer-service/chat")}>Contacter le service client</button>
+              </div>
+            )}
+            {!isWithinHours && !user.withdrawalBlocked && user.hasProduct && (
+              <div className="beko-notice flex items-start gap-2">
+                <Clock3 size={18} className="mt-0.5 shrink-0 text-[#087653]" />
+                <span>Les retraits sont actuellement fermés. Réessayez pendant la plage horaire de retrait de votre pays.</span>
+              </div>
+            )}
 
-          <div>
-            <h3 className="text-blue-600 font-bold mb-3">À savoir avant votre retrait</h3>
-            <div className="space-y-3 text-sm text-gray-600">
-              <p>1. Le montant minimum de retrait est de {withdrawalMinimum.toLocaleString("fr-FR")} FCFA.</p>
-              <p>2. Les retraits sont ouverts de {withdrawalHours.start}h à {withdrawalHours.end}h, heure locale ({withdrawalHoursGmt.start}h à {withdrawalHoursGmt.end}h GMT), avec une limite de 3 retraits par jour.</p>
-              <p>3. {withdrawalFeePercentage}% des frais de retrait seront utilisés pour couvrir les charges de la plateforme.</p>
-              <p>4. Les retraits seront disponibles sous 2 heures, et exceptionnellement sous 24 heures.</p>
-            </div>
+            <section className="grid gap-2">
+              <div className="beko-section-heading">
+                <h2>Montant du retrait</h2>
+                <span>Minimum {formatMoney(withdrawalMinimum)} FCFA</span>
+              </div>
+              <label htmlFor="withdraw-amount" className="sr-only">Montant du retrait en FCFA</label>
+              <div className="relative">
+                <input
+                  id="withdraw-amount"
+                  type="number"
+                  min={withdrawalMinimum}
+                  step="1"
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder="Saisir le montant"
+                  className="beko-input pr-20 text-lg font-extrabold tabular-nums"
+                  data-testid="input-amount"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-[#668078]">FCFA</span>
+              </div>
+              <p className="m-0 text-xs text-[#a9b4cf]">Frais de {formatMoney(withdrawalFeePercentage)}% calculés selon les paramètres en vigueur.</p>
+            </section>
+
+            <section className="grid gap-2">
+              <div className="beko-section-heading">
+                <h2>Carte de réception</h2>
+                <span>{wallets?.length ?? 0} portefeuille(s)</span>
+              </div>
+              {walletsLoading ? (
+                <Skeleton className="h-24 w-full rounded-2xl" />
+              ) : walletsError ? (
+                <div className="beko-alert is-danger">
+                  <strong>Portefeuilles indisponibles</strong>
+                  Impossible de charger vos comptes.
+                  <button type="button" className="beko-inline-link mt-2 block" onClick={() => void refetchWallets()}>Réessayer</button>
+                </div>
+              ) : wallets?.length ? (
+                <div className="grid gap-2">
+                  {wallets.map((wallet) => (
+                    <button
+                      type="button"
+                      key={wallet.id}
+                      onClick={() => setSelectedWalletId(wallet.id)}
+                      className={`beko-wallet-option ${selectedWalletId === wallet.id ? "is-selected" : ""}`}
+                      aria-pressed={selectedWalletId === wallet.id}
+                      data-testid={`wallet-${wallet.id}`}
+                    >
+                      <span className="beko-action-icon"><CreditCard size={18} /></span>
+                      <span>{wallet.paymentMethod}<small className="mt-1 block font-medium text-[#668078]">{wallet.accountNumber}</small></span>
+                      {selectedWalletId === wallet.id ? <Check className="text-[#087653]" size={18} /> : <ArrowRight className="text-[#83a18e]" size={18} />}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="beko-panel grid justify-items-center gap-2 px-5 py-7 text-center">
+                  <span className="beko-action-icon h-12 w-12"><WalletCards size={22} /></span>
+                  <strong className="text-sm">Aucun portefeuille lié</strong>
+                  <p className="m-0 text-xs text-[#668078]">Ajoutez un moyen de réception avant de demander un retrait.</p>
+                  <button type="button" className="beko-inline-link mt-1" onClick={() => navigate("/wallets")}>Lier un portefeuille</button>
+                </div>
+              )}
+              {wallets?.length ? (
+                <button type="button" className="beko-inline-link justify-self-start" onClick={() => navigate("/wallets")}>
+                  Gérer mes portefeuilles
+                </button>
+              ) : null}
+            </section>
+
+            {settingsError && (
+              <div className="beko-alert is-danger">
+                <strong>Paramètres de retrait indisponibles</strong>
+                Vérifiez la connexion avant d’envoyer votre demande.
+                <button type="button" className="beko-inline-link mt-2 block" onClick={() => void refetchSettings()}>Réessayer</button>
+              </div>
+            )}
+
+            {selectedWallet && (
+              <div className="beko-notice flex items-center gap-2">
+                <Check size={17} className="text-[#087653]" />
+                <span>Réception sur {selectedWallet.paymentMethod} · {selectedWallet.accountNumber}</span>
+              </div>
+            )}
+
+            <section className="beko-panel grid gap-3 p-4">
+              <div className="beko-section-heading">
+                <h2>À savoir</h2>
+                <span>Avant votre demande</span>
+              </div>
+              <div className="grid gap-2 text-xs leading-relaxed text-[#668078]">
+                <p className="m-0">Le montant minimum de retrait est de <strong className="text-[#14392f]">{formatMoney(withdrawalMinimum)} FCFA</strong>.</p>
+                <p className="m-0">Les retraits sont ouverts de {withdrawalHours.start}h à {withdrawalHours.end}h, heure locale ({withdrawalHoursGmt.start}h–{withdrawalHoursGmt.end}h GMT).</p>
+                <p className="m-0">Les frais de retrait sont de {formatMoney(withdrawalFeePercentage)}% et sont déduits du montant demandé.</p>
+                <p className="m-0">Le traitement peut prendre jusqu’à 2 heures et exceptionnellement jusqu’à 24 heures.</p>
+              </div>
+            </section>
           </div>
-        </div>
+        </main>
       </div>
-
-      <BottomNav />
+      <div className="beko-withdraw-dock">
+        <div className="beko-withdraw-summary" aria-live="polite">
+          <div><span>Frais estimés</span><strong>{formatMoney(feeAmount)} FCFA</strong></div>
+          <div><span>Vous recevrez</span><strong>{formatMoney(netAmount)} FCFA</strong></div>
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!canWithdraw || !walletReady || !platformSettings || settingsLoading || walletsLoading || walletsError || settingsError || withdrawMutation.isPending || amountNum < withdrawalMinimum || amountNum > user.withdrawalBalance}
+          className="beko-primary-button"
+          data-testid="button-submit"
+        >
+          {withdrawMutation.isPending ? <><Loader2 size={18} className="animate-spin" /> Envoi en cours…</> : <><ArrowRight size={18} /> Envoyer la demande</>}
+        </button>
+      </div>
     </div>
   );
 }

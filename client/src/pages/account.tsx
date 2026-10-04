@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -5,253 +6,285 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { getCountryDialCode } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ChevronRight, Globe, Copy, Info, 
-  Headphones, RefreshCw, Lock, Shield, LogOut,
-  ArrowRight, Package, FileCheck2
+import {
+  ArrowDownToLine,
+  ArrowRight,
+  BadgeInfo,
+  Check,
+  ChevronRight,
+  Copy,
+  FileCheck2,
+  Headphones,
+  History,
+  LockKeyhole,
+  LogOut,
+  MessageCircle,
+  Package,
+  RefreshCw,
+  ShieldCheck,
+  WalletCards,
 } from "lucide-react";
+import "./beko-pages.css";
 
 interface PlatformSettings {
-  customerService: string;
-  officialChannel: string;
-  discussionGroup: string;
+  customerService?: string | null;
+  officialChannel?: string | null;
+  discussionGroup?: string | null;
 }
 
+const formatMoney = (amount: number) =>
+  Number(amount || 0).toLocaleString("fr-FR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+
 export default function AccountPage() {
-  const { user, logout } = useAuth();
+  const { user, isLoading: authLoading, logout } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const { data: supportUnreadCount = 0 } = useQuery<number>({
     queryKey: ["/api/support/unread-count"],
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
   });
-
   const { data: settings } = useQuery<PlatformSettings>({
     queryKey: ["/api/settings/public"],
   });
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
-
-  const copyUserId = () => {
-    if (user) {
-      navigator.clipboard.writeText(user.referralCode);
+  const copyReferralCode = async () => {
+    if (!user) return;
+    try {
+      await navigator.clipboard.writeText(user.referralCode);
       toast({
-       title: "Code copié",
-       description: "Votre identifiant de parrainage est prêt à être partagé.",
+        title: "Code copié",
+        description: "Votre code de parrainage est prêt à être partagé.",
+      });
+    } catch {
+      toast({
+        title: "Copie impossible",
+        description: "Autorisez l’accès au presse-papiers puis réessayez.",
+        variant: "destructive",
       });
     }
   };
 
-  if (!user) {
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Déconnexion impossible",
+        description: error instanceof Error ? error.message : "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      setLoggingOut(false);
+    }
+  };
+
+  if (authLoading || !user) {
     return (
-      <div className="min-h-[100dvh] bg-[#f2eee3] pb-24">
-        <div className="mx-auto max-w-md space-y-4 p-4">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-40 w-full" />
+      <div className="beko-page">
+        <div className="beko-shell space-y-4 p-4">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-56 w-full rounded-3xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-3xl" />
         </div>
         <BottomNav />
       </div>
     );
   }
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
   const menuItems = [
-    { 
-      icon: Package, 
-      label: "Mes produits",
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-500",
-      action: () => navigate("/my-products"),
-      testId: "menu-products" 
+    {
+      icon: WalletCards,
+      title: "Lier / gérer un portefeuille de retrait",
+      detail: "Mettre à jour vos moyens de réception",
+      action: () => navigate("/wallets"),
     },
-    { 
-      icon: Info, 
-      label: "À propos",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-500",
+    {
+      icon: Package,
+      title: "Mes produits",
+      detail: "Consulter vos produits actifs",
+      action: () => navigate("/my-products"),
+    },
+    {
+      icon: BadgeInfo,
+      title: "À propos de Beko",
+      detail: "En savoir plus sur nos services",
       action: () => navigate("/about"),
-      testId: "menu-about" 
     },
     {
       icon: FileCheck2,
-      label: "Preuves de retrait",
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-700",
+      title: "Preuves de retrait",
+      detail: "Consulter les justificatifs",
       action: () => navigate("/withdrawal-proofs"),
-      testId: "menu-withdrawal-proofs",
     },
-    { 
-      icon: Headphones, 
-      label: "Service client", 
-      iconBg: "bg-green-100",
-      iconColor: "text-green-500",
+    {
+      icon: Headphones,
+      title: "Service client",
+      detail: supportUnreadCount > 0 ? `${supportUnreadCount} nouveau(x) message(s)` : "Nous sommes là pour vous aider",
       action: () => navigate("/customer-service/chat"),
-      testId: "menu-support" 
+      unread: supportUnreadCount,
     },
-    { 
-      icon: RefreshCw, 
-      label: "Utiliser un code bonus",
-      iconBg: "bg-teal-100",
-      iconColor: "text-teal-500",
+    {
+      icon: RefreshCw,
+      title: "Utiliser un code bonus",
+      detail: "Échanger un code de récompense",
       action: () => navigate("/exchange-code"),
-      testId: "menu-exchange" 
     },
-    { 
-      icon: Lock, 
-      label: "Modifier mot de passe", 
-      iconBg: "bg-red-100",
-      iconColor: "text-red-500",
+    {
+      icon: LockKeyhole,
+      title: "Modifier le mot de passe",
+      detail: "Sécuriser l’accès à votre compte",
       action: () => navigate("/change-password"),
-      testId: "menu-password" 
     },
   ];
 
+  const communityLinks = [
+    { title: "Service client", value: settings?.customerService, icon: MessageCircle },
+    { title: "Canal officiel", value: settings?.officialChannel, icon: ShieldCheck },
+    { title: "Groupe de discussion", value: settings?.discussionGroup, icon: MessageCircle },
+  ].filter((item) => Boolean(item.value));
+
+  const openCommunityLink = (value: string) => {
+    if (/^https?:\/\//i.test(value)) {
+      window.open(value, "_blank", "noopener,noreferrer");
+    } else {
+      void navigator.clipboard.writeText(value).then(
+        () => toast({ title: "Coordonnée copiée", description: value }),
+        () => toast({ title: "Coordonnée", description: value }),
+      );
+    }
+  };
+
   return (
-    <div className="min-h-[100dvh] bg-[#f2eee3] pb-[calc(6rem+env(safe-area-inset-bottom))]">
-      <div className="mx-auto max-w-md overflow-hidden bg-[#fbf8f0] shadow-[0_12px_36px_rgba(40,54,42,0.08)]">
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950 to-teal-800 px-4 pb-5 pt-7 sm:px-5">
-          <div className="absolute right-2 top-2 z-20">
-            <button 
-              className="flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10"
-              data-testid="button-language"
-            >
-              <Globe className="h-4 w-4" />
-              <span>Langue</span>
-            </button>
-          </div>
-          
-          <div className="relative z-10">
-            <h1 className="mb-3 w-fit rounded-xl bg-[#fbf8f0]/95 px-3 py-1.5 shadow-sm">
-              <span className="text-sm font-bold uppercase tracking-[0.12em] text-white">Mon compte</span>
-            </h1>
-            <p className="text-lg font-semibold tracking-[0.01em] text-white" data-testid="text-phone">
-              {getCountryDialCode(user.country)} {user.phone}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm font-medium tracking-[0.04em] text-white/80" data-testid="text-user-id">{user.referralCode}</span>
-              <button onClick={copyUserId} aria-label="Copier le code de parrainage" className="flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15" data-testid="button-copy-id">
-                <Copy className="h-4 w-4" />
+    <div className="beko-page">
+      <div className="beko-shell">
+        <header className="beko-topbar">
+          <span className="beko-brand">BEKO</span>
+          <h1>Mon compte</h1>
+          <span className="beko-icon-button" aria-hidden="true"><WalletCards size={17} /></span>
+        </header>
+
+        <main className="beko-content">
+          <section className="beko-hero beko-fade-in">
+            <p className="beko-eyebrow">Votre espace personnel</p>
+            <h2>Heureux de vous revoir.</h2>
+            <p>{getCountryDialCode(user.country)} {user.phone}</p>
+            <div className="beko-profile-id">
+              <span>Code · {user.referralCode}</span>
+              <button type="button" onClick={() => void copyReferralCode()} aria-label="Copier le code de parrainage" data-testid="button-copy-id">
+                <Copy size={14} />
               </button>
             </div>
-          </div>
+          </section>
 
-          <div className="relative z-10 mt-5 grid grid-cols-2 gap-2 rounded-2xl border border-white/20 bg-white/10 p-3.5 shadow-sm backdrop-blur-md sm:gap-3 sm:p-4">
-            <div className="text-center flex flex-col items-center justify-center min-w-0">
-              <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-balance">
-                {formatNumber(user.depositBalance)}
-              </p>
-              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Solde dépôt</p>
-            </div>
-            <div className="flex min-w-0 flex-col items-center justify-center border-l border-white/25 px-1 text-center sm:px-2">
-              <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-withdrawal-balance">
-                {formatNumber(user.withdrawalBalance)}
-              </p>
-              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Solde retrait</p>
-            </div>
-            <div className="flex min-w-0 flex-col items-center justify-center border-t border-white/25 px-1 pt-2 text-center sm:px-2">
-              <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-total-earnings">
-                {formatNumber(user.totalEarnings)}
-              </p>
-              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Revenus cumulés</p>
-            </div>
-            <div className="text-center flex flex-col items-center justify-center min-w-0 border-t border-l border-white/25 px-1 pt-2 sm:px-2">
-              <p className="w-full truncate text-[15px] font-bold leading-tight tabular-nums text-white sm:text-base" data-testid="text-today-earnings">
-                {formatNumber(user.todayEarnings)}
-              </p>
-              <p className="mt-1 text-[10px] leading-tight text-white/80 sm:text-xs">Revenu du jour</p>
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
-            <button
-              className="flex min-h-[104px] items-start justify-between gap-2 rounded-2xl border border-white/20 bg-[#1d6870]/40 p-3 text-left shadow-sm backdrop-blur-sm transition-colors hover:bg-[#1d6870]/50 active:scale-[0.98] sm:p-3.5"
-              onClick={() => navigate("/wallets")}
-              data-testid="button-bank-account"
-            >
-              <div className="flex min-w-0 flex-1 flex-col items-start">
-                <p className="mb-2 text-sm font-bold leading-snug text-white">Mes portefeuilles</p>
-                <div className="mt-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                  <ArrowRight className="h-4 w-4 text-white" aria-hidden="true" />
-                </div>
+          <section className="beko-balance-card" aria-label="Soldes et revenus">
+            <div className="beko-balance-top">
+              <div>
+                <p>Votre espace financier</p>
+                <strong>Soldes et revenus</strong>
               </div>
+              <span className="beko-balance-mark"><WalletCards size={21} /></span>
+            </div>
+            <div className="beko-balance-grid">
+              <div className="beko-balance-cell" data-testid="text-balance">
+                <span>Solde dépôt</span>
+                <strong>{formatMoney(user.depositBalance)} FCFA</strong>
+              </div>
+              <div className="beko-balance-cell" data-testid="text-withdrawal-balance">
+                <span>Solde retrait</span>
+                <strong>{formatMoney(user.withdrawalBalance)} FCFA</strong>
+              </div>
+              <div className="beko-balance-cell" data-testid="text-total-earnings">
+                <span>Revenus cumulés</span>
+                <strong>{formatMoney(user.totalEarnings)} FCFA</strong>
+              </div>
+              <div className="beko-balance-cell" data-testid="text-today-earnings">
+                <span>Revenu du jour</span>
+                <strong>{formatMoney(user.todayEarnings)} FCFA</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="beko-shortcuts" aria-label="Actions rapides">
+            <button type="button" className="beko-shortcut" onClick={() => navigate("/deposit")} data-testid="button-deposit">
+              <ArrowRight size={19} /><span>Déposer</span>
             </button>
-            
-            <button
-              className="flex min-h-[104px] items-start justify-between gap-2 rounded-2xl border border-white/20 bg-[#1d6870]/40 p-3 text-left shadow-sm backdrop-blur-sm transition-colors hover:bg-[#1d6870]/50 active:scale-[0.98] sm:p-3.5"
-              onClick={() => navigate("/history")}
-              data-testid="button-invoice"
-            >
-              <div className="flex min-w-0 flex-1 flex-col items-start">
-                <p className="mb-2 text-sm font-bold leading-snug text-white">Mon historique</p>
-                <div className="mt-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                  <ArrowRight className="h-4 w-4 text-white" aria-hidden="true" />
-                </div>
-              </div>
+            <button type="button" className="beko-shortcut" onClick={() => navigate("/withdraw")} data-testid="button-withdraw">
+              <ArrowDownToLine size={19} /><span>Retirer</span>
             </button>
-          </div>
-        </div>
+            <button type="button" className="beko-shortcut" onClick={() => navigate("/history")} data-testid="button-invoice">
+              <History size={19} /><span>Historique</span>
+            </button>
+          </section>
 
-        <div className="bg-[#fbf8f0] px-3 pb-1 pt-2 sm:px-4">
-          {menuItems.map((item, index) => (
-            <button
-              key={item.testId}
-              className={`flex min-h-[64px] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-[#f1eadb] active:bg-[#ebe1cf] sm:gap-4 sm:px-4 ${
-                index !== menuItems.length - 1 ? "border-b border-[#e9e2d4]" : ""
-              }`}
-              onClick={item.action}
-              data-testid={item.testId}
-            >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${item.iconBg}`}>
-                <item.icon className={`h-5 w-5 ${item.iconColor}`} aria-hidden="true" />
-              </div>
-              <span className="flex-1 text-left font-semibold text-[#30453c]">{item.label}</span>
-              {item.testId === "menu-support" && supportUnreadCount > 0 && (
-                <span className="shrink-0 rounded-full bg-[#dff1df] px-2 py-1 text-[10px] font-bold text-[#24603b]">
-                  Nouveau · {supportUnreadCount}
+          <section className="beko-panel overflow-hidden p-2" aria-label="Actions du compte">
+            {menuItems.map((item, index) => (
+              <button
+                type="button"
+                key={item.title}
+                onClick={item.action}
+                className={`beko-action border-0 bg-transparent shadow-none ${index ? "border-t border-[#e3eee0]" : ""}`}
+                data-testid={`menu-${item.title === "Lier / gérer un portefeuille de retrait" ? "wallets" : item.title === "Service client" ? "support" : item.title === "Mes produits" ? "products" : item.title === "À propos de Beko" ? "about" : item.title === "Preuves de retrait" ? "withdrawal-proofs" : item.title === "Utiliser un code bonus" ? "exchange" : "password"}`}
+              >
+                <span className="beko-action-icon"><item.icon size={19} /></span>
+                <span className="beko-action-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.detail}</small>
                 </span>
-              )}
-              <ChevronRight className="h-5 w-5 shrink-0 text-[#9c9d91]" aria-hidden="true" />
-            </button>
-          ))}
-        </div>
+                {item.unread ? (
+                  <span className="rounded-full bg-[#e2f2d9] px-2 py-1 text-[.65rem] font-extrabold text-[#236548]">{item.unread}</span>
+                ) : null}
+                <ChevronRight className="beko-arrow" size={18} />
+              </button>
+            ))}
+          </section>
 
-        {user.isAdmin && (
-          <div className="mx-4 mt-3">
-            <button
-              className="flex min-h-[64px] w-full items-center gap-3 rounded-2xl border border-[#d8e2d6] bg-[#eaf0e6] px-4 py-3 transition-colors hover:bg-[#e1eadc] sm:gap-4"
-              onClick={() => navigate("/admin")}
-              data-testid="button-admin"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#d6e4d1]">
-                <Shield className="h-5 w-5 text-[#315c48]" />
+          {communityLinks.length > 0 && (
+            <section className="grid gap-2" aria-label="Communauté Beko">
+              <div className="beko-section-heading">
+                <h2>Rester en contact</h2>
+                <span>Canaux officiels</span>
               </div>
-              <span className="flex-1 text-left font-semibold text-[#315c48]">Panneau d'administration</span>
-              <ChevronRight className="h-5 w-5 text-[#66846f]" />
-            </button>
-          </div>
-        )}
+              {communityLinks.map((item) => (
+                <button key={item.title} type="button" className="beko-action" onClick={() => openCommunityLink(item.value!)}>
+                  <span className="beko-action-icon"><item.icon size={18} /></span>
+                  <span className="beko-action-copy">
+                    <strong>{item.title}</strong>
+                    <small>{item.value}</small>
+                  </span>
+                  <ArrowRight className="beko-arrow" size={17} />
+                </button>
+              ))}
+            </section>
+          )}
 
-        <div className="px-4 pb-5 pt-3">
+          {user.isAdmin && (
+            <button type="button" className="beko-action" onClick={() => navigate("/admin")} data-testid="button-admin">
+              <span className="beko-action-icon"><ShieldCheck size={19} /></span>
+              <span className="beko-action-copy"><strong>Administration</strong><small>Accéder au panneau de gestion</small></span>
+              <ChevronRight className="beko-arrow" size={18} />
+            </button>
+          )}
+
           <button
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl py-3 font-semibold text-[#a65249] transition-colors hover:bg-[#f7e9e2]"
-            onClick={handleLogout}
+            type="button"
+            className="beko-action justify-center border-[#eed6cd] bg-[#fff7f2] text-[#9c493a]"
+            onClick={() => void handleLogout()}
+            disabled={loggingOut}
             data-testid="button-logout"
           >
-            <LogOut className="h-5 w-5" />
-            Déconnexion
+            {loggingOut ? <Check size={18} /> : <LogOut size={18} />}
+            <span className="font-bold">{loggingOut ? "Déconnexion…" : "Déconnexion"}</span>
           </button>
-        </div>
+        </main>
       </div>
-
       <BottomNav />
     </div>
   );

@@ -1,0 +1,1278 @@
+.beko-page {
+  --beko-ink: #14392f;
+  --beko-muted: #668078;
+  --beko-deep: #064b3b;
+  --beko-green: #087c59;
+  --beko-lime: #c9ee8d;
+  --beko-paper: #f1f7ea;
+  --beko-card: #fcfff9;
+  --beko-line: #d8e8d8;
+  --beko-coral: #ef795d;
+  min-height: 100dvh;
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  color: var(--beko-ink);
+  background:
+    radial-gradient(ellipse at 90% 5%, rgba(201, 238, 141, .38), transparent 30rem),
+    linear-gradient(180deg, #e8f3df 0%, var(--beko-paper) 32rem, #edf5e8 100%);
+}
+
+.beko-shell {
+  width: min(100%, 34rem);
+  min-height: 100dvh;
+  margin-inline: auto;
+  overflow: hidden;
+  background: rgba(247, 251, 241, .72);
+  box-shadow: 0 0 54px rgba(13, 62, 46, .09);
+}
+
+.beko-topbar {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  gap: .9rem;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid rgba(216, 232, 216, .8);
+  background: rgba(250, 255, 247, .76);
+}
+
+.beko-back {
+  display: inline-grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 50%;
+  color: white;
+  background: var(--beko-deep);
+  box-shadow: 0 5px 13px rgba(6, 75, 59, .15);
+}
+
+.beko-topbar h1 {
+  flex: 1;
+  margin: 0;
+  color: var(--beko-ink);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.beko-brand {
+  color: var(--beko-green);
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.beko-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem 1.2rem 1.35rem;
+  color: #f7fff2;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(201, 238, 141, .22), transparent 12rem),
+    linear-gradient(135deg, #063e34, #087151 68%, #0c7854);
+}
+
+.beko-hero::after {
+  position: absolute;
+  right: -2.2rem;
+  bottom: -4rem;
+  width: 12rem;
+  height: 12rem;
+  border: 1px solid rgba(237, 255, 217, .18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.3rem rgba(237, 255, 217, .035), 0 0 0 2.6rem rgba(237, 255, 217, .025);
+  content: "";
+  pointer-events: none;
+}
+
+.beko-eyebrow {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 .6rem;
+  color: var(--beko-lime);
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.beko-hero h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 19rem;
+  margin: 0;
+  color: #f9fff4;
+  font-size: clamp(1.65rem, 7vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -.055em;
+  line-height: 1.03;
+}
+
+.beko-hero p:not(.beko-eyebrow) {
+  position: relative;
+  z-index: 1;
+  max-width: 22rem;
+  margin: .7rem 0 0;
+  color: rgba(242, 255, 236, .8);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+.beko-content {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1rem 1.5rem;
+}
+
+.beko-panel {
+  border: 1px solid rgba(216, 232, 216, .95);
+  border-radius: 1.35rem;
+  background: var(--beko-card);
+  box-shadow: 0 8px 22px rgba(24, 69, 46, .055);
+}
+
+.beko-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+  margin: .1rem 0 -.25rem;
+}
+
+.beko-section-heading h2 {
+  margin: 0;
+  color: var(--beko-ink);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.beko-section-heading span {
+  color: var(--beko-muted);
+  font-size: .72rem;
+}
+
+.beko-action {
+  display: flex;
+  width: 100%;
+  min-height: 3.75rem;
+  align-items: center;
+  gap: .8rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--beko-line);
+  border-radius: 1.05rem;
+  color: var(--beko-ink);
+  background: rgba(252, 255, 249, .93);
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.beko-action:hover {
+  border-color: #a6cbb0;
+  background: #f8fff1;
+}
+
+.beko-action:active {
+  transform: scale(.985);
+}
+
+.beko-action-icon {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: .85rem;
+  color: var(--beko-green);
+  background: #e6f3d8;
+}
+
+.beko-action-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.beko-action-copy strong {
+  display: block;
+  font-size: .87rem;
+  font-weight: 750;
+}
+
+.beko-action-copy small {
+  display: block;
+  margin-top: .15rem;
+  color: var(--beko-muted);
+  font-size: .72rem;
+}
+
+.beko-arrow {
+  flex: 0 0 auto;
+  color: #83a18e;
+}
+
+.beko-balance-card {
+  padding: 1rem;
+  color: #f5fff0;
+  border: 1px solid rgba(196, 235, 173, .28);
+  border-radius: 1.4rem;
+  background: linear-gradient(135deg, #074b3b, #0b7452);
+  box-shadow: 0 11px 27px rgba(6, 75, 59, .17);
+}
+
+.beko-balance-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .8rem;
+  padding-bottom: .85rem;
+  border-bottom: 1px solid rgba(240, 255, 235, .2);
+}
+
+.beko-balance-top p {
+  margin: 0 0 .25rem;
+  color: rgba(239, 255, 233, .72);
+  font-size: .74rem;
+}
+
+.beko-balance-top strong {
+  font-size: clamp(1.45rem, 6vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-balance-mark {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border-radius: 1rem;
+  color: var(--beko-deep);
+  background: var(--beko-lime);
+}
+
+.beko-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.beko-balance-cell {
+  min-width: 0;
+  padding: .8rem .4rem .1rem;
+}
+
+.beko-balance-cell:nth-child(2n) {
+  padding-left: .8rem;
+  border-left: 1px solid rgba(240, 255, 235, .2);
+}
+
+.beko-balance-cell:nth-child(n+3) {
+  margin-top: .6rem;
+  padding-top: .75rem;
+  border-top: 1px solid rgba(240, 255, 235, .2);
+}
+
+.beko-balance-cell span {
+  display: block;
+  overflow: hidden;
+  color: rgba(239, 255, 233, .7);
+  font-size: .67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.beko-balance-cell strong {
+  display: block;
+  margin-top: .2rem;
+  overflow: hidden;
+  font-size: .92rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.beko-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.beko-shortcut {
+  display: flex;
+  min-height: 4.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .4rem;
+  padding: .65rem;
+  border: 1px solid rgba(224, 238, 216, .27);
+  border-radius: 1rem;
+  color: #f6fff0;
+  background: rgba(255, 255, 255, .1);
+  text-align: left;
+}
+
+.beko-shortcut:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.beko-shortcut span {
+  font-size: .73rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.beko-shortcut svg {
+  color: var(--beko-lime);
+}
+
+.beko-profile-id {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .8rem;
+  color: rgba(241, 255, 233, .83);
+  font-size: .78rem;
+}
+
+.beko-profile-id button,
+.beko-icon-button {
+  display: inline-grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border: 1px solid rgba(239, 255, 233, .2);
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, .12);
+}
+
+.beko-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .35rem;
+  padding: .35rem;
+  border: 1px solid #d6e8cf;
+  border-radius: 1.1rem;
+  background: #e5f0dc;
+}
+
+.beko-tab {
+  min-height: 2.75rem;
+  padding: .4rem .2rem;
+  border: 0;
+  border-radius: .85rem;
+  color: #567268;
+  background: transparent;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.beko-tab[aria-selected="true"] {
+  color: #f8fff2;
+  background: var(--beko-green);
+  box-shadow: 0 4px 10px rgba(8, 124, 89, .17);
+}
+
+.beko-tab small {
+  display: inline-grid;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  margin-left: .18rem;
+  place-items: center;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .17);
+  font-size: .64rem;
+}
+
+.beko-kind-tabs {
+  display: flex;
+  gap: .45rem;
+  overflow-x: auto;
+  padding: .1rem 0 .15rem;
+  scrollbar-width: none;
+}
+
+.beko-kind-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.beko-kind-tab {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .75rem;
+  border: 1px solid #d6e8cf;
+  border-radius: 99px;
+  color: #567268;
+  background: #f9fff5;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.beko-kind-tab[aria-selected="true"] {
+  border-color: #087c59;
+  color: #07563e;
+  background: #e2f1d8;
+}
+
+.beko-kind-tab small {
+  font-size: .64rem;
+}
+
+.beko-record {
+  overflow: hidden;
+  border: 1px solid #d6e8d5;
+  border-radius: 1.2rem;
+  background: #fbfff8;
+  box-shadow: 0 7px 18px rgba(24, 69, 46, .05);
+}
+
+.beko-record-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem;
+  padding: .85rem .85rem .75rem;
+}
+
+.beko-record-type {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .65rem;
+}
+
+.beko-record-icon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: .85rem;
+  color: #087653;
+  background: #e4f4dc;
+}
+
+.beko-record-title {
+  overflow: hidden;
+  font-size: .85rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.beko-record-date {
+  margin-top: .18rem;
+  color: var(--beko-muted);
+  font-size: .68rem;
+}
+
+.beko-record-amount {
+  flex: 0 0 auto;
+  color: var(--beko-deep);
+  font-size: .9rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.beko-record-amount small {
+  display: block;
+  margin-top: .1rem;
+  color: var(--beko-muted);
+  font-size: .63rem;
+  font-weight: 600;
+}
+
+.beko-record-details {
+  display: grid;
+  gap: .45rem;
+  padding: .7rem .9rem .85rem;
+  border-top: 1px solid #e2eee0;
+}
+
+.beko-record-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  color: var(--beko-muted);
+  font-size: .73rem;
+}
+
+.beko-record-detail strong {
+  color: var(--beko-ink);
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.beko-status {
+  flex: 0 0 auto;
+  padding: .3rem .55rem;
+  border-radius: 99px;
+  color: #45685d;
+  background: #edf2e9;
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.beko-status[data-status="approved"] {
+  color: #176b49;
+  background: #ddf3df;
+}
+
+.beko-status[data-status="pending"] {
+  color: #875517;
+  background: #fbefce;
+}
+
+.beko-status[data-status="rejected"] {
+  color: #9b493d;
+  background: #fbe5dc;
+}
+
+.beko-notice {
+  padding: .95rem 1rem;
+  border: 1px solid #dcebd5;
+  border-radius: 1.1rem;
+  color: #527268;
+  background: rgba(248, 255, 243, .85);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.beko-notice strong {
+  display: block;
+  margin-bottom: .2rem;
+  color: var(--beko-ink);
+}
+
+.beko-alert {
+  padding: .85rem .95rem;
+  border: 1px solid #eed3b8;
+  border-radius: 1rem;
+  color: #76432e;
+  background: #fff3e5;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.beko-alert.is-danger {
+  border-color: #efc7be;
+  color: #8c4237;
+  background: #fff0e9;
+}
+
+.beko-alert.is-success {
+  border-color: #b8dec1;
+  color: #266348;
+  background: #eaf7e9;
+}
+
+.beko-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: .8rem .9rem;
+  border: 1px solid #cfe1d0;
+  border-radius: .95rem;
+  color: var(--beko-ink);
+  background: #fbfff9;
+  font-size: 1rem;
+}
+
+.beko-input:focus {
+  border-color: #429878;
+  outline: 3px solid rgba(8, 124, 89, .12);
+}
+
+.beko-primary-button {
+  display: inline-flex;
+  min-height: 3.25rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  padding: .8rem 1rem;
+  border: 0;
+  border-radius: 1rem;
+  color: #fffef6;
+  background: linear-gradient(110deg, #087653, #0b8b62);
+  box-shadow: 0 8px 16px rgba(8, 124, 89, .18);
+  font-size: .9rem;
+  font-weight: 850;
+}
+
+.beko-primary-button:hover:not(:disabled) {
+  background: linear-gradient(110deg, #066b4b, #087c59);
+}
+
+.beko-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+  box-shadow: none;
+}
+
+.beko-wallet-option {
+  display: flex;
+  width: 100%;
+  min-height: 3.65rem;
+  align-items: center;
+  gap: .75rem;
+  padding: .7rem .8rem;
+  border: 1px solid #d7e7d5;
+  border-radius: 1rem;
+  color: var(--beko-ink);
+  background: #fbfff8;
+  text-align: left;
+}
+
+.beko-wallet-option.is-selected {
+  border-color: #218262;
+  background: #eaf6e4;
+  box-shadow: inset 0 0 0 1px #218262;
+}
+
+.beko-wallet-option span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.beko-field-label {
+  display: block;
+  margin: 0 0 .4rem;
+  color: var(--beko-ink);
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.beko-withdraw-balance {
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 1.25rem;
+  color: #f8fff1;
+  background: linear-gradient(125deg, #07684d, #0b8d60 66%, #ca694e);
+  box-shadow: 0 10px 24px rgba(10, 94, 65, .16);
+}
+
+.beko-withdraw-balance span {
+  display: block;
+  color: rgba(246, 255, 239, .75);
+  font-size: .74rem;
+}
+
+.beko-withdraw-balance strong {
+  display: block;
+  margin-top: .18rem;
+  font-size: 1.75rem;
+  font-weight: 850;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-fee-box {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .6rem;
+  padding: .8rem .9rem;
+  border-radius: 1rem;
+  color: var(--beko-muted);
+  background: #edf5e7;
+  font-size: .75rem;
+}
+
+.beko-fee-box strong {
+  color: var(--beko-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-referral-card {
+  padding: .85rem;
+  border: 1px solid #c8dfbf;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #fafff3, #e8f3df);
+}
+
+.beko-referral-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+
+.beko-referral-row + .beko-referral-row {
+  margin-top: .8rem;
+  padding-top: .8rem;
+  border-top: 1px solid #d6e6d0;
+}
+
+.beko-referral-label {
+  margin: 0 0 .2rem;
+  color: var(--beko-muted);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.beko-referral-value {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  color: var(--beko-ink);
+  background: transparent;
+  font-size: .78rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.beko-copy-button {
+  display: inline-flex;
+  min-height: 2.3rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .3rem;
+  padding: .45rem .65rem;
+  border: 0;
+  border-radius: 99px;
+  color: #f8fff2;
+  background: #087653;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.beko-team-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .55rem;
+}
+
+.beko-team-total {
+  padding: .85rem;
+  border: 1px solid #d7e8d2;
+  border-radius: 1.1rem;
+  background: #fbfff8;
+}
+
+.beko-team-total span {
+  display: block;
+  color: var(--beko-muted);
+  font-size: .7rem;
+}
+
+.beko-team-total strong {
+  display: block;
+  margin-top: .3rem;
+  color: var(--beko-deep);
+  font-size: 1.2rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-level-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: .9rem;
+  border: 1px solid #d3e4d2;
+  border-radius: 1.25rem;
+  color: var(--beko-ink);
+  background: linear-gradient(110deg, #fbfff8, #edf6e8);
+  box-shadow: 0 7px 19px rgba(24, 69, 46, .055);
+  text-decoration: none;
+}
+
+.beko-level-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: .28rem;
+  background: #a7c96f;
+  content: "";
+}
+
+.beko-level-card[data-level="2"]::before {
+  background: #9aafa1;
+}
+
+.beko-level-card[data-level="3"]::before {
+  background: var(--beko-coral);
+}
+
+.beko-level-head {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.beko-level-medal {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(16, 80, 58, .12);
+  border-radius: 50%;
+  color: #155a43;
+  background: #d9ed9a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.beko-level-card[data-level="2"] .beko-level-medal {
+  color: #465c54;
+  background: #e1e9e2;
+}
+
+.beko-level-card[data-level="3"] .beko-level-medal {
+  color: #813f2d;
+  background: #f7d5b6;
+}
+
+.beko-level-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.beko-level-title strong {
+  display: block;
+  font-size: .9rem;
+  font-weight: 850;
+}
+
+.beko-level-title small {
+  color: var(--beko-muted);
+  font-size: .68rem;
+}
+
+.beko-level-rate {
+  text-align: right;
+}
+
+.beko-level-rate strong {
+  display: block;
+  color: #087653;
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.beko-level-rate small {
+  color: var(--beko-muted);
+  font-size: .62rem;
+}
+
+.beko-level-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .3rem;
+  margin-top: .85rem;
+  padding-top: .7rem;
+  border-top: 1px solid #dce9d8;
+}
+
+.beko-level-stat {
+  min-width: 0;
+}
+
+.beko-level-stat span {
+  display: block;
+  color: var(--beko-muted);
+  font-size: .62rem;
+}
+
+.beko-level-stat strong {
+  display: block;
+  margin-top: .15rem;
+  overflow-wrap: anywhere;
+  color: var(--beko-ink);
+  font-size: .75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.beko-inline-link {
+  color: #087653;
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: .15em;
+}
+
+.beko-fade-in {
+  animation: beko-rise 360ms ease both;
+}
+
+@keyframes beko-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beko-fade-in { animation: none; }
+  .beko-action, .beko-primary-button { transition: none; }
+}
+
+@media (max-width: 380px) {
+  .beko-content { padding-inline: .75rem; }
+  .beko-shortcut { padding: .55rem; }
+  .beko-shortcut span { font-size: .67rem; }
+  .beko-record-head { gap: .4rem; padding-inline: .7rem; }
+  .beko-record-amount { font-size: .82rem; }
+}
+
+/* The withdrawal and referral pages take their cue from the earlier deep-blue references. */
+.beko-page--dark {
+  --beko-ink: #f4f5fa;
+  --beko-muted: #b4bfd7;
+  --beko-deep: #172d58;
+  --beko-green: #ff9a62;
+  --beko-lime: #ffd184;
+  --beko-paper: #111a32;
+  --beko-card: #203763;
+  --beko-line: #3c527e;
+  --beko-coral: #ff8c61;
+  color: var(--beko-ink);
+  background:
+    radial-gradient(ellipse at 88% 6%, rgba(238, 129, 79, .18), transparent 19rem),
+    radial-gradient(ellipse at 8% 48%, rgba(43, 74, 132, .23), transparent 24rem),
+    linear-gradient(180deg, #10172c 0%, #1a2d56 44%, #13203d 100%);
+}
+
+.beko-page--dark .beko-shell {
+  background: rgba(20, 35, 67, .93);
+  box-shadow: 0 0 60px rgba(5, 10, 24, .28);
+}
+
+.beko-page--dark .beko-topbar {
+  border-bottom-color: rgba(120, 145, 190, .16);
+  background: rgba(16, 25, 48, .88);
+}
+
+.beko-page--dark .beko-topbar h1 {
+  color: #f7f6f2;
+}
+
+.beko-page--dark .beko-brand {
+  color: #ffb16e;
+}
+
+.beko-page--dark .beko-back {
+  border-color: rgba(255, 255, 255, .11);
+  color: #fff6e9;
+  background: #263b69;
+  box-shadow: 0 5px 14px rgba(3, 8, 21, .25);
+}
+
+.beko-page--dark .beko-hero {
+  background:
+    radial-gradient(circle at 93% 8%, rgba(246, 146, 85, .28), transparent 13rem),
+    linear-gradient(125deg, #172346 0%, #203c70 61%, #273a63 100%);
+}
+
+.beko-page--dark .beko-hero::after {
+  border-color: rgba(255, 181, 112, .25);
+  box-shadow: 0 0 0 1.3rem rgba(255, 181, 112, .045), 0 0 0 2.6rem rgba(255, 181, 112, .03);
+}
+
+.beko-page--dark .beko-eyebrow {
+  color: #ffb46f;
+}
+
+.beko-page--dark .beko-hero h2 {
+  color: #fffaf2;
+}
+
+.beko-page--dark .beko-hero p:not(.beko-eyebrow) {
+  color: #ccd5e8;
+}
+
+.beko-page--dark .beko-section-heading h2 {
+  color: #f5f4f0;
+}
+
+.beko-page--dark .beko-section-heading span {
+  color: #aebbd4;
+}
+
+.beko-page--dark .beko-panel {
+  border-color: rgba(119, 145, 189, .23);
+  background: #1b315a;
+  box-shadow: 0 9px 25px rgba(3, 9, 23, .2);
+}
+
+.beko-page--dark .beko-action {
+  border-color: #3b527e;
+  color: #f2f4fa;
+  background: #223a68;
+}
+
+.beko-page--dark .beko-action:hover {
+  border-color: #e28d5a;
+  background: #294574;
+}
+
+.beko-page--dark .beko-action-icon {
+  color: #ffd08b;
+  background: rgba(240, 144, 89, .18);
+}
+
+.beko-page--dark .beko-action-copy small,
+.beko-page--dark .beko-arrow {
+  color: #aebbd4;
+}
+
+.beko-page--dark .beko-notice {
+  border-color: #415982;
+  color: #c4cee1;
+  background: #1d345e;
+}
+
+.beko-page--dark .beko-notice strong {
+  color: #fff2e1;
+}
+
+.beko-page--dark .beko-alert {
+  border-color: #8b633d;
+  color: #ffdaa9;
+  background: #443859;
+}
+
+.beko-page--dark .beko-alert.is-danger {
+  border-color: #965b52;
+  color: #ffd0c4;
+  background: #422e47;
+}
+
+.beko-page--dark .beko-input {
+  border-color: #52688f;
+  color: #fffaf2;
+  background: #1d3159;
+}
+
+.beko-page--dark .beko-input::placeholder {
+  color: #92a2c2;
+}
+
+.beko-page--dark .beko-input:focus {
+  border-color: #f49a61;
+  outline-color: rgba(244, 154, 97, .22);
+}
+
+.beko-page--dark .beko-primary-button {
+  color: #172346;
+  background: linear-gradient(110deg, #f08b58, #ffbd74);
+  box-shadow: 0 8px 19px rgba(226, 119, 65, .22);
+}
+
+.beko-page--dark .beko-primary-button:hover:not(:disabled) {
+  background: linear-gradient(110deg, #e57b49, #f5a75f);
+}
+
+.beko-page--dark .beko-wallet-option {
+  border-color: #3c527c;
+  color: #f5f4f0;
+  background: #203763;
+}
+
+.beko-page--dark .beko-wallet-option.is-selected {
+  border-color: #ff9e63;
+  background: #2b426c;
+  box-shadow: inset 0 0 0 1px #ff9e63;
+}
+
+.beko-page--dark .beko-wallet-option small {
+  color: #b4bfd7;
+}
+
+.beko-page--dark .beko-withdraw-balance {
+  border-color: rgba(255, 180, 112, .28);
+  background:
+    radial-gradient(circle at 95% 20%, rgba(255, 167, 97, .19), transparent 9rem),
+    linear-gradient(125deg, #192b54, #263f70);
+  box-shadow: 0 12px 26px rgba(4, 11, 28, .26);
+}
+
+.beko-page--dark .beko-withdraw-balance span {
+  color: #bdc9df;
+}
+
+.beko-page--dark .beko-withdraw-balance strong {
+  color: #fff7ed;
+}
+
+.beko-page--dark .beko-referral-card {
+  border-color: #435c88;
+  background: linear-gradient(130deg, #223a68, #1b315b);
+  box-shadow: 0 8px 22px rgba(4, 10, 25, .2);
+}
+
+.beko-page--dark .beko-referral-row + .beko-referral-row {
+  border-top-color: #405781;
+}
+
+.beko-page--dark .beko-referral-label {
+  color: #b8c5dc;
+}
+
+.beko-page--dark .beko-referral-value {
+  color: #f4f5fa;
+}
+
+.beko-page--dark .beko-copy-button {
+  color: #30233c;
+  background: linear-gradient(110deg, #ffcc6d, #f48e56);
+}
+
+.beko-page--dark .beko-team-total {
+  border-color: #3d527b;
+  background: #203763;
+}
+
+.beko-page--dark .beko-team-total span {
+  color: #b9c5dc;
+}
+
+.beko-page--dark .beko-team-total strong {
+  color: #fff1dd;
+}
+
+.beko-page--dark .beko-level-card {
+  padding: .75rem .8rem;
+  border-color: #405681;
+  color: #f4f5fa;
+  background: linear-gradient(108deg, #263e6d, #20365f);
+  box-shadow: 0 8px 20px rgba(3, 9, 23, .2);
+}
+
+.beko-page--dark .beko-level-card::before {
+  width: .32rem;
+  background: #ffc963;
+}
+
+.beko-page--dark .beko-level-card[data-level="2"]::before {
+  background: #c7d0dd;
+}
+
+.beko-page--dark .beko-level-card[data-level="3"]::before {
+  background: #e87943;
+}
+
+.beko-page--dark .beko-level-medal,
+.beko-page--dark .beko-level-card[data-level="2"] .beko-level-medal,
+.beko-page--dark .beko-level-card[data-level="3"] .beko-level-medal {
+  border-color: rgba(255, 255, 255, .22);
+  color: #452a23;
+  background: linear-gradient(145deg, #ffe58e, #e8a846);
+}
+
+.beko-page--dark .beko-level-card[data-level="2"] .beko-level-medal {
+  color: #27364f;
+  background: linear-gradient(145deg, #eef2f5, #aebbd0);
+}
+
+.beko-page--dark .beko-level-card[data-level="3"] .beko-level-medal {
+  color: #fff4e8;
+  background: linear-gradient(145deg, #f3a15e, #a95031);
+}
+
+.beko-page--dark .beko-level-title small,
+.beko-page--dark .beko-level-rate small,
+.beko-page--dark .beko-level-stat span {
+  color: #b5c1d9;
+}
+
+.beko-page--dark .beko-level-rate strong {
+  color: #ffbd72;
+}
+
+.beko-page--dark .beko-level-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: .65rem;
+  padding-top: .55rem;
+  border-top-color: #405781;
+}
+
+.beko-page--dark .beko-level-stat strong {
+  color: #f5f5f8;
+  font-size: .69rem;
+}
+
+.beko-page--dark .beko-inline-link {
+  color: #ffc07b;
+}
+
+.beko-page--dark .beko-fade-in {
+  animation: none;
+}
+
+.beko-page--withdraw {
+  padding-bottom: 0;
+}
+
+.beko-page--withdraw .beko-shell {
+  padding-bottom: calc(9.7rem + env(safe-area-inset-bottom));
+}
+
+.beko-page--withdraw .beko-content {
+  padding-bottom: 1.25rem;
+}
+
+.beko-page--withdraw .beko-withdraw-dock {
+  position: fixed;
+  z-index: 60;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  padding: .7rem 1rem calc(.8rem + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 179, 112, .35);
+  background: rgba(19, 32, 61, .97);
+  box-shadow: 0 -12px 30px rgba(4, 10, 24, .32);
+  backdrop-filter: blur(16px);
+}
+
+.beko-withdraw-summary {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: .7rem;
+  margin-bottom: .65rem;
+}
+
+.beko-withdraw-summary div {
+  min-width: 0;
+}
+
+.beko-withdraw-summary span {
+  display: block;
+  color: #b9c5dc;
+  font-size: .65rem;
+}
+
+.beko-withdraw-summary strong {
+  display: block;
+  margin-top: .12rem;
+  color: #fff5e6;
+  font-size: .86rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 380px) {
+  .beko-page--dark .beko-level-stats {
+    gap: .2rem;
+  }
+  .beko-page--dark .beko-level-stat span {
+    font-size: .57rem;
+  }
+  .beko-page--dark .beko-level-stat strong {
+    font-size: .62rem;
+  }
+}
