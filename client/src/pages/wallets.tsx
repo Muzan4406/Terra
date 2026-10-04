@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CountrySelect, getCountryFlag } from "@/components/country-select";
+import { CountryFlagIcon, CountrySelect, getCountryName } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
+import { PaymentMethodPngIcon } from "@/components/beko-icons";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -241,16 +242,15 @@ export default function WalletsPage() {
                 {wallets?.map((wallet) => (
                   <article key={wallet.id} className="beko-panel p-3">
                     <div className="flex items-center gap-3">
-                      <span className="beko-action-icon h-12 w-12 rounded-2xl">
-                        <CreditCard className="h-5 w-5" />
-                      </span>
+                      <PaymentMethodPngIcon method={wallet.paymentMethod} className="h-12 w-12 rounded-2xl p-1.5" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-bold text-[#14392f]">{wallet.accountName}</p>
                         <p className="truncate text-sm text-[#527268]">
                           {wallet.paymentMethod} · {wallet.accountNumber}
                         </p>
-                        <p className="mt-1 text-xs text-[#668078]">
-                          {getCountryFlag(wallet.country)} {wallet.country}
+                        <p className="mt-1 flex items-center gap-1.5 text-xs text-[#668078]">
+                          <CountryFlagIcon code={wallet.country} className="h-4 w-4" />
+                          {getCountryName(wallet.country)}
                         </p>
                       </div>
                       <Button

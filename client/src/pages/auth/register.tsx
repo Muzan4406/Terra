@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { CountryFlagIcon } from "@/components/beko-icons";
 import type { z } from "zod";
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -114,13 +115,22 @@ export default function RegisterPage() {
                           <Select value={countryField.value} onValueChange={countryField.onChange}>
                             <SelectTrigger className="w-24 border-0 border-r border-gray-200 rounded-none bg-transparent focus:ring-0 h-12">
                               <SelectValue>
-                                {selectedCountry ? `+${selectedCountry.dialCode}` : "+225"}
+                                {selectedCountry ? (
+                                  <span className="flex items-center gap-1.5">
+                                    <CountryFlagIcon code={selectedCountry.code} className="h-5 w-5" />
+                                    <span>+{selectedCountry.dialCode}</span>
+                                  </span>
+                                ) : "+225"}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="country-select-content">
                               {ELIGIBLE_COUNTRIES.map((country) => (
                                 <SelectItem key={country.code} value={country.code}>
-                                  +{country.dialCode}
+                                  <span className="flex items-center gap-2">
+                                    <CountryFlagIcon code={country.code} />
+                                    <span>{country.name}</span>
+                                    <span className="ml-auto text-muted-foreground">+{country.dialCode}</span>
+                                  </span>
                                 </SelectItem>
                               ))}
                             </SelectContent>

@@ -6,9 +6,10 @@ import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, ArrowRight, Check, Clock3, CreditCard, Loader2, WalletCards } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Loader2, WalletCards } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Wallet as WalletType } from "@shared/schema";
+import { PaymentMethodPngIcon } from "@/components/beko-icons";
 import "./beko-pages.css";
 
 interface PublicFinancialSettings {
@@ -222,7 +223,7 @@ export default function WithdrawPage() {
                       aria-pressed={selectedWalletId === wallet.id}
                       data-testid={`wallet-${wallet.id}`}
                     >
-                      <span className="beko-action-icon"><CreditCard size={18} /></span>
+                      <PaymentMethodPngIcon method={wallet.paymentMethod} />
                       <span>{wallet.paymentMethod}<small className="mt-1 block font-medium text-[#668078]">{wallet.accountNumber}</small></span>
                       {selectedWalletId === wallet.id ? <Check className="text-[#087653]" size={18} /> : <ArrowRight className="text-[#83a18e]" size={18} />}
                     </button>
@@ -253,8 +254,9 @@ export default function WithdrawPage() {
 
             {selectedWallet && (
               <div className="beko-notice flex items-center gap-2">
-                <Check size={17} className="text-[#087653]" />
+                <PaymentMethodPngIcon method={selectedWallet.paymentMethod} className="h-8 w-8 rounded-lg p-0.5" />
                 <span>Réception sur {selectedWallet.paymentMethod} · {selectedWallet.accountNumber}</span>
+                <Check size={17} className="ml-auto shrink-0 text-[#087653]" />
               </div>
             )}
 

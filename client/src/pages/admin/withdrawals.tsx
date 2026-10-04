@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyDisplay } from "@/components/money-display";
-import { getCountryFlag } from "@/components/country-select";
+import { CountryFlagIcon, getCountryName } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Search, Check, X, Clock, Loader2 } from "lucide-react";
@@ -151,7 +151,7 @@ export default function AdminWithdrawalsPage() {
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                           <p><span className="text-muted-foreground">Nom compte:</span> {withdrawal.wallet.accountName}</p>
                           <p><span className="text-muted-foreground">Numéro:</span> {withdrawal.wallet.accountNumber}</p>
-                          <p><span className="text-muted-foreground">Pays:</span> {getCountryFlag(withdrawal.wallet.country)} {withdrawal.wallet.country}</p>
+                          <p className="flex items-center gap-1.5"><span className="text-muted-foreground">Pays:</span> <CountryFlagIcon code={withdrawal.wallet.country} className="h-5 w-5" /> {getCountryName(withdrawal.wallet.country)}</p>
                           <p><span className="text-muted-foreground">Moyen:</span> {withdrawal.wallet.paymentMethod}</p>
                           <p><span className="text-muted-foreground">Frais:</span> <MoneyDisplay amount={withdrawal.feeAmount} /></p>
                           <p><span className="text-muted-foreground">Utilisateur:</span> {withdrawal.user.fullName}</p>

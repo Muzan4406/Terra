@@ -10,13 +10,13 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
-  CreditCard,
   Info,
   Loader2,
   ShieldCheck,
 } from "lucide-react";
 import { CountrySelect } from "@/components/country-select";
 import { PaymentMethodSelect } from "@/components/payment-method-select";
+import { PaymentMethodPngIcon } from "@/components/beko-icons";
 import { DEFAULT_BUSINESS_SETTINGS } from "@shared/schema";
 import "./beko-pages.css";
 import "./deposit-page.css";
@@ -540,7 +540,9 @@ export default function DepositPage() {
                           data-testid={`channel-${channel.id}`}
                         >
                           <span className="deposit-channel-main">
-                            <span className="deposit-channel-icon"><CreditCard size={18} aria-hidden="true" /></span>
+                            <span className="deposit-channel-icon">
+                              <PaymentMethodPngIcon method={channel.name} className="h-9 w-9 rounded-lg border-0 bg-transparent p-0" />
+                            </span>
                             <span className="deposit-channel-name">{channel.name}</span>
                           </span>
                           <span className="deposit-channel-tag">

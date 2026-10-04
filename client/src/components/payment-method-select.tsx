@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaymentMethodPngIcon } from "@/components/beko-icons";
 import { PAYMENT_METHODS_BY_COUNTRY } from "@shared/schema";
 
 interface PaymentMethodSelectProps {
@@ -26,7 +27,10 @@ export function PaymentMethodSelect({
       <SelectContent className="operator-select-content">
         {methods.map((method) => (
           <SelectItem key={method} value={method} data-testid={`payment-${method}`}>
-            {method}
+            <span className="flex items-center gap-2">
+              <PaymentMethodPngIcon method={method} className="h-7 w-7 rounded-lg p-0.5" />
+              <span>{method}</span>
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

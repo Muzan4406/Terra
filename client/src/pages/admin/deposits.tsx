@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyDisplay } from "@/components/money-display";
-import { getCountryFlag } from "@/components/country-select";
+import { CountryFlagIcon, getCountryName } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Search, Check, X, Ban, Clock, Loader2 } from "lucide-react";
@@ -145,7 +145,7 @@ export default function AdminDepositsPage() {
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                           <p><span className="text-muted-foreground">Nom:</span> {deposit.accountName}</p>
                           <p><span className="text-muted-foreground">Numéro:</span> {deposit.accountNumber}</p>
-                          <p><span className="text-muted-foreground">Pays:</span> {getCountryFlag(deposit.country)} {deposit.country}</p>
+                          <p className="flex items-center gap-1.5"><span className="text-muted-foreground">Pays:</span> <CountryFlagIcon code={deposit.country} className="h-5 w-5" /> {getCountryName(deposit.country)}</p>
                           <p><span className="text-muted-foreground">Moyen:</span> {deposit.paymentMethod}</p>
                           <p><span className="text-muted-foreground">Utilisateur:</span> {deposit.user.fullName}</p>
                           <p><span className="text-muted-foreground">Tél:</span> {deposit.user.phone}</p>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { MoneyDisplay } from "@/components/money-display";
-import { getCountryFlag } from "@/components/country-select";
+import { CountryFlagIcon } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
@@ -322,8 +322,9 @@ export default function AdminUsersPage() {
                           {u.isSuperAdmin && <Badge className="bg-purple-600"><Crown className="h-3 w-3 mr-1" />Super Admin</Badge>}
                           {u.isAdmin && !u.isSuperAdmin && <Badge>Admin</Badge>}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {getCountryFlag(u.country)} {u.phone}
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CountryFlagIcon code={u.country} className="h-5 w-5" />
+                          {u.phone}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">

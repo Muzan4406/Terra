@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/bottom-nav";
 import { getCountryDialCode } from "@/components/country-select";
+import { BekoUtilityIcon, type BekoUtilityIconName } from "@/components/beko-icons";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowDownToLine,
@@ -14,7 +15,6 @@ import {
   Copy,
   FileCheck2,
   Headphones,
-  History,
   LockKeyhole,
   LogOut,
   Package,
@@ -84,6 +84,7 @@ export default function AccountPage() {
   const menuItems = [
     {
       icon: WalletCards,
+      image: "wallet" as BekoUtilityIconName,
       title: "Lier / gérer un portefeuille de retrait",
       detail: "Mettre à jour vos moyens de réception",
       action: () => navigate("/wallets"),
@@ -102,12 +103,14 @@ export default function AccountPage() {
     },
     {
       icon: FileCheck2,
+      image: "receipt" as BekoUtilityIconName,
       title: "Preuves de retrait",
       detail: "Consulter les justificatifs",
       action: () => navigate("/withdrawal-proofs"),
     },
     {
       icon: Headphones,
+      image: "support" as BekoUtilityIconName,
       title: "Service client",
       detail: "Chaîne et assistance sur Telegram",
       action: () => navigate("/customer-service"),
@@ -174,7 +177,7 @@ export default function AccountPage() {
               <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
             <button type="button" className="beko-shortcut" onClick={() => navigate("/history")} data-testid="button-invoice">
-              <span className="beko-shortcut-icon"><History size={21} /></span>
+              <BekoUtilityIcon name="receipt" className="h-[2.85rem] w-[2.85rem] rounded-[.95rem]" />
               <span className="beko-shortcut-copy"><strong>Historique</strong><small>Voir mes opérations</small></span>
               <ChevronRight className="beko-shortcut-arrow" size={20} />
             </button>
@@ -189,7 +192,11 @@ export default function AccountPage() {
                 className={`beko-action border-0 bg-transparent shadow-none ${index ? "border-t border-[#e3eee0]" : ""}`}
                 data-testid={`menu-${item.title === "Lier / gérer un portefeuille de retrait" ? "wallets" : item.title === "Service client" ? "support" : item.title === "Mes produits" ? "products" : item.title === "À propos de Beko" ? "about" : item.title === "Preuves de retrait" ? "withdrawal-proofs" : item.title === "Utiliser un code bonus" ? "exchange" : "password"}`}
               >
-                <span className="beko-action-icon"><item.icon size={19} /></span>
+                {item.image ? (
+                  <BekoUtilityIcon name={item.image} className="h-[2.45rem] w-[2.45rem] rounded-[.85rem]" />
+                ) : (
+                  <span className="beko-action-icon"><item.icon size={19} /></span>
+                )}
                 <span className="beko-action-copy">
                   <strong>{item.title}</strong>
                   <small>{item.detail}</small>
