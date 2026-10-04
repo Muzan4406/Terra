@@ -1,8 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNav } from "@/components/bottom-nav";
-import { AppSidebar } from "@/components/app-sidebar";
 import { TelegramChannelPopup } from "@/components/telegram-channel-popup";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -56,8 +54,7 @@ export default function HomePage() {
   return (
     <div className="site-page fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#f3f2e9]">
       <div className="home-shell mx-auto flex h-full max-w-md flex-col overflow-hidden">
-        <header className="home-header flex shrink-0 items-center gap-3 px-5">
-          <AppSidebar />
+        <header className="home-header flex shrink-0 items-center px-5">
           <div className="flex items-center gap-2.5">
             <BrandLogo className="h-11 w-11 rounded-lg object-contain" alt="" />
             <div>
@@ -67,7 +64,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+        <main className="home-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(2rem+env(safe-area-inset-bottom))]">
           <section className="home-welcome" aria-label="Bienvenue">
             <h2 className="mt-0.5 text-[25px] font-bold leading-[1.15] tracking-[-0.045em] text-[#14553f]">
               Bienvenue, {user.fullName.split(" ")[0]} !
@@ -130,8 +127,6 @@ export default function HomePage() {
           </section>
         </main>
       </div>
-
-      <BottomNav />
 
       <TelegramChannelPopup
         isOpen={showTelegramInvite && !!telegramChannelUrl}

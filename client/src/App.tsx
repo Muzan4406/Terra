@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppSidebar } from "@/components/app-sidebar";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/auth/login";
@@ -96,7 +97,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="protected-app-shell">
+      <AppSidebar triggerClassName="protected-app-sidebar-trigger" />
+      {children}
+    </div>
+  );
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {

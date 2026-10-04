@@ -1,4 +1,4 @@
-- [Site identity and page rebuilds](site-identity-removal.md) — replace former designs; use user-supplied Beko icons, not Signa Group assets, and preserve support/proof uploads.
+- [Site identity and navigation](site-identity-removal.md) — use user-supplied Beko icons, keep the sidebar on user pages, remove dashboard bottom tabs, and preserve evidence uploads.
 - [Separated account balances](separated-account-balances.md) — keep legacy funds in the deposit balance; withdrawals and matured or approved credits use the withdrawal balance.
 - [Support message ordering](support-message-ordering.md) — use per-call timestamps so same-transaction acknowledgements sort after user messages.
 - [Support read receipts](support-read-receipts.md) — only mark inbound messages actually returned to the open thread as read.

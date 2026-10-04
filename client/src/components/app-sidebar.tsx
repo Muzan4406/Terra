@@ -31,7 +31,11 @@ const menuItems = [
   { path: "/account", label: "Compte", icon: User },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  triggerClassName?: string;
+}
+
+export function AppSidebar({ triggerClassName = "" }: AppSidebarProps) {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -42,7 +46,7 @@ export function AppSidebar() {
           type="button"
           aria-label="Ouvrir le menu de navigation"
           data-testid="button-open-sidebar"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#dce8db] bg-white text-[#14553f] shadow-sm transition-colors hover:bg-[#f0f7ef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65a878]"
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#dce8db] bg-white text-[#14553f] shadow-sm transition-colors hover:bg-[#f0f7ef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65a878] ${triggerClassName}`}
         >
           <Menu className="h-5 w-5" aria-hidden="true" />
         </button>
