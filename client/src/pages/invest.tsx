@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, LockKeyhole, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { getProductImageMap } from "@shared/product-images";
@@ -24,6 +24,11 @@ interface ProductWithOwnership extends Product {
   purchaseBlockReason: ProductPurchaseBlockReason | null;
 }
 
+interface ProductCatalog {
+  products: ProductWithOwnership[];
+  hasActiveFixedPlan: boolean;
+}
+
 function formatGmtDateTime(value: Date | string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Date indisponible";
@@ -40,12 +45,12 @@ export default function InvestPage() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("fixed");
 
   const {
-    data: products,
+    data: catalog,
     isLoading,
     isError,
     error,
     refetch,
-  } = useQuery<ProductWithOwnership[]>({
+  } = useQuery<ProductCatalog>({
     queryKey: ["/api/products"],
     retry: 1,
     refetchInterval: 15_000,
@@ -86,6 +91,17 @@ export default function InvestPage() {
     return ((dailyReturn / price) * 100).toFixed(1);
   };
 
+  const products = catalog?.products;
+  const userHasActiveFixedPlan = catalog?.hasActiveFixedPlan ?? false;
+  const isCategoryLocked = (category: ProductCategory) =>
+    category !== "fixed" && !userHasActiveFixedPlan;
+
+  useEffect(() => {
+    if (catalog && !catalog.hasActiveFixedPlan && selectedCategory !== "fixed") {
+      setSelectedCategory("fixed");
+    }
+  }, [catalog, selectedCategory]);
+
   const productImageMap = getProductImageMap(products ?? []);
   const visibleProducts = (products ?? []).filter(
     (product) => product.category === selectedCategory,
@@ -123,20 +139,42 @@ export default function InvestPage() {
           </div>
         </div>
 
+        {catalog && !userHasActiveFixedPlan && (
+          <div
+            role="note"
+            className="mx-4 mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          >
+            <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="m-0">
+              Vous devez avoir au moins un produit fixe actif pour déverrouiller les produits Bien-être et Activités.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2 overflow-x-auto px-4 py-4">
           {PRODUCT_CATEGORIES.map((category) => (
             <button
               key={category}
               type="button"
               aria-pressed={selectedCategory === category}
+              aria-label={isCategoryLocked(category)
+                ? `${PRODUCT_CATEGORY_LABELS[category]} (verrouillé)`
+                : undefined}
+              title={isCategoryLocked(category)
+                ? "Un produit fixe actif est requis"
+                : undefined}
+              disabled={isCategoryLocked(category)}
               onClick={() => setSelectedCategory(category)}
-              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 selectedCategory === category
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
               {PRODUCT_CATEGORY_LABELS[category]}
+              {isCategoryLocked(category) && (
+                <LockKeyhole className="ml-1 inline h-3.5 w-3.5" aria-hidden="true" />
+              )}
             </button>
           ))}
         </div>
@@ -227,6 +265,8 @@ export default function InvestPage() {
                     >
                       {purchaseMutation.isPending ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Traitement…</>
+                      ) : product.purchaseBlockReason === "fixed_plan_required" ? (
+                        "Plan fixe actif requis"
                       ) : product.purchaseBlockReason === "activity_not_open_yet" ? (
                         "Pas encore disponible"
                       ) : product.purchaseBlockReason === "activity_schedule_required" ? (

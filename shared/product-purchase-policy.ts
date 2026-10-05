@@ -4,6 +4,7 @@ export const ACTIVITY_LAUNCH_VERSION_SETTING_KEY = "activityLaunchVersion";
 export const INITIAL_ACTIVITY_LAUNCH_VERSION = 1;
 
 export type ProductPurchaseBlockReason =
+  | "fixed_plan_required"
   | "activity_schedule_required"
   | "activity_not_open_yet"
   | "wellness_in_progress"
@@ -22,12 +23,29 @@ export type PurchaseEligibilityProduct = {
   activityAvailableAt: Date | string | null;
 };
 
+export function hasActiveFixedPlan(
+  purchaseHistory: PurchaseHistoryRecord[],
+): boolean {
+  return purchaseHistory.some((purchase) =>
+    purchase.category === "fixed" &&
+    purchase.isActive &&
+    purchase.cyclesCompleted < purchase.duration
+  );
+}
+
 export function getProductPurchaseBlockReason(
   product: PurchaseEligibilityProduct,
   purchaseHistory: PurchaseHistoryRecord[],
   currentActivityLaunchVersion: number,
   now = new Date(),
 ): ProductPurchaseBlockReason | null {
+  if (
+    (product.category === "wellness" || product.category === "activities") &&
+    !hasActiveFixedPlan(purchaseHistory)
+  ) {
+    return "fixed_plan_required";
+  }
+
   if (product.category === "wellness") {
     const hasUnfinishedWellness = purchaseHistory.some((purchase) =>
       purchase.category === "wellness" &&

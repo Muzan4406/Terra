@@ -15,7 +15,10 @@ import {
 } from "@shared/schema";
 import { getWithdrawalHoursForCountry, isWithdrawalWindowOpen } from "@shared/withdrawal-time";
 import { getNextProductImage } from "@shared/product-images";
-import { getProductPurchaseBlockReason } from "@shared/product-purchase-policy";
+import {
+  getProductPurchaseBlockReason,
+  hasActiveFixedPlan,
+} from "@shared/product-purchase-policy";
 import {
   getDepositMinimumError,
   resolvePlatformBusinessSettings,
@@ -779,6 +782,14 @@ export async function registerRoutes(
     const products = await storage.getProducts();
     const userProducts = await storage.getUserProducts(req.session.userId!);
     const activityLaunchVersion = await storage.getActivityLaunchVersion();
+    const purchaseHistory = userProducts.map((up) => ({
+      category: up.product.category as ProductCategory,
+      duration: up.product.duration,
+      cyclesCompleted: up.cyclesCompleted,
+      isActive: up.isActive,
+      activityLaunchVersion: up.activityLaunchVersion,
+    }));
+    const userHasActiveFixedPlan = hasActiveFixedPlan(purchaseHistory);
     
     const productCountMap = new Map<string, number>();
     userProducts.forEach(up => {
@@ -786,7 +797,11 @@ export async function registerRoutes(
       productCountMap.set(up.productId, count + 1);
     });
     
-    const productsWithOwnership = products.map(p => ({
+    const productsWithOwnership = products
+      .filter((product) =>
+        product.category === "fixed" || userHasActiveFixedPlan
+      )
+      .map(p => ({
       ...p,
       owned: productCountMap.has(p.id),
       ownedCount: productCountMap.get(p.id) || 0,
@@ -796,18 +811,15 @@ export async function registerRoutes(
           category: p.category as ProductCategory,
           activityAvailableAt: p.activityAvailableAt,
         },
-        userProducts.map((up) => ({
-          category: up.product.category as ProductCategory,
-          duration: up.product.duration,
-          cyclesCompleted: up.cyclesCompleted,
-          isActive: up.isActive,
-          activityLaunchVersion: up.activityLaunchVersion,
-        })),
+        purchaseHistory,
         activityLaunchVersion,
       ),
     }));
     
-    res.json(productsWithOwnership);
+    res.json({
+      products: productsWithOwnership,
+      hasActiveFixedPlan: userHasActiveFixedPlan,
+    });
   }));
 
   app.get("/api/products/all", asyncRoute(requireAdmin), asyncRoute(async (_req, res) => {
@@ -955,6 +967,7 @@ export async function registerRoutes(
           return res.status(404).json({ message: "Utilisateur non trouvé" });
         }
         const ruleMessages = {
+          fixed_plan_required: "Vous devez avoir au moins un produit fixe actif pour accéder aux produits Bien-être et Activités.",
           activity_schedule_required: "La date d’ouverture de ce produit n’est pas encore définie.",
           activity_not_open_yet: "Ce produit n’est pas encore disponible à l’achat.",
           wellness_in_progress: "Terminez votre produit Bien-être en cours avant d’en acheter un autre.",
@@ -2408,6 +2421,24 @@ export async function registerRoutes(
     }
 
     if (action === "assign") {
+      if (product.category !== "fixed") {
+        const userProducts = await storage.getUserProducts(user.id);
+        const userHasActiveFixedPlan = hasActiveFixedPlan(
+          userProducts.map((userProduct) => ({
+            category: userProduct.product.category as ProductCategory,
+            duration: userProduct.product.duration,
+            cyclesCompleted: userProduct.cyclesCompleted,
+            isActive: userProduct.isActive,
+            activityLaunchVersion: userProduct.activityLaunchVersion,
+          })),
+        );
+        if (!userHasActiveFixedPlan) {
+          return res.status(400).json({
+            message: "L’utilisateur doit avoir au moins un produit fixe actif avant de recevoir un produit Bien-être ou Activité.",
+          });
+        }
+      }
+
       const nextPayoutAt = new Date();
       nextPayoutAt.setHours(nextPayoutAt.getHours() + 24);
 

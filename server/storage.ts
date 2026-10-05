@@ -54,6 +54,7 @@ export type ProductPurchaseResult =
         | "user_not_found"
         | "product_not_found"
         | "insufficient_balance"
+        | "fixed_plan_required"
         | "activity_schedule_required"
         | "activity_not_open_yet"
         | "wellness_in_progress"
