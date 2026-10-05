@@ -85,7 +85,9 @@ Avant de déployer le code correspondant sur Plesk :
 3. Vérifiez `products.activity_available_at`, `user_products.product_snapshot` et `user_products.activity_launch_version`. Vérifiez aussi que les achats existants liés aux produits ont reçu leur instantané.
 4. Déployez ensuite le code; ne lancez pas `db:push:supabase` et ne relancez pas la migration initiale.
 
-La migration copie les conditions actuelles des produits dans les achats existants sans modifier les soldes, l’état des investissements ni leurs paiements en attente. Elle attribue aussi le lancement initial aux achats Activité payés déjà liés à un produit, sans compter les produits attribués par un administrateur. Elle ajoute la date GMT d’ouverture et le compteur de lancement partagé. Elle doit être appliquée avant le nouveau code; `public.session` doit rester intacte. Cette migration de production n’a pas été exécutée depuis Replit.
+La migration copie les conditions actuelles des produits dans les achats existants sans modifier les soldes, l’état des investissements ni leurs paiements en attente. Elle attribue aussi le lancement initial aux achats Activité payés déjà liés à un produit, sans compter les produits attribués par un administrateur. Elle ajoute la date GMT d’ouverture et le compteur de lancement partagé. Elle doit être appliquée avant le nouveau code; `public.session` doit rester intacte.
+
+**Statut de production (2026-10-05) :** cette migration a été appliquée à la base Supabase utilisée par Plesk, dans une transaction. Les vérifications ont confirmé les colonnes attendues, `public.session` intacte, `/api/health` en `200 ok` et `/api/auth/me` en `401` sans session. Les deux mises à jour de rétro-remplissage n’ont modifié aucune ligne.
 
 ## AshTech Pay — Direct API Mobile Money
 
