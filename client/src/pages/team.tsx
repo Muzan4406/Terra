@@ -93,9 +93,14 @@ export default function TeamPage() {
       textArea.style.position = "fixed";
       textArea.style.left = "-9999px";
       document.body.appendChild(textArea);
-      textArea.select();
-      const copied = document.execCommand("copy");
-      textArea.remove();
+      let copied = false;
+      try {
+        textArea.focus();
+        textArea.select();
+        copied = document.execCommand("copy");
+      } finally {
+        textArea.remove();
+      }
       if (!copied) throw new Error("Clipboard copy failed");
       toast({ title: "Lien copié", description: "Partagez-le pour inviter un nouveau membre." });
     } catch {
@@ -129,7 +134,7 @@ export default function TeamPage() {
                   className="beko-referral-value beko-referral-link"
                   href={referralLink || undefined}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   title={referralLink}
                   data-testid="link-referral"
                 >
