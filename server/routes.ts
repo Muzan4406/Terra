@@ -218,7 +218,12 @@ let ashtechReconciliationInProgress = false;
 const ashtechReconciliationLastAttempt = new Map<string, number>();
 
 async function reconcilePendingAshtechDeposits() {
-  if (ashtechReconciliationInProgress || !getAshtechReadiness().apiKeyConfigured) {
+  const readiness = getAshtechReadiness();
+  if (
+    ashtechReconciliationInProgress ||
+    !readiness.apiKeyConfigured ||
+    !readiness.userIdConfigured
+  ) {
     return;
   }
 
@@ -273,7 +278,8 @@ function startAshtechReconciliationWorker(httpServer: Server) {
   if (
     ashtechReconciliationWorkerStarted ||
     process.env.NODE_ENV !== "production" ||
-    !getAshtechReadiness().apiKeyConfigured
+    !getAshtechReadiness().apiKeyConfigured ||
+    !getAshtechReadiness().userIdConfigured
   ) {
     return;
   }
@@ -1061,10 +1067,11 @@ export async function registerRoutes(
       const readiness = getAshtechReadiness();
       if (
         !readiness.apiKeyConfigured ||
+        !readiness.userIdConfigured ||
         !readiness.publicUrlConfigured
       ) {
         return res.status(400).json({
-          message: "Configurez ASHTECH_API_KEY et APP_PUBLIC_URL (HTTPS) avant d'activer un pays.",
+          message: "Configurez ASHTECH_API_KEY, ASHTECH_USER_ID et APP_PUBLIC_URL (HTTPS) avant d'activer un pays.",
         });
       }
 
@@ -1118,6 +1125,7 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
+      !readiness.userIdConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({
@@ -1187,6 +1195,7 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
+      !readiness.userIdConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({
@@ -1293,6 +1302,15 @@ export async function registerRoutes(
         });
       }
 
+      const providerErrorCode = ashtechErrorCode(body);
+      const safeErrorCode =
+        providerErrorCode && /^[A-Za-z0-9_.-]{1,80}$/.test(providerErrorCode)
+          ? providerErrorCode
+          : "unclassified";
+      console.warn("AshTech collection rejected.", {
+        httpStatus: providerResponse.status,
+        errorCode: safeErrorCode,
+      });
       await storage.rejectDepositOnce(deposit.id);
       const status = ashtechErrorCode(body) === "api_not_enabled" ? 503 : 400;
       return res.status(status).json({ message: ashtechUserFacingError(body) });
@@ -1365,6 +1383,7 @@ export async function registerRoutes(
     const readiness = getAshtechReadiness();
     if (
       !readiness.apiKeyConfigured ||
+      !readiness.userIdConfigured ||
       !readiness.publicUrlConfigured
     ) {
       return res.status(503).json({

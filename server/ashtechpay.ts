@@ -124,6 +124,16 @@ function getApiKey(): string {
   return key;
 }
 
+function getAshtechUserId(): string {
+  const userId = process.env.ASHTECH_USER_ID?.trim();
+  if (!userId) {
+    throw new AshtechConfigurationError(
+      "L'identifiant du profil AshTech Pay (ASHTECH_USER_ID) n'est pas configuré.",
+    );
+  }
+  return userId;
+}
+
 export function getAshtechReadiness() {
   const publicUrl = process.env.APP_PUBLIC_URL?.trim();
   let publicUrlConfigured = false;
@@ -137,6 +147,7 @@ export function getAshtechReadiness() {
 
   return {
     apiKeyConfigured: Boolean(process.env.ASHTECH_API_KEY?.trim()),
+    userIdConfigured: Boolean(process.env.ASHTECH_USER_ID?.trim()),
     webhookSecretConfigured: Boolean(process.env.ASHTECH_WEBHOOK_SECRET?.trim()),
     publicUrlConfigured,
   };
@@ -287,13 +298,22 @@ export function normalizeAshtechPhone(phone: string, countryCode: string): strin
 export async function createAshtechCollection(
   payload: Record<string, unknown>,
 ): Promise<AshtechResponse> {
-  return requestAshtech("/v1/collect", { method: "POST", body: payload });
+  return requestAshtech("/v1/collect", {
+    method: "POST",
+    body: {
+      ...payload,
+      user_id: getAshtechUserId(),
+    },
+  });
 }
 
 export async function getAshtechTransaction(
   transactionId: string,
 ): Promise<AshtechResponse> {
-  return requestAshtech(`/v1/transaction/${encodeURIComponent(transactionId)}`);
+  const userId = encodeURIComponent(getAshtechUserId());
+  return requestAshtech(
+    `/v1/transaction/${encodeURIComponent(transactionId)}?user_id=${userId}`,
+  );
 }
 
 export function normalizeAshtechTransactionStatus(

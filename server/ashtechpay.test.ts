@@ -3,13 +3,80 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canAcceptAshtechWebhook,
+  createAshtechCollection,
   filterAvailableAshtechOperators,
+  getAshtechReadiness,
+  getAshtechTransaction,
   isValidAshtechWebhookSignature,
   normalizeAshtechTransactionStatus,
   normalizeAshtechPhone,
   parseEnabledAshtechCountries,
   verifyAshtechTransaction,
 } from "./ashtechpay";
+
+test("sends the configured AshTech merchant profile ID for collections and transaction checks", async () => {
+  const previousApiKey = process.env.ASHTECH_API_KEY;
+  const previousUserId = process.env.ASHTECH_USER_ID;
+  const previousFetch = globalThis.fetch;
+  const requests: Array<{ url: string; body?: string }> = [];
+
+  process.env.ASHTECH_API_KEY = "test-api-key";
+  process.env.ASHTECH_USER_ID = "merchant-profile-id";
+  globalThis.fetch = (async (input, init) => {
+    requests.push({
+      url: String(input),
+      body: typeof init?.body === "string" ? init.body : undefined,
+    });
+    return new Response("{}", { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    await createAshtechCollection({
+      user_id: "beko-customer-id",
+      amount: 3000,
+      currency: "XOF",
+      country_code: "TG",
+      operator: "Mixx By Yas",
+      phone: "22800000000",
+    });
+    await getAshtechTransaction("transaction-1");
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousApiKey === undefined) delete process.env.ASHTECH_API_KEY;
+    else process.env.ASHTECH_API_KEY = previousApiKey;
+    if (previousUserId === undefined) delete process.env.ASHTECH_USER_ID;
+    else process.env.ASHTECH_USER_ID = previousUserId;
+  }
+
+  assert.equal(
+    JSON.parse(requests[0].body ?? "{}").user_id,
+    "merchant-profile-id",
+  );
+  assert.equal(
+    requests[1].url,
+    "https://www.ashtechpay.com/v1/transaction/transaction-1?user_id=merchant-profile-id",
+  );
+});
+
+test("requires an AshTech merchant profile ID before creating a collection", async () => {
+  const previousApiKey = process.env.ASHTECH_API_KEY;
+  const previousUserId = process.env.ASHTECH_USER_ID;
+  process.env.ASHTECH_API_KEY = "test-api-key";
+  delete process.env.ASHTECH_USER_ID;
+
+  try {
+    assert.equal(getAshtechReadiness().userIdConfigured, false);
+    await assert.rejects(
+      createAshtechCollection({ amount: 3000 }),
+      /ASHTECH_USER_ID/,
+    );
+  } finally {
+    if (previousApiKey === undefined) delete process.env.ASHTECH_API_KEY;
+    else process.env.ASHTECH_API_KEY = previousApiKey;
+    if (previousUserId === undefined) delete process.env.ASHTECH_USER_ID;
+    else process.env.ASHTECH_USER_ID = previousUserId;
+  }
+});
 
 test("removes Celtis only from Benin's AshTech operator list", () => {
   assert.deepEqual(

@@ -102,6 +102,7 @@ ALTER TABLE public.deposits
 Ne lancez pas `db:push:supabase` pour cette modification. Configurez ensuite dans les variables d’environnement Node.js de Plesk :
 
 - `ASHTECH_API_KEY` : clé Direct API AshTech Pay;
+- `ASHTECH_USER_ID` : identifiant du profil marchand AshTech Pay associé à cette clé; ne mettez pas l’identifiant d’un client Beko;
 - `ASHTECH_WEBHOOK_SECRET` : facultatif; configurez-le seulement si le compte AshTech fournit une signature `whsec_...`;
 - `APP_PUBLIC_URL` : origine HTTPS publique, par exemple `https://votre-domaine.tld` (sans chemin).
 

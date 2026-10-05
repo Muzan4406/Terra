@@ -10,6 +10,7 @@ import { Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
 interface AshtechConfig {
   readiness: {
     apiKeyConfigured: boolean;
+    userIdConfigured: boolean;
     webhookSecretConfigured: boolean;
     publicUrlConfigured: boolean;
   };
@@ -41,6 +42,7 @@ export function AshtechCountrySettings() {
 
   const ready = Boolean(
     data?.readiness.apiKeyConfigured &&
+    data?.readiness.userIdConfigured &&
     data?.readiness.publicUrlConfigured,
   );
   const dirty = (data?.enabledCountryCodes ?? []).slice().sort().join(",") !==
@@ -90,6 +92,7 @@ export function AshtechCountrySettings() {
             <p className="font-medium">{ready ? "Configuration prête" : "Configuration incomplète"}</p>
             <p className="mt-1">
               Clé API: {data?.readiness.apiKeyConfigured ? "configurée" : "absente"} ·
+              {" "}Profil marchand AshTech: {data?.readiness.userIdConfigured ? "configuré" : "absent"} ·
               {" "}Signature webhook: {data?.readiness.webhookSecretConfigured
                 ? "vérifiée si fournie"
                 : "optionnelle; statut contrôlé via l’API"} ·
@@ -97,7 +100,7 @@ export function AshtechCountrySettings() {
             </p>
             {!ready && (
               <p className="mt-1">
-                Configurez ASHTECH_API_KEY et APP_PUBLIC_URL avant d'activer un pays. Le secret webhook n’est nécessaire que si AshTech fournit des signatures pour votre compte.
+                Configurez ASHTECH_API_KEY, ASHTECH_USER_ID et APP_PUBLIC_URL avant d'activer un pays. ASHTECH_USER_ID est l’identifiant du profil AshTech associé à la clé, pas l’identifiant d’un client Beko. Le secret webhook n’est nécessaire que si AshTech fournit des signatures pour votre compte.
               </p>
             )}
           </div>
