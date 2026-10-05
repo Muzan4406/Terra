@@ -42,6 +42,9 @@ export default function TeamPage() {
     queryKey: ["/api/settings/public"],
     enabled: Boolean(user),
   });
+  const referralLink = user?.referralCode
+    ? `${window.location.origin}/register?reg=${encodeURIComponent(user.referralCode)}`
+    : "";
 
   const referralLevels = [
     {
@@ -71,14 +74,34 @@ export default function TeamPage() {
   ];
   const totalMembers = referralLevels.reduce((sum, item) => sum + item.count, 0);
 
-  const copyReferralCode = async () => {
+  const copyReferralLink = async () => {
+    if (!referralLink) return;
     try {
-      await navigator.clipboard.writeText(user?.referralCode ?? "");
-      toast({ title: "Code copié", description: "Partagez-le pour inviter un nouveau membre." });
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(referralLink);
+          toast({ title: "Lien copié", description: "Partagez-le pour inviter un nouveau membre." });
+          return;
+        }
+      } catch {
+        // Fall back to the selection-based copy for browsers that deny Clipboard API access.
+      }
+
+      const textArea = document.createElement("textarea");
+      textArea.value = referralLink;
+      textArea.setAttribute("readonly", "");
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const copied = document.execCommand("copy");
+      textArea.remove();
+      if (!copied) throw new Error("Clipboard copy failed");
+      toast({ title: "Lien copié", description: "Partagez-le pour inviter un nouveau membre." });
     } catch {
       toast({
         title: "Copie impossible",
-        description: "Autorisez l’accès au presse-papiers puis réessayez.",
+        description: "Impossible de copier le lien. Sélectionnez-le puis copiez-le manuellement.",
         variant: "destructive",
       });
     }
@@ -100,13 +123,30 @@ export default function TeamPage() {
           </section>
           <div className="beko-content">
             <section className="beko-referral-card">
-              <p className="beko-referral-label">Votre code de parrainage</p>
+              <p className="beko-referral-label">Votre lien de parrainage</p>
               <div className="beko-referral-row">
-                <strong className="beko-referral-value">{user?.referralCode || "—"}</strong>
-                <button type="button" className="beko-copy-button" onClick={() => void copyReferralCode()}>
-                  <Copy size={15} /> Copier
+                <a
+                  className="beko-referral-value beko-referral-link"
+                  href={referralLink || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={referralLink}
+                  data-testid="link-referral"
+                >
+                  {referralLink || "Lien indisponible"}
+                </a>
+                <button
+                  type="button"
+                  className="beko-copy-button"
+                  onClick={() => void copyReferralLink()}
+                  disabled={!referralLink}
+                  aria-label="Copier le lien de parrainage"
+                  data-testid="button-copy-referral-link"
+                >
+                  <Copy size={15} /> Copier le lien
                 </button>
               </div>
+              <p className="beko-referral-code">Code d’invitation : <strong>{user?.referralCode || "—"}</strong></p>
             </section>
 
             <section className="beko-team-totals" aria-label="Résumé de l’équipe">

@@ -813,6 +813,7 @@
 
 .beko-referral-value {
   display: block;
+  min-width: 0;
   width: 100%;
   overflow: hidden;
   padding: 0;
@@ -823,6 +824,18 @@
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.beko-referral-link {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.beko-referral-code {
+  margin: .45rem 0 0;
+  color: var(--beko-muted);
+  font-size: .7rem;
 }
 
 .beko-copy-button {
@@ -1212,6 +1225,14 @@
 }
 
 .beko-page--dark .beko-referral-value {
+  color: #f4f5fa;
+}
+
+.beko-page--dark .beko-referral-code {
+  color: #b8c5dc;
+}
+
+.beko-page--dark .beko-referral-code strong {
   color: #f4f5fa;
 }
 
