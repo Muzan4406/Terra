@@ -29,7 +29,7 @@ Plesk Passenger health responses can vary between requests while separate Node w
 
 Default-data seeding is background setup, not a core request dependency. Once routes, PostgreSQL, and the session store are ready, health and unrelated API actions should remain available while defaults are initializing or have failed.
 
-**Why:** Production probes showed `503 starting` at `defaults.admin.read` even though PostgreSQL and sessions were ready, which blocked unrelated administrator actions during worker startup.
+**Why:** Production probes showed `503 starting` at `defaults.admin.read` even though PostgreSQL and sessions were ready, which blocked unrelated user actions during worker startup.
 
 **How to apply:** Keep 503 responses for route registration and required database/session readiness. Report default-seed progress and errors in health output, and gate only endpoints that truly require missing seed data.
 

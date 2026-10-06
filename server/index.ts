@@ -164,8 +164,8 @@ const healthHandler = async (_req: Request, res: Response) => {
 app.get(["/api/health", "/api/healthz"], healthHandler);
 
 app.use((req, res, next) => {
-  // Default records are seeded in the background and aren't required for
-  // unrelated API actions such as approving a pending deposit.
+  // Default records are seeded in the background; don't block API actions
+  // that don't depend on those records while a worker finishes seeding them.
   if (
     req.path.startsWith("/api") &&
     req.path !== "/api/health" &&
