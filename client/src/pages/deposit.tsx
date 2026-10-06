@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, fetchWithTimeout } from "@/lib/queryClient";
 import {
   ArrowLeft,
   ArrowRight,
@@ -82,7 +82,7 @@ export default function DepositPage() {
     queryKey: ["/api/deposit-options", country],
     enabled: Boolean(country),
     queryFn: async () => {
-      const response = await fetch(`/api/deposit-options?country=${encodeURIComponent(country)}`);
+      const response = await fetchWithTimeout(`/api/deposit-options?country=${encodeURIComponent(country)}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Impossible de charger les moyens de paiement.");
       return result;
@@ -102,7 +102,7 @@ export default function DepositPage() {
     queryKey: ["/api/deposits", automaticDeposit?.depositId, "status"],
     enabled: Boolean(automaticDeposit?.depositId && !automaticDeposit.otpRequired),
     queryFn: async () => {
-      const response = await fetch(`/api/deposits/${automaticDeposit!.depositId}/status`);
+      const response = await fetchWithTimeout(`/api/deposits/${automaticDeposit!.depositId}/status`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Impossible de vérifier le statut.");
       return result;

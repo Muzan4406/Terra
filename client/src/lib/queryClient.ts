@@ -1,8 +1,9 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 const API_REQUEST_TIMEOUT_MS = 10_000;
+const STARTUP_RETRY_DELAYS_MS = [500, 1000, 1500, 2000, 2000, 2000] as const;
 
-export async function fetchWithTimeout(
+async function fetchOnceWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
@@ -19,6 +20,37 @@ export async function fetchWithTimeout(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  let response = await fetchOnceWithTimeout(input, init);
+
+  for (const fallbackDelay of STARTUP_RETRY_DELAYS_MS) {
+    if (response.status !== 503) {
+      break;
+    }
+
+    const body = await response
+      .clone()
+      .json()
+      .catch(() => null) as { status?: string } | null;
+    if (body?.status !== "starting") {
+      break;
+    }
+
+    const retryAfterSeconds = Number(response.headers.get("Retry-After"));
+    const delay =
+      Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? Math.min(retryAfterSeconds * 1000, 3000)
+        : fallbackDelay;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    response = await fetchOnceWithTimeout(input, init);
+  }
+
+  return response;
 }
 
 async function throwIfResNotOk(res: Response) {

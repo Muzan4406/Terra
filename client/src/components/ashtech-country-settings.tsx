@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, fetchWithTimeout, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function AshtechCountrySettings() {
   const { data, isLoading } = useQuery<AshtechConfig>({
     queryKey: ["/api/admin/ashtech/config"],
     queryFn: async () => {
-      const response = await fetch("/api/admin/ashtech/config");
+      const response = await fetchWithTimeout("/api/admin/ashtech/config");
       if (!response.ok) throw new Error("Impossible de charger la configuration AshTech Pay.");
       return response.json();
     },

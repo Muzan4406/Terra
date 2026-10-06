@@ -3,6 +3,7 @@ import { useLocation, useParams, Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Users, TrendingUp, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { fetchWithTimeout } from "@/lib/queryClient";
 
 interface User {
   id: string;
@@ -45,7 +46,7 @@ export default function AdminUserTeamPage() {
   const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ["/api/admin/users", id],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/users/${id}`);
+      const res = await fetchWithTimeout(`/api/admin/users/${id}`);
       if (!res.ok) throw new Error("Utilisateur non trouvé");
       return res.json();
     },
@@ -54,7 +55,7 @@ export default function AdminUserTeamPage() {
   const { data: teamStats, isLoading: teamLoading } = useQuery<TeamStats>({
     queryKey: ["/api/admin/users", id, "team"],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/users/${id}/team`);
+      const res = await fetchWithTimeout(`/api/admin/users/${id}/team`);
       if (!res.ok) throw new Error("Équipe non trouvée");
       return res.json();
     },

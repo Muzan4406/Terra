@@ -5,14 +5,14 @@ import { useLocation } from "wouter";
 import { SupportChatThread, type SupportMessageView } from "@/components/support-chat-thread";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { fetchWithTimeout, queryClient } from "@/lib/queryClient";
 
 async function postSupportMessage(body: string, files: File[]) {
   const formData = new FormData();
   formData.append("message", body);
   files.forEach((file) => formData.append("attachments", file, file.name));
 
-  const response = await fetch("/api/support/messages", {
+  const response = await fetchWithTimeout("/api/support/messages", {
     method: "POST",
     body: formData,
     credentials: "include",

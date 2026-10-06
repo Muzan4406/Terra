@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, fetchWithTimeout, queryClient } from "@/lib/queryClient";
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
 
@@ -41,7 +41,7 @@ export default function AdminWithdrawalProofsPage() {
   const { data: proofs = [], isLoading, isError } = useQuery<ProofReview[]>({
     queryKey: ["/api/admin/withdrawal-proofs", status],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/withdrawal-proofs?status=${status}`, {
+      const response = await fetchWithTimeout(`/api/admin/withdrawal-proofs?status=${status}`, {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Impossible de charger les preuves.");

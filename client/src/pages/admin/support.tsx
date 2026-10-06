@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SupportChatThread, type SupportMessageView } from "@/components/support-chat-thread";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { fetchWithTimeout, queryClient } from "@/lib/queryClient";
 
 interface SupportConversation {
   userId: string;
@@ -23,7 +23,7 @@ async function postAdminReply(userId: string, body: string, files: File[]) {
   formData.append("message", body);
   files.forEach((file) => formData.append("attachments", file, file.name));
 
-  const response = await fetch(`/api/admin/support/conversations/${userId}/messages`, {
+  const response = await fetchWithTimeout(`/api/admin/support/conversations/${userId}/messages`, {
     method: "POST",
     body: formData,
     credentials: "include",

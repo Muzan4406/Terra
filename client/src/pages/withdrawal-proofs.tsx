@@ -5,7 +5,7 @@ import { ArrowLeft, FileCheck2, Loader2, Upload, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { fetchWithTimeout, queryClient } from "@/lib/queryClient";
 
 type ProofRecord = {
   id: string;
@@ -66,7 +66,7 @@ export default function WithdrawalProofsPage() {
       const formData = new FormData();
       formData.append("websiteProof", websiteProof);
       formData.append("smsProof", smsProof);
-      const response = await fetch("/api/withdrawal-proofs", {
+      const response = await fetchWithTimeout("/api/withdrawal-proofs", {
         method: "POST",
         body: formData,
         credentials: "include",

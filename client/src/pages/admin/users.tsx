@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { MoneyDisplay } from "@/components/money-display";
 import { CountryFlagIcon } from "@/components/country-select";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, fetchWithTimeout } from "@/lib/queryClient";
 import { 
   ArrowLeft, Search, Edit, Ban, Users, ShoppingBag, Lock, 
   Unlock, Award, Key, Wallet, Loader2, ChevronRight, Trash2, Crown,
@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
     queryKey: ["/api/admin/users", managingUserId, "products"],
     queryFn: async () => {
       if (!managingUserId) return [];
-      const res = await fetch(`/api/admin/users/${managingUserId}/products`);
+      const res = await fetchWithTimeout(`/api/admin/users/${managingUserId}/products`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -103,7 +103,7 @@ export default function AdminUsersPage() {
     queryKey: ["/api/admin/users", managingUserId, "appointment"],
     queryFn: async () => {
       if (!managingUserId) return null;
-      const res = await fetch(`/api/admin/users/${managingUserId}/appointment`);
+      const res = await fetchWithTimeout(`/api/admin/users/${managingUserId}/appointment`);
       if (!res.ok) return null;
       return res.json();
     },

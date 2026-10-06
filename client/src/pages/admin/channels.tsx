@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, fetchWithTimeout } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Trash2, CreditCard, Link2, Zap, Loader2, History, Clock, User } from "lucide-react";
 import type { PaymentChannel } from "@shared/schema";
 import { z } from "zod";
@@ -56,7 +56,7 @@ export default function AdminChannelsPage() {
     queryKey: ["/api/admin/payment-channels", viewingHistoryId, "history"],
     queryFn: async () => {
       if (!viewingHistoryId) return [];
-      const res = await fetch(`/api/admin/payment-channels/${viewingHistoryId}/history`);
+      const res = await fetchWithTimeout(`/api/admin/payment-channels/${viewingHistoryId}/history`);
       if (!res.ok) return [];
       return res.json();
     },
