@@ -27,6 +27,12 @@ Plesk Passenger health responses can vary between requests while separate Node w
 
 **How to apply:** Check repeated health responses during cold start. Do not accept traffic before route registration; return an explicit `503 starting` with `Retry-After`, and let the client retry that state rather than treating it as an authentication failure.
 
+Default-data seeding is background setup, not a core request dependency. Once routes, PostgreSQL, and the session store are ready, health and unrelated API actions should remain available while defaults are initializing or have failed.
+
+**Why:** Production probes showed `503 starting` at `defaults.admin.read` even though PostgreSQL and sessions were ready, which blocked unrelated administrator actions during worker startup.
+
+**How to apply:** Keep 503 responses for route registration and required database/session readiness. Report default-seed progress and errors in health output, and gate only endpoints that truly require missing seed data.
+
 The shared `package-lock.json` must use public canonical npm tarball URLs for Plesk and other external installs; Replit's internal package-firewall hostname and `/npm/` prefix are only valid inside Replit.
 
 **Why:** Plesk cannot resolve Replit's internal package host, and replacing only the hostname leaves an invalid `/npm/` path in the public URL.

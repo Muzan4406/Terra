@@ -72,14 +72,12 @@ const healthHandler = async (_req: Request, res: Response) => {
   const defaultDataStartedAt =
     app.locals.defaultDataStartedAt ?? startupStartedAt;
   const sessionStoreStatus = app.locals.sessionStoreStatus ?? "unknown";
-  const dependenciesReady =
-    databaseConnected &&
-    sessionStoreStatus === "ready" &&
-    defaultDataStatus === "ready";
+  const coreDependenciesReady =
+    databaseConnected && sessionStoreStatus === "ready";
 
-  if (startupStatus === "ready" && dependenciesReady) {
+  if (startupStatus === "ready" && coreDependenciesReady) {
     return res.json({
-      status: "ok",
+      status: defaultDataStatus === "failed" ? "degraded" : "ok",
       database: "connected",
       sessionStore: sessionStoreStatus,
       ...(app.locals.sessionStoreCleanup
@@ -95,13 +93,30 @@ const healthHandler = async (_req: Request, res: Response) => {
         ? { sessionStoreErrorCode: app.locals.sessionStoreErrorCode }
         : {}),
       defaults: defaultDataStatus,
+      ...(defaultDataStatus !== "ready"
+        ? {
+            stage: startupFailureStage,
+            step: app.locals.defaultDataStep ?? app.locals.startupStep,
+            startupSeconds: Math.floor(
+              (Date.now() - startupStartedAt) / 1000,
+            ),
+            defaultsSeconds: Math.floor(
+              (Date.now() - defaultDataStartedAt) / 1000,
+            ),
+          }
+        : {}),
+      ...(app.locals.defaultDataError
+        ? { defaultsError: app.locals.defaultDataError }
+        : {}),
+      ...(app.locals.defaultDataErrorCode
+        ? { defaultsErrorCode: app.locals.defaultDataErrorCode }
+        : {}),
     });
   }
 
   const dependencyFailed =
     startupStatus === "failed" ||
-    sessionStoreStatus === "write_failed" ||
-    defaultDataStatus === "failed";
+    sessionStoreStatus === "write_failed";
   return res.status(503).json({
     status: dependencyFailed ? "failed" : "starting",
     database: databaseConnected ? "connected" : "unavailable",
@@ -149,18 +164,18 @@ const healthHandler = async (_req: Request, res: Response) => {
 app.get(["/api/health", "/api/healthz"], healthHandler);
 
 app.use((req, res, next) => {
+  // Default records are seeded in the background and aren't required for
+  // unrelated API actions such as approving a pending deposit.
   if (
     req.path.startsWith("/api") &&
     req.path !== "/api/health" &&
     req.path !== "/api/healthz" &&
     (startupStatus !== "ready" ||
-      app.locals.sessionStoreStatus !== "ready" ||
-      app.locals.defaultDataStatus !== "ready")
+      app.locals.sessionStoreStatus !== "ready")
   ) {
     const dependencyFailed =
       startupStatus === "failed" ||
-      app.locals.sessionStoreStatus === "write_failed" ||
-      app.locals.defaultDataStatus === "failed";
+      app.locals.sessionStoreStatus === "write_failed";
     if (!dependencyFailed) {
       res.set("Retry-After", "1");
     }
