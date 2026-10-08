@@ -127,7 +127,7 @@ export default function MyProductsPage() {
           <section className="beko-hero">
             <p className="beko-eyebrow">Votre portefeuille Beko</p>
             <h2>Suivez vos produits.</h2>
-            <p>Consultez vos produits et leurs gains bloqués. Les gains sont crédités au solde de retrait uniquement à la fin du cycle défini par l’administration.</p>
+            <p>Consultez vos produits et leurs gains bloqués. À l’échéance, utilisez le bouton de collecte pour créditer les gains sur votre solde de retrait.</p>
           </section>
 
           <div className="beko-content">
@@ -211,11 +211,11 @@ export default function MyProductsPage() {
                               <strong>{formatMoney(investment.product.price)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
-                              <span>Gain quotidien bloqué</span>
+                              <span>{maturity.isMatured ? "Gain quotidien" : "Gain quotidien bloqué"}</span>
                               <strong>+{formatMoney(investment.product.dailyReturn)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
-                              <span>Gains bloqués</span>
+                              <span>{maturity.isMatured ? "Gains à collecter" : "Gains bloqués"}</span>
                               <strong data-testid="text-cumulative-revenue">{formatMoney(displayedPendingReturns)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
