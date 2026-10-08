@@ -1,5 +1,5 @@
 - [Site identity and navigation](site-identity-removal.md) — use user-supplied Beko icons, keep the sidebar on user pages, remove dashboard bottom tabs, and preserve evidence uploads.
-- [Separated account balances](separated-account-balances.md) — keep legacy funds in the deposit balance; withdrawals and matured or approved credits use the withdrawal balance.
+- [Separated account balances](separated-account-balances.md) — keep legacy funds in the deposit balance; withdrawals and manually collected matured-product gains use the withdrawal balance.
 - [Conditions des achats existants](purchased-product-terms.md) — modifier ou retirer un produit du catalogue ne doit pas changer les achats déjà souscrits.
 - [Accès par plan fixe](fixed-plan-access.md) — chaque utilisateur doit avoir au moins un plan fixe actif pour accéder aux produits Bien-être et aux Activités.
 - [Support message ordering](support-message-ordering.md) — use per-call timestamps so same-transaction acknowledgements sort after user messages.
