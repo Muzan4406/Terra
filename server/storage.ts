@@ -17,6 +17,10 @@ import {
   INITIAL_ACTIVITY_LAUNCH_VERSION,
   getProductPurchaseBlockReason,
 } from "@shared/product-purchase-policy";
+import {
+  getProductMaturityInfo,
+  PRODUCT_CYCLE_DAY_MS,
+} from "@shared/product-maturity";
 import { eq, and, asc, desc, inArray, sql, gte, lte, or, count, isNull, isNotNull } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -59,6 +63,22 @@ export type ProductPurchaseResult =
         | "activity_not_open_yet"
         | "wellness_in_progress"
         | "activity_already_purchased";
+    };
+
+export type ProductCollectionResult =
+  | {
+      success: true;
+      amount: number;
+      withdrawalBalance: number;
+    }
+  | {
+      success: false;
+      reason:
+        | "user_not_found"
+        | "product_not_found"
+        | "not_matured"
+        | "already_collected"
+        | "invalid_payout";
     };
 
 export type WithdrawalRequestResult =
@@ -159,6 +179,10 @@ export interface IStorage {
     referralPercentages: [number, number, number],
   ): Promise<ProductPurchaseResult>;
   processDueProductCycle(userProductId: string): Promise<number>;
+  collectMaturedProduct(
+    userId: string,
+    userProductId: string,
+  ): Promise<ProductCollectionResult>;
   
   getUserProducts(userId: string): Promise<(UserProduct & { product: Product })[]>;
   getUserTotalInvestment(userId: string): Promise<number>;
@@ -747,8 +771,13 @@ export class DatabaseStorage implements IStorage {
       if (investment.cyclesCompleted >= product.duration) return 0;
 
       const completedCycles = investment.cyclesCompleted + 1;
-      const pendingReturns = investment.pendingReturns + product.dailyReturn;
       const isMatured = completedCycles >= product.duration;
+      const pendingReturns = isMatured
+        ? product.totalReturn
+        : Math.min(
+            product.totalReturn,
+            investment.pendingReturns + product.dailyReturn,
+          );
       const nextPayoutAt = new Date(
         investment.nextPayoutAt.getTime() + 24 * 60 * 60 * 1000,
       );
@@ -756,25 +785,115 @@ export class DatabaseStorage implements IStorage {
       await tx.update(userProducts).set({
         cyclesCompleted: completedCycles,
         nextPayoutAt,
-        pendingReturns: isMatured ? 0 : pendingReturns,
+        pendingReturns,
         isActive: !isMatured,
       }).where(eq(userProducts.id, investment.id));
 
-      if (!isMatured) return 0;
+      // Keep the mature amount pending until the user explicitly collects it.
+      return isMatured ? pendingReturns : 0;
+    });
+  }
 
-      await tx.update(users).set({
-        withdrawalBalance: sql`${users.withdrawalBalance} + ${pendingReturns}`,
-        totalEarnings: sql`${users.totalEarnings} + ${pendingReturns}`,
-        todayEarnings: sql`${users.todayEarnings} + ${pendingReturns}`,
-      }).where(eq(users.id, investment.userId));
+  async collectMaturedProduct(
+    userId: string,
+    userProductId: string,
+  ): Promise<ProductCollectionResult> {
+    return db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      if (!user) return { success: false, reason: "user_not_found" };
+
+      const [investment] = await tx
+        .select()
+        .from(userProducts)
+        .where(
+          and(
+            eq(userProducts.id, userProductId),
+            eq(userProducts.userId, userId),
+          ),
+        )
+        .for("update");
+      if (!investment) return { success: false, reason: "product_not_found" };
+
+      const [currentProduct] = await tx
+        .select()
+        .from(products)
+        .where(eq(products.id, investment.productId));
+      const product = resolvePurchaseProduct(
+        currentProduct ?? null,
+        investment.productSnapshot,
+        investment.productId,
+      );
+      if (!product) return { success: false, reason: "product_not_found" };
+
+      const maturity = getProductMaturityInfo(
+        investment.purchasedAt,
+        product.duration,
+      );
+      if (!maturity.isMatured || !maturity.maturityAt) {
+        return { success: false, reason: "not_matured" };
+      }
+
+      if (!investment.isActive && investment.pendingReturns <= 0) {
+        return { success: false, reason: "already_collected" };
+      }
+
+      const [existingPayout] = await tx
+        .select({ id: earnings.id })
+        .from(earnings)
+        .where(
+          and(
+            eq(earnings.userId, userId),
+            eq(earnings.sourceId, userProductId),
+            eq(earnings.type, "product_payout"),
+          ),
+        )
+        .limit(1);
+      if (existingPayout) {
+        return { success: false, reason: "already_collected" };
+      }
+
+      const amount = Math.floor(product.totalReturn);
+      if (!Number.isSafeInteger(amount) || amount <= 0) {
+        return { success: false, reason: "invalid_payout" };
+      }
+
+      await tx.update(userProducts).set({
+        cyclesCompleted: product.duration,
+        nextPayoutAt: new Date(
+          maturity.maturityAt.getTime() + PRODUCT_CYCLE_DAY_MS,
+        ),
+        pendingReturns: 0,
+        isActive: false,
+      }).where(eq(userProducts.id, investment.id));
+
+      const [updatedUser] = await tx
+        .update(users)
+        .set({
+          withdrawalBalance: sql`${users.withdrawalBalance} + ${amount}`,
+          totalEarnings: sql`${users.totalEarnings} + ${amount}`,
+          todayEarnings: sql`${users.todayEarnings} + ${amount}`,
+        })
+        .where(eq(users.id, userId))
+        .returning({ withdrawalBalance: users.withdrawalBalance });
+      if (!updatedUser) return { success: false, reason: "user_not_found" };
+
       await tx.insert(earnings).values({
-        userId: investment.userId,
-        amount: pendingReturns,
+        userId,
+        amount,
         type: "product_payout",
-        description: `Gains bloqués libérés — ${product.name}`,
+        description: `Gains collectés — ${product.name}`,
         sourceId: investment.id,
       });
-      return pendingReturns;
+
+      return {
+        success: true,
+        amount,
+        withdrawalBalance: updatedUser.withdrawalBalance,
+      };
     });
   }
 

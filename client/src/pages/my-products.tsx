@@ -1,5 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
@@ -12,6 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Link } from "wouter";
+import { getProductMaturityInfo } from "@shared/product-maturity";
 import "./beko-pages.css";
 
 interface UserProduct {
@@ -55,7 +59,9 @@ function getCycleEndDate(purchasedAt: string, durationDays: number) {
 }
 
 export default function MyProductsPage() {
-  const { user } = useAuth();
+  const { user, refetchUser } = useAuth();
+  const { toast } = useToast();
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const {
     data: products,
     isLoading,
@@ -64,6 +70,41 @@ export default function MyProductsPage() {
   } = useQuery<UserProduct[]>({
     queryKey: ["/api/user/products"],
     enabled: Boolean(user),
+  });
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const collectMutation = useMutation({
+    mutationFn: async (userProductId: string) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/user/products/${encodeURIComponent(userProductId)}/collect`,
+      );
+      return response.json() as Promise<{
+        amount: number;
+        withdrawalBalance: number;
+      }>;
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Gains collectés",
+        description: `${formatMoney(result.amount)} FCFA ont été crédités sur votre solde de retrait.`,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["/api/user/products"],
+      });
+      void refetchUser();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Collecte impossible",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const activeProducts = products?.filter((product) => product.isActive) ?? [];
@@ -114,11 +155,27 @@ export default function MyProductsPage() {
                     </div>
                     {activeProducts.map((investment) => {
                       const duration = Math.max(1, Number(investment.product.duration) || 1);
-                      const cyclesCompleted = Math.min(
+                      const maturity = getProductMaturityInfo(
+                        investment.purchasedAt,
                         duration,
-                        Math.max(0, Number(investment.cyclesCompleted) || 0),
+                        new Date(nowMs),
                       );
-                      const daysRemaining = Math.max(0, duration - cyclesCompleted);
+                      const payoutAlreadyCollected =
+                        !investment.isActive && investment.pendingReturns <= 0;
+                      const canCollect =
+                        maturity.isMatured && !payoutAlreadyCollected;
+                      const displayedPendingReturns = payoutAlreadyCollected
+                        ? 0
+                        : maturity.isMatured
+                          ? investment.product.totalReturn
+                          : Math.min(
+                              investment.product.totalReturn,
+                              Math.max(
+                                Number(investment.pendingReturns) || 0,
+                                maturity.elapsedCycles *
+                                  investment.product.dailyReturn,
+                              ),
+                            );
 
                       return (
                         <article
@@ -131,7 +188,10 @@ export default function MyProductsPage() {
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="m-0 truncate text-base font-extrabold">{investment.product.name}</h3>
-                                <span className="beko-product-status"><TrendingUp size={12} /> Actif</span>
+                                <span className={`beko-product-status${maturity.isMatured ? " is-completed" : ""}`}>
+                                  {maturity.isMatured ? <CheckCircle2 size={12} /> : <TrendingUp size={12} />}
+                                  {maturity.isMatured ? "À collecter" : "Actif"}
+                                </span>
                               </div>
                               <p className="mt-1 text-xs text-[#668078]">Produit niveau {investment.product.level}</p>
                             </div>
@@ -140,7 +200,7 @@ export default function MyProductsPage() {
                           <div className="beko-product-days">
                             <div>
                               <span>Jours restants</span>
-                              <strong data-testid="text-days-remaining">{daysRemaining}</strong>
+                              <strong data-testid="text-days-remaining">{maturity.daysRemaining}</strong>
                             </div>
                             <span className="beko-product-days-icon"><Clock3 size={22} /></span>
                           </div>
@@ -156,7 +216,7 @@ export default function MyProductsPage() {
                             </div>
                             <div className="beko-product-stat">
                               <span>Gains bloqués</span>
-                              <strong data-testid="text-cumulative-revenue">{formatMoney(investment.pendingReturns)} FCFA</strong>
+                              <strong data-testid="text-cumulative-revenue">{formatMoney(displayedPendingReturns)} FCFA</strong>
                             </div>
                             <div className="beko-product-stat">
                               <span>Total à maturité</span>
@@ -167,7 +227,9 @@ export default function MyProductsPage() {
                           <div className="beko-product-lock-note">
                             <LockKeyhole size={18} aria-hidden="true" />
                             <span>
-                              Les gains restent bloqués. À la fin du cycle de {duration} jours défini par l’administration, le montant cumulé sera crédité uniquement au solde de retrait.
+                              {maturity.isMatured
+                                ? "Le cycle est terminé. Collectez vos gains pour les créditer sur votre solde de retrait."
+                                : `Les gains restent bloqués jusqu’à la fin du cycle de ${duration} jours défini par l’administration.`}
                             </span>
                           </div>
 
@@ -175,6 +237,19 @@ export default function MyProductsPage() {
                             <span><CalendarDays size={14} /> Acheté le {formatDate(investment.purchasedAt)}</span>
                             <span><Clock3 size={14} /> Fin du cycle prévue : {getCycleEndDate(investment.purchasedAt, duration)}</span>
                           </div>
+                          <button
+                            type="button"
+                            className="beko-primary-button"
+                            data-testid={`button-collect-${investment.id}`}
+                            disabled={!canCollect || collectMutation.isPending}
+                            onClick={() => collectMutation.mutate(investment.id)}
+                          >
+                            {payoutAlreadyCollected
+                              ? "Gains déjà collectés"
+                              : maturity.isMatured
+                                ? `Collecter ${formatMoney(investment.product.totalReturn)} FCFA`
+                                : "Collecter à l’échéance"}
+                          </button>
                           {investment.assignedByAdmin && (
                             <span className="beko-product-admin-note">Produit attribué par l’administration</span>
                           )}
@@ -190,38 +265,77 @@ export default function MyProductsPage() {
                       <h2>Terminés</h2>
                       <span>{completedProducts.length} produit{completedProducts.length === 1 ? "" : "s"}</span>
                     </div>
-                    {completedProducts.map((investment) => (
-                      <article
-                        key={investment.id}
-                        className="beko-panel beko-product-card is-completed"
-                        data-testid={`card-product-completed-${investment.id}`}
-                      >
-                        <div className="beko-product-card-head">
-                          <span className="beko-action-icon h-11 w-11"><PackageCheck size={20} /></span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="m-0 truncate text-base font-extrabold">{investment.product.name}</h3>
-                              <span className="beko-product-status is-completed"><CheckCircle2 size={12} /> Terminé</span>
+                    {completedProducts.map((investment) => {
+                      const duration = Math.max(1, Number(investment.product.duration) || 1);
+                      const maturity = getProductMaturityInfo(
+                        investment.purchasedAt,
+                        duration,
+                        new Date(nowMs),
+                      );
+                      const payoutAlreadyCollected =
+                        !investment.isActive && investment.pendingReturns <= 0;
+                      const canCollect =
+                        maturity.isMatured && !payoutAlreadyCollected;
+
+                      return (
+                        <article
+                          key={investment.id}
+                          className="beko-panel beko-product-card is-completed"
+                          data-testid={`card-product-completed-${investment.id}`}
+                        >
+                          <div className="beko-product-card-head">
+                            <span className="beko-action-icon h-11 w-11"><PackageCheck size={20} /></span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="m-0 truncate text-base font-extrabold">{investment.product.name}</h3>
+                                <span className="beko-product-status is-completed">
+                                  <CheckCircle2 size={12} />
+                                  {payoutAlreadyCollected ? "Collecté" : "À collecter"}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-xs text-[#668078]">Produit niveau {investment.product.level}</p>
                             </div>
-                            <p className="mt-1 text-xs text-[#668078]">Produit niveau {investment.product.level}</p>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="beko-product-stat">
-                            <span>Montant investi</span>
-                            <strong>{formatMoney(investment.product.price)} FCFA</strong>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="beko-product-stat">
+                              <span>Montant investi</span>
+                              <strong>{formatMoney(investment.product.price)} FCFA</strong>
+                            </div>
+                            <div className="beko-product-stat">
+                              <span>{payoutAlreadyCollected ? "Gain collecté" : "Gains à collecter"}</span>
+                              <strong>{formatMoney(investment.product.totalReturn)} FCFA</strong>
+                            </div>
                           </div>
-                          <div className="beko-product-stat">
-                            <span>Gain total prévu</span>
-                            <strong>{formatMoney(investment.product.totalReturn)} FCFA</strong>
+                          <div className="beko-product-lock-note">
+                            <LockKeyhole size={18} aria-hidden="true" />
+                            <span>
+                              {payoutAlreadyCollected
+                                ? "Les gains ont déjà été crédités sur votre solde de retrait."
+                                : maturity.isMatured
+                                  ? "Le cycle est terminé. Collectez vos gains pour les créditer sur votre solde de retrait."
+                                  : "La collecte sera disponible à la fin du cycle."}
+                            </span>
                           </div>
-                        </div>
-                        <div className="beko-product-dates">
-                          <span><CalendarDays size={14} /> Acheté le {formatDate(investment.purchasedAt)}</span>
-                          <span><CheckCircle2 size={14} /> Cycle de {investment.product.duration} jours terminé</span>
-                        </div>
-                      </article>
-                    ))}
+                          <div className="beko-product-dates">
+                            <span><CalendarDays size={14} /> Acheté le {formatDate(investment.purchasedAt)}</span>
+                            <span><CheckCircle2 size={14} /> Cycle de {duration} jours terminé</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="beko-primary-button"
+                            data-testid={`button-collect-${investment.id}`}
+                            disabled={!canCollect || collectMutation.isPending}
+                            onClick={() => collectMutation.mutate(investment.id)}
+                          >
+                            {payoutAlreadyCollected
+                              ? "Gains déjà collectés"
+                              : canCollect
+                                ? `Collecter ${formatMoney(investment.product.totalReturn)} FCFA`
+                                : "Collecter à l’échéance"}
+                          </button>
+                        </article>
+                      );
+                    })}
                   </section>
                 )}
               </>

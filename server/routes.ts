@@ -832,6 +832,39 @@ export async function registerRoutes(
     res.json(userProducts);
   }));
 
+  app.post(
+    "/api/user/products/:id/collect",
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const result = await storage.collectMaturedProduct(
+        req.session.userId!,
+        req.params.id,
+      );
+
+      if (!result.success) {
+        const messages = {
+          user_not_found: "Compte utilisateur introuvable.",
+          product_not_found: "Investissement introuvable.",
+          not_matured: "La collecte sera disponible à la fin du cycle.",
+          already_collected: "Les gains de cet investissement ont déjà été collectés.",
+          invalid_payout: "Le montant des gains ne peut pas être crédité.",
+        } as const;
+        const status =
+          result.reason === "user_not_found" ||
+          result.reason === "product_not_found"
+            ? 404
+            : 409;
+
+        return res.status(status).json({
+          code: result.reason,
+          message: messages[result.reason],
+        });
+      }
+
+      res.json(result);
+    }),
+  );
+
   app.get("/api/withdrawal-proofs", requireAuth, asyncRoute(async (req, res) => {
     const userId = req.session.userId!;
     const [approvedWithdrawals, proofs] = await Promise.all([
